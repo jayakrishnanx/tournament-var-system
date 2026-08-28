@@ -167,6 +167,7 @@ def toggle_match_timer(match_id, action, actor=None, ip_address=None):
         match.away_score = 0
         match.status = Match.Status.SCHEDULED
         match.current_period = Match.Period.NOT_STARTED
+        MatchEvent.objects.filter(match=match).delete()
     elif action == 'FINISH':
         if match.timer_last_updated_at and match.is_timer_running:
             delta = (now - match.timer_last_updated_at).total_seconds()
