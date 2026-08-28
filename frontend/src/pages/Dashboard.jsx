@@ -218,7 +218,7 @@ export const Dashboard = () => {
               backgroundColor: '#ffffff',
               borderRadius: '8px',
               border: '1px solid #ffffff',
-              padding: '6px',
+              padding: '2px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -229,7 +229,7 @@ export const Dashboard = () => {
               <img
                 src="/sponsors/sponsor3.png"
                 alt="N N STEELS"
-                style={{ height: '100%', width: '100%', maxHeight: '76px', objectFit: 'contain' }}
+                style={{ height: '100%', width: '100%', maxHeight: '84px', objectFit: 'contain', transform: 'scale(1.15)' }}
               />
             </div>
           </div>
