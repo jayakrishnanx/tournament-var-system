@@ -120,11 +120,11 @@ export const TournamentDetail = () => {
           </div>
 
           {user?.role === 'ADMIN' && (
-            <div className="hide-on-mobile" style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => setShowTeamModal(true)} className="btn-secondary">
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button onClick={() => setShowTeamModal(true)} className="btn-secondary" style={{ padding: '8px 12px', fontSize: '0.8rem', fontWeight: '800' }}>
                 <Users size={14} /> Add Team
               </button>
-              <button onClick={() => setShowMatchModal(true)} className="btn-primary">
+              <button onClick={() => setShowMatchModal(true)} className="btn-primary" style={{ padding: '8px 12px', fontSize: '0.8rem', fontWeight: '800' }}>
                 <Calendar size={14} /> Schedule Match
               </button>
             </div>
