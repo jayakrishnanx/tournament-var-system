@@ -2,36 +2,89 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
-import { Activity, PlusCircle, ArrowRight, Award } from 'lucide-react';
+import { Activity, PlusCircle, ArrowRight, Award, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const Dashboard = () => {
   const [matches, setMatches] = useState([]);
+  const [tournaments, setTournaments] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [stats, setStats] = useState({ top_scorers: [], yellow_cards: [], red_cards: [] });
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+
+  // New Match Form State
+  const [selectedTournament, setSelectedTournament] = useState('');
+  const [homeTeam, setHomeTeam] = useState('');
+  const [awayTeam, setAwayTeam] = useState('');
+  const [scheduledDate, setScheduledDate] = useState(new Date().toISOString().split('T')[0]);
+  const [submitting, setSubmitting] = useState(false);
+
   const { user } = useAuth();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [mRes, sRes] = await Promise.all([
-          api.get('/tournaments/matches/'),
-          api.get('/tournaments/matches/stats/')
-        ]);
-        setMatches(mRes.data);
-        setStats(sRes.data || { top_scorers: [], yellow_cards: [], red_cards: [] });
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-      } finally {
-        setLoading(false);
+  const fetchData = async () => {
+    try {
+      const [mRes, sRes, tRes, tmRes] = await Promise.all([
+        api.get('/tournaments/matches/'),
+        api.get('/tournaments/matches/stats/'),
+        api.get('/tournaments/tournaments/'),
+        api.get('/tournaments/teams/')
+      ]);
+      setMatches(mRes.data);
+      setStats(sRes.data || { top_scorers: [], yellow_cards: [], red_cards: [] });
+      setTournaments(tRes.data);
+      setTeams(tmRes.data);
+      if (tRes.data.length > 0 && !selectedTournament) {
+        setSelectedTournament(tRes.data[0].id);
       }
-    };
-    fetchData();
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    fetchData();
     const interval = setInterval(fetchData, 2000);
     return () => clearInterval(interval);
   }, []);
 
+  const handleCreateMatch = async (e) => {
+    e.preventDefault();
+    if (!selectedTournament || !homeTeam || !awayTeam) {
+      alert('Please select tournament, home team, and away team.');
+      return;
+    }
+    if (homeTeam === awayTeam) {
+      alert('Home team and Away team must be different!');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await api.post('/tournaments/matches/', {
+        tournament: selectedTournament,
+        home_team: homeTeam,
+        away_team: awayTeam,
+        status: 'SCHEDULED',
+        current_period: 'NOT_STARTED',
+        scheduled_time: `${scheduledDate}T00:00:00Z`
+      });
+      setShowModal(false);
+      setHomeTeam('');
+      setAwayTeam('');
+      fetchData();
+      alert('Match successfully scheduled!');
+    } catch (err) {
+      console.error(err);
+      alert('Error scheduling match.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const tournamentTeams = teams.filter(t => t.tournament === selectedTournament || !selectedTournament);
   const topScorer = stats.top_scorers[0];
 
   const sortedMatches = [...matches].sort((a, b) => {
@@ -67,11 +120,118 @@ export const Dashboard = () => {
         </div>
 
         {user?.role === 'ADMIN' && (
-          <Link to="/tournaments" className="btn-primary" style={{ marginTop: '8px' }}>
-            <PlusCircle size={16} /> New Tournament
-          </Link>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+            <button
+              onClick={() => setShowModal(true)}
+              className="btn-primary"
+              style={{ padding: '7px 14px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800' }}
+            >
+              <PlusCircle size={16} /> Schedule New Match
+            </button>
+            <Link to="/tournaments" className="btn-secondary" style={{ padding: '7px 14px', fontSize: '0.8rem' }}>
+              Tournaments
+            </Link>
+          </div>
         )}
       </div>
+
+      {/* Schedule Match Modal for Admin */}
+      {showModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.75)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          padding: '16px'
+        }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '24px', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#f8fafc' }}>
+                📅 Schedule New Match
+              </h3>
+              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateMatch} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px', fontWeight: '600' }}>
+                  Select Tournament
+                </label>
+                <select
+                  value={selectedTournament}
+                  onChange={e => setSelectedTournament(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                >
+                  {tournaments.map(t => (
+                    <option key={t.id} value={t.id} style={{ background: '#1e293b' }}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px', fontWeight: '600' }}>
+                  Home Team
+                </label>
+                <select
+                  required
+                  value={homeTeam}
+                  onChange={e => setHomeTeam(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                >
+                  <option value="">-- Select Home Team --</option>
+                  {tournamentTeams.map(t => (
+                    <option key={t.id} value={t.id} style={{ background: '#1e293b' }}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px', fontWeight: '600' }}>
+                  Away Team
+                </label>
+                <select
+                  required
+                  value={awayTeam}
+                  onChange={e => setAwayTeam(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                >
+                  <option value="">-- Select Away Team --</option>
+                  {tournamentTeams.map(t => (
+                    <option key={t.id} value={t.id} style={{ background: '#1e293b' }}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px', fontWeight: '600' }}>
+                  Scheduled Match Date
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={scheduledDate}
+                  onChange={e => setScheduledDate(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary" style={{ flex: 1, padding: '9px' }}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={submitting} className="btn-primary" style={{ flex: 1, padding: '9px' }}>
+                  {submitting ? 'Scheduling...' : 'Schedule Match'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Top Goal Scorer Card (Shown on both Admin and User Dashboards) */}
       <div className="glass-panel" style={{ padding: '16px', marginBottom: '20px', borderTop: '3px solid #10b981' }}>
