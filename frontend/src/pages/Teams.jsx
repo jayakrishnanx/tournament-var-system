@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Users, Plus, Shield, Trash2 } from 'lucide-react';
+import { Users, Plus, Shield, Trash2, Pencil } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const Teams = () => {
@@ -9,9 +9,11 @@ export const Teams = () => {
   const [loading, setLoading] = useState(true);
   const [showPlayerModal, setShowPlayerModal] = useState(false);
   const [showTeamModal, setShowTeamModal] = useState(false);
+  const [showEditTeamModal, setShowEditTeamModal] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState(null);
 
   const [teamForm, setTeamForm] = useState({ name: '', code: '', tournament: '' });
+  const [editTeamForm, setEditTeamForm] = useState({ id: null, name: '', tournament: '' });
   const [playerForm, setPlayerForm] = useState({ name: '', jersey_number: 10, position: 'Forward' });
   const { user } = useAuth();
 
@@ -46,6 +48,25 @@ export const Teams = () => {
       fetchTeams();
     } catch (err) {
       alert('Error creating team: ' + (err.response?.data?.detail || err.message));
+    }
+  };
+
+  const handleOpenEditTeam = (team) => {
+    setEditTeamForm({ id: team.id, name: team.name, tournament: team.tournament });
+    setShowEditTeamModal(true);
+  };
+
+  const handleUpdateTeam = async (e) => {
+    e.preventDefault();
+    try {
+      await api.patch(`/tournaments/teams/${editTeamForm.id}/`, {
+        name: editTeamForm.name,
+        tournament: editTeamForm.tournament
+      });
+      setShowEditTeamModal(false);
+      fetchTeams();
+    } catch (err) {
+      alert('Error updating team: ' + (err.response?.data?.detail || err.message));
     }
   };
 
@@ -110,22 +131,40 @@ export const Teams = () => {
                       {tournamentObj?.name || 'Tournament'}
                     </span>
                     {user?.role === 'ADMIN' && (
-                      <button
-                        onClick={() => handleDeleteTeam(team.id, team.name)}
-                        title="Delete Team"
-                        style={{
-                          backgroundColor: 'rgba(244, 63, 94, 0.15)',
-                          color: '#f43f5e',
-                          border: '1px solid rgba(244, 63, 94, 0.3)',
-                          borderRadius: '6px',
-                          padding: '4px 8px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <button
+                          onClick={() => handleOpenEditTeam(team)}
+                          title="Edit Team"
+                          style={{
+                            backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                            color: '#3b82f6',
+                            border: '1px solid rgba(59, 130, 246, 0.3)',
+                            borderRadius: '6px',
+                            padding: '4px 8px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTeam(team.id, team.name)}
+                          title="Delete Team"
+                          style={{
+                            backgroundColor: 'rgba(244, 63, 94, 0.15)',
+                            color: '#f43f5e',
+                            border: '1px solid rgba(244, 63, 94, 0.3)',
+                            borderRadius: '6px',
+                            padding: '4px 8px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -195,6 +234,47 @@ export const Teams = () => {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
                 <button type="button" onClick={() => setShowTeamModal(false)} className="btn-secondary">Cancel</button>
                 <button type="submit" className="btn-primary">Create Team</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Team Modal */}
+      {showEditTeamModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '440px', padding: '28px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Pencil size={20} color="#3b82f6" /> Edit Team
+            </h3>
+            <form onSubmit={handleUpdateTeam} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px' }}>Select Tournament</label>
+                <select
+                  value={editTeamForm.tournament}
+                  onChange={e => setEditTeamForm({ ...editTeamForm, tournament: e.target.value })}
+                  style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
+                >
+                  {tournaments.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px' }}>Team Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editTeamForm.name}
+                  onChange={e => setEditTeamForm({ ...editTeamForm, name: e.target.value })}
+                  style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button type="button" onClick={() => setShowEditTeamModal(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary">Save Changes</button>
               </div>
             </form>
           </div>

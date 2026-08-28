@@ -16,7 +16,7 @@ export const Dashboard = () => {
 
   const [homeTeam, setHomeTeam] = useState('');
   const [awayTeam, setAwayTeam] = useState('');
-  const [scheduledDate, setScheduledDate] = useState(new Date().toISOString().split('T')[0]);
+  const [scheduledDate, setScheduledDate] = useState(new Date().toISOString().slice(0, 16));
   const [submitting, setSubmitting] = useState(false);
 
   const { user } = useAuth();
@@ -68,7 +68,7 @@ export const Dashboard = () => {
         tournament: selectedTournament,
         home_team: homeTeam,
         away_team: awayTeam,
-        scheduled_time: `${scheduledDate}T00:00:00Z`
+        scheduled_time: new Date(scheduledDate).toISOString()
       });
       setShowModal(false);
       setHomeTeam('');
@@ -144,7 +144,7 @@ export const Dashboard = () => {
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px' }}>Scheduled Date</label>
                 <input
-                  type="date"
+                  type="datetime-local"
                   required
                   value={scheduledDate}
                   onChange={e => setScheduledDate(e.target.value)}

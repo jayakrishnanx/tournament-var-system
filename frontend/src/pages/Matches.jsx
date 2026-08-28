@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
-import { Calendar, Filter, PlusCircle, X } from 'lucide-react';
+import { Calendar, Filter, PlusCircle, X, Pencil } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const Matches = () => {
@@ -17,8 +17,12 @@ export const Matches = () => {
   const [selectedTournament, setSelectedTournament] = useState('');
   const [homeTeam, setHomeTeam] = useState('');
   const [awayTeam, setAwayTeam] = useState('');
-  const [scheduledDate, setScheduledDate] = useState(new Date().toISOString().split('T')[0]);
+  const [scheduledDate, setScheduledDate] = useState(new Date().toISOString().slice(0, 16));
   const [submitting, setSubmitting] = useState(false);
+
+  // Edit Match State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({ id: null, home_team: '', away_team: '', scheduled_date: '', tournament: null });
   
   const { user } = useAuth();
 
@@ -65,7 +69,7 @@ export const Matches = () => {
         away_team: awayTeam,
         status: 'SCHEDULED',
         current_period: 'NOT_STARTED',
-        scheduled_time: `${scheduledDate}T00:00:00Z`
+        scheduled_time: new Date(scheduledDate).toISOString()
       });
       setShowModal(false);
       setHomeTeam('');
@@ -95,7 +99,38 @@ export const Matches = () => {
     }
   };
 
+  const handleOpenEdit = (m) => {
+    setEditForm({
+      id: m.id,
+      home_team: m.home_team ? String(m.home_team) : '',
+      away_team: m.away_team ? String(m.away_team) : '',
+      scheduled_date: m.scheduled_time ? new Date(m.scheduled_time).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+      tournament: m.tournament
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateMatch = async (e) => {
+    e.preventDefault();
+    if (editForm.home_team === editForm.away_team) {
+      alert('Home and Away teams must be different!');
+      return;
+    }
+    try {
+      await api.patch(`/tournaments/matches/${editForm.id}/`, {
+        home_team: editForm.home_team,
+        away_team: editForm.away_team,
+        scheduled_time: new Date(editForm.scheduled_date).toISOString()
+      });
+      setShowEditModal(false);
+      fetchMatches();
+    } catch (err) {
+      alert('Error updating match: ' + (err.response?.data?.detail || err.message));
+    }
+  };
+
   const tournamentTeams = teams.filter(t => t.tournament === selectedTournament || !selectedTournament);
+  const editModalTeams = teams.filter(t => t.tournament === editForm.tournament);
 
   const sortedMatches = [...matches].sort((a, b) => {
     if (a.status === 'LIVE' && b.status !== 'LIVE') return -1;
@@ -237,7 +272,7 @@ export const Matches = () => {
                   Scheduled Match Date
                 </label>
                 <input
-                  type="date"
+                  type="datetime-local"
                   required
                   value={scheduledDate}
                   onChange={e => setScheduledDate(e.target.value)}
@@ -340,23 +375,34 @@ export const Matches = () => {
 
                 {(user?.role === 'ADMIN' || m.status !== 'SCHEDULED') && (
                   <div style={{ paddingTop: '14px', borderTop: '1px solid #343a46', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                    {user?.role === 'ADMIN' && m.status === 'SCHEDULED' && (
-                      <button
-                        onClick={() => handleSetNextMatch(m.id)}
-                        style={{
-                          backgroundColor: m.is_next_match ? '#2B5748' : 'rgba(43, 87, 72, 0.18)',
-                          color: m.is_next_match ? '#EAECF0' : '#2B5748',
-                          border: '1px solid #2B5748',
-                          padding: '5px 12px',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                          fontWeight: '800',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {m.is_next_match ? '📌 Next Match Active (Unset)' : '📌 Set as Next Match'}
-                      </button>
-                    )}
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {user?.role === 'ADMIN' && m.status === 'SCHEDULED' && (
+                        <button
+                          onClick={() => handleSetNextMatch(m.id)}
+                          style={{
+                            backgroundColor: m.is_next_match ? '#2B5748' : 'rgba(43, 87, 72, 0.18)',
+                            color: m.is_next_match ? '#EAECF0' : '#2B5748',
+                            border: '1px solid #2B5748',
+                            padding: '5px 12px',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            fontWeight: '800',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {m.is_next_match ? '📌 Next Match Active (Unset)' : '📌 Set as Next Match'}
+                        </button>
+                      )}
+                      {user?.role === 'ADMIN' && (
+                        <button
+                          onClick={() => handleOpenEdit(m)}
+                          className="btn-secondary"
+                          style={{ padding: '5px 10px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: '800' }}
+                        >
+                          <Pencil size={12} /> Edit
+                        </button>
+                      )}
+                    </div>
 
                     <Link to={`/matches/${m.id}`} className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem', marginLeft: 'auto' }}>
                       {user?.role === 'ADMIN' ? 'Open Master Console' : 'Watch Live Scoreboard'}
@@ -365,6 +411,70 @@ export const Matches = () => {
                 )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Edit Match Modal */}
+      {showEditModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.75)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '24px', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Pencil size={18} color="#3b82f6" /> Edit Match
+              </h3>
+              <button onClick={() => setShowEditModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateMatch} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px', fontWeight: '600' }}>Home Team</label>
+                <select
+                  required
+                  value={editForm.home_team}
+                  onChange={e => setEditForm({ ...editForm, home_team: e.target.value })}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                >
+                  <option value="">-- Select Home Team --</option>
+                  {editModalTeams.map(t => (
+                    <option key={t.id} value={String(t.id)} style={{ background: '#1D2128' }}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px', fontWeight: '600' }}>Away Team</label>
+                <select
+                  required
+                  value={editForm.away_team}
+                  onChange={e => setEditForm({ ...editForm, away_team: e.target.value })}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                >
+                  <option value="">-- Select Away Team --</option>
+                  {editModalTeams.map(t => (
+                    <option key={t.id} value={String(t.id)} style={{ background: '#1D2128' }}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px', fontWeight: '600' }}>Match Date</label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={editForm.scheduled_date}
+                  onChange={e => setEditForm({ ...editForm, scheduled_date: e.target.value })}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem', colorScheme: 'dark' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                <button type="button" onClick={() => setShowEditModal(false)} className="btn-secondary" style={{ flex: 1, padding: '9px' }}>Cancel</button>
+                <button type="submit" className="btn-primary" style={{ flex: 1, padding: '9px' }}>Save Changes</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

@@ -13,6 +13,7 @@ import { MatchDetail } from './pages/MatchDetail';
 import { PublicScoreboard } from './pages/PublicScoreboard';
 import { Standings } from './pages/Standings';
 import { Bracket } from './pages/Bracket';
+import { PhoneBroadcaster } from './pages/PhoneBroadcaster';
 
 function App() {
   return (
@@ -25,6 +26,8 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/bracket" element={<Bracket />} />
               <Route path="/standings" element={<Standings />} />
+              <Route path="/camera/:camId" element={<PhoneBroadcaster />} />
+              <Route path="/broadcast/:camId" element={<PhoneBroadcaster />} />
               <Route path="/tournaments" element={<Tournaments />} />
               <Route path="/tournaments/:id" element={<TournamentDetail />} />
               <Route path="/teams" element={<Teams />} />
