@@ -156,6 +156,7 @@ def toggle_match_timer(match_id, action, actor=None, ip_address=None):
             if match.status == Match.Status.SCHEDULED:
                 match.status = Match.Status.LIVE
                 match.actual_start_time = now
+                match.is_next_match = False
                 if match.current_period == Match.Period.NOT_STARTED:
                     match.current_period = Match.Period.FIRST_HALF
     elif action == 'PAUSE':
@@ -171,6 +172,7 @@ def toggle_match_timer(match_id, action, actor=None, ip_address=None):
         match.timer_last_updated_at = None
         match.home_score = 0
         match.away_score = 0
+        match.is_next_match = False
         match.status = Match.Status.SCHEDULED
         match.current_period = Match.Period.NOT_STARTED
         MatchEvent.objects.filter(match=match).delete()
@@ -180,6 +182,7 @@ def toggle_match_timer(match_id, action, actor=None, ip_address=None):
             match.timer_seconds_elapsed += int(delta)
         match.is_timer_running = False
         match.timer_last_updated_at = None
+        match.is_next_match = False
         match.status = Match.Status.ENDED
         match.actual_end_time = now
 

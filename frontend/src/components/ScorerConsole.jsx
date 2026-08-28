@@ -64,17 +64,16 @@ export const ScorerConsole = ({ match, onUpdate }) => {
   };
 
   const handleResetTimer = async () => {
-    if (window.confirm('Reset match clock back to 00:00 & clear scores?')) {
-      setLoading(true);
-      try {
-        const res = await api.post(`/tournaments/matches/${match.id}/timer/`, { action: 'RESET' });
-        setElapsedSeconds(0);
-        if (onUpdate) onUpdate(res.data);
-      } catch (err) {
-        alert('Error resetting timer: ' + (err.response?.data?.error || err.message));
-      } finally {
-        setLoading(false);
-      }
+    setLoading(true);
+    try {
+      const res = await api.post(`/tournaments/matches/${match.id}/timer/`, { action: 'RESET' });
+      setElapsedSeconds(0);
+      if (onUpdate) onUpdate(res.data);
+      alert('🔄 Match timer and score reset to 0.');
+    } catch (err) {
+      alert('Error resetting timer: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -141,25 +140,23 @@ export const ScorerConsole = ({ match, onUpdate }) => {
 
             {match.status !== 'ENDED' && (
               <button
-                onClick={() => {
-                  if (window.confirm('Mark this match as FINISHED / ENDED?')) {
-                    handleTimerToggle('FINISH');
-                  }
-                }}
+                onClick={() => handleTimerToggle('FINISH')}
                 disabled={loading}
                 style={{
-                  backgroundColor: '#f59e0b',
-                  color: '#618764',
+                  backgroundColor: '#2B5748',
+                  color: '#EAECF0',
                   fontWeight: '900',
-                  padding: '6px 12px',
+                  padding: '8px 14px',
                   borderRadius: '6px',
-                  fontSize: '0.75rem',
+                  fontSize: '0.8rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '4px',
+                  border: '1px solid #2B5748',
+                  touchAction: 'manipulation'
                 }}
               >
-                🏁 Finish
+                🏁 Finish Match
               </button>
             )}
 
@@ -168,9 +165,9 @@ export const ScorerConsole = ({ match, onUpdate }) => {
               disabled={loading}
               className="btn-secondary"
               title="Reset Clock & Score"
-              style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem' }}
+              style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', touchAction: 'manipulation' }}
             >
-              <RotateCcw size={13} /> Reset
+              <RotateCcw size={14} /> Reset
             </button>
           </div>
         </div>

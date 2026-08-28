@@ -82,8 +82,13 @@ export const Matches = () => {
 
   const handleSetNextMatch = async (matchId) => {
     try {
-      await api.post(`/tournaments/matches/${matchId}/set_next/`);
+      const res = await api.post(`/tournaments/matches/${matchId}/set_next/`);
       fetchMatches();
+      if (res.data?.is_next_match) {
+        alert('📌 Match successfully set as UPCOMING NEXT MATCH!');
+      } else {
+        alert('📌 Next match selection removed.');
+      }
     } catch (err) {
       console.error('Failed to set next match:', err);
       alert('Failed to set as next match.');
