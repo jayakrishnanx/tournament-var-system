@@ -157,6 +157,8 @@ def toggle_match_timer(match_id, action, actor=None, ip_address=None):
         match.is_timer_running = False
         match.timer_seconds_elapsed = 0
         match.timer_last_updated_at = None
+        match.home_score = 0
+        match.away_score = 0
         match.status = Match.Status.SCHEDULED
         match.current_period = Match.Period.NOT_STARTED
     elif action == 'FINISH':
