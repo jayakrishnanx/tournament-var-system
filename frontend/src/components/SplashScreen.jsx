@@ -53,15 +53,18 @@ export const SplashScreen = ({ children }) => {
           maxHeight: '200px',
           overflow: 'hidden',
         }}>
-          <img
-            src="/loading.webp"
-            alt="Loading..."
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain'
-            }}
-          />
+          <picture style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <source srcSet="/loading.webp" type="image/webp" />
+            <img
+              src="/loading.gif"
+              alt="Loading..."
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain'
+              }}
+            />
+          </picture>
         </div>
       </div>
       {children}
