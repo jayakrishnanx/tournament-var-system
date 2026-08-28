@@ -7,7 +7,7 @@ const getBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
     if (host.includes('vercel.app') || host.includes('onrender.com')) {
-      return 'https://tournament-var-backend.onrender.com/api';
+      return 'https://tournament-var-system.onrender.com/api';
     }
     return `http://${host}:8000/api`;
   }
@@ -18,7 +18,7 @@ const API_BASE_URL = getBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 60000, // 60s timeout to allow Render free server wake-up
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
