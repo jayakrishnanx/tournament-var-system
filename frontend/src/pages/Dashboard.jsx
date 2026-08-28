@@ -162,67 +162,69 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* 1. OFFICIAL SPONSORS BANNER (POSITION #1 AT VERY TOP) */}
-      <div className="glass-panel" style={{ padding: '14px 16px', marginBottom: '20px', borderTop: '3px solid #3b82f6' }}>
-        <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', textAlign: 'center' }}>
-          ✨ OFFICIAL TOURNAMENT SPONSORS
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', alignItems: 'center' }}>
-          {/* Sponsor Logo 1: Quick Mix */}
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '8px',
-            padding: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '60px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-          }}>
-            <img
-              src="/sponsors/sponsor1.png"
-              alt="Quick Mix"
-              style={{ maxHeight: '48px', maxWidth: '100%', objectFit: 'contain' }}
-            />
+      {/* 1. OFFICIAL SPONSORS BANNER (SPECTATORS ONLY) */}
+      {user?.role !== 'ADMIN' && (
+        <div className="glass-panel" style={{ padding: '14px 16px', marginBottom: '20px', borderTop: '3px solid #3b82f6' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', textAlign: 'center' }}>
+            ✨ OFFICIAL TOURNAMENT SPONSORS
           </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', alignItems: 'center' }}>
+            {/* Sponsor Logo 1: Quick Mix */}
+            <div style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '8px',
+              padding: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '60px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+            }}>
+              <img
+                src="/sponsors/sponsor1.png"
+                alt="Quick Mix"
+                style={{ maxHeight: '48px', maxWidth: '100%', objectFit: 'contain' }}
+              />
+            </div>
 
-          {/* Sponsor Logo 2: NEO */}
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '8px',
-            padding: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '60px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-          }}>
-            <img
-              src="/sponsors/sponsor2.png"
-              alt="NEO"
-              style={{ maxHeight: '48px', maxWidth: '100%', objectFit: 'contain' }}
-            />
-          </div>
+            {/* Sponsor Logo 2: NEO */}
+            <div style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '8px',
+              padding: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '60px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+            }}>
+              <img
+                src="/sponsors/sponsor2.png"
+                alt="NEO"
+                style={{ maxHeight: '48px', maxWidth: '100%', objectFit: 'contain' }}
+              />
+            </div>
 
-          {/* Sponsor Logo 3: N N STEELS */}
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '8px',
-            padding: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '60px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-          }}>
-            <img
-              src="/sponsors/sponsor3.png"
-              alt="N N STEELS"
-              style={{ maxHeight: '48px', maxWidth: '100%', objectFit: 'contain' }}
-            />
+            {/* Sponsor Logo 3: N N STEELS */}
+            <div style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '8px',
+              padding: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '60px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+            }}>
+              <img
+                src="/sponsors/sponsor3.png"
+                alt="N N STEELS"
+                style={{ maxHeight: '48px', maxWidth: '100%', objectFit: 'contain' }}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 2. MAIN LIVE & SCHEDULED MATCHES (POSITION #2 SECOND) */}
       <div style={{ marginBottom: '24px' }}>
