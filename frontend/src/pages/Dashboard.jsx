@@ -166,16 +166,16 @@ export const Dashboard = () => {
 
       {/* 1. OFFICIAL SPONSORS BANNER (SPECTATORS ONLY) */}
       {user?.role !== 'ADMIN' && (
-        <div className="glass-panel" style={{ padding: '14px 16px', marginBottom: '20px', borderTop: '3px solid #FF0000' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#FF0000', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', textAlign: 'center' }}>
+        <div className="glass-panel" style={{ padding: '14px 16px', marginBottom: '20px', borderTop: '3px solid #CF3030' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#CF3030', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', textAlign: 'center' }}>
             ✨ OFFICIAL TOURNAMENT SPONSORS
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', alignItems: 'center' }}>
             {/* Sponsor Logo 1: Quick Mix */}
             <div style={{
-              backgroundColor: '#000000',
+              backgroundColor: '#141414',
               borderRadius: '8px',
-              border: '1px solid #950101',
+              border: '1px solid #333333',
               padding: '4px',
               display: 'flex',
               alignItems: 'center',
@@ -192,9 +192,9 @@ export const Dashboard = () => {
 
             {/* Sponsor Logo 2: NEO */}
             <div style={{
-              backgroundColor: '#000000',
+              backgroundColor: '#141414',
               borderRadius: '8px',
-              border: '1px solid #950101',
+              border: '1px solid #333333',
               padding: '4px',
               display: 'flex',
               alignItems: 'center',
@@ -211,9 +211,9 @@ export const Dashboard = () => {
 
             {/* Sponsor Logo 3: N N STEELS */}
             <div style={{
-              backgroundColor: '#000000',
+              backgroundColor: '#141414',
               borderRadius: '8px',
-              border: '1px solid #950101',
+              border: '1px solid #333333',
               padding: '4px',
               display: 'flex',
               alignItems: 'center',
@@ -236,27 +236,27 @@ export const Dashboard = () => {
         <div className="glass-panel" style={{
           padding: '16px 20px',
           marginBottom: '20px',
-          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.95))',
-          border: '1px solid rgba(245, 158, 11, 0.4)',
-          borderLeft: '4px solid #f59e0b'
+          background: 'linear-gradient(135deg, rgba(232, 138, 26, 0.18), rgba(20, 20, 20, 0.95))',
+          border: '1px solid rgba(232, 138, 26, 0.4)',
+          borderLeft: '4px solid #E88A1A'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#E88A1A', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
               📌 UPCOMING NEXT MATCH
             </span>
-            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#94a3b8' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#a3a3a3' }}>
               Match #{nextMatch.match_number}
             </span>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#f8fafc' }}>
-              {nextMatch.home_team_details?.name} <span style={{ color: '#f59e0b', margin: '0 6px' }}>VS</span> {nextMatch.away_team_details?.name}
+            <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#D9D9D9' }}>
+              {nextMatch.home_team_details?.name} <span style={{ color: '#E88A1A', margin: '0 6px' }}>VS</span> {nextMatch.away_team_details?.name}
             </div>
 
             <Link to={`/matches/${nextMatch.id}`} style={{
-              backgroundColor: '#f59e0b',
-              color: '#000000',
+              backgroundColor: '#E88A1A',
+              color: '#141414',
               fontWeight: '900',
               padding: '6px 14px',
               borderRadius: '6px',
@@ -273,20 +273,20 @@ export const Dashboard = () => {
       <div style={{ marginBottom: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Activity size={18} color="#FF0000" /> Live & Scheduled Matches
+            <Activity size={18} color="#CF3030" /> Live & Scheduled Matches
           </h2>
-          <Link to="/standings" className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '800' }}>
+          <Link to="/standings" className="btn-success" style={{ padding: '6px 14px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '800' }}>
             📊 View Points Table
           </Link>
         </div>
 
         {loading ? (
-          <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
+          <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#a3a3a3' }}>
             Loading match schedule...
           </div>
         ) : matches.length === 0 ? (
-          <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
-            <p style={{ fontSize: '0.95rem', color: '#f8fafc', fontWeight: '700' }}>No active matches scheduled yet.</p>
+          <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#a3a3a3' }}>
+            <p style={{ fontSize: '0.95rem', color: '#D9D9D9', fontWeight: '700' }}>No active matches scheduled yet.</p>
           </div>
         ) : (
           <div className="responsive-grid-2">
@@ -296,7 +296,7 @@ export const Dashboard = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '6px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <StatusBadge status={m.status} />
-                      <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#FF0000', backgroundColor: 'rgba(255, 0, 0, 0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(255, 0, 0, 0.3)' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#E88A1A', backgroundColor: 'rgba(232, 138, 26, 0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(232, 138, 26, 0.3)' }}>
                         🏆 {m.tournament_name || 'Kakkikalam'}
                       </span>
                     </div>

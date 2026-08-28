@@ -21,9 +21,9 @@ export const Navbar = () => {
     borderRadius: '6px',
     fontSize: '0.8rem',
     fontWeight: '700',
-    color: location.pathname === path ? '#FF0000' : '#d1d5db',
-    backgroundColor: location.pathname === path ? 'rgba(255, 0, 0, 0.18)' : 'transparent',
-    border: location.pathname === path ? '1px solid rgba(255, 0, 0, 0.4)' : '1px solid transparent',
+    color: location.pathname === path ? '#CF3030' : '#D9D9D9',
+    backgroundColor: location.pathname === path ? 'rgba(207, 48, 48, 0.18)' : 'transparent',
+    border: location.pathname === path ? '1px solid rgba(207, 48, 48, 0.4)' : '1px solid transparent',
     transition: 'all 0.2s ease',
   });
 
@@ -35,8 +35,8 @@ export const Navbar = () => {
       alignItems: 'center',
       justifyContent: 'space-between',
       padding: '10px 16px',
-      backgroundColor: '#000000',
-      borderBottom: '1px solid #950101',
+      backgroundColor: '#141414',
+      borderBottom: '1px solid #333333',
       position: 'sticky',
       top: 0,
       zIndex: 50
@@ -44,18 +44,18 @@ export const Navbar = () => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
         <Link to={isAdmin ? "/matches" : "/"} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <div style={{
-            background: 'linear-gradient(135deg, #FF0000, #950101)',
+            background: 'linear-gradient(135deg, #CF3030, #E88A1A)',
             padding: '5px',
             borderRadius: '6px',
             display: 'flex'
           }}>
-            <Trophy size={16} color="white" />
+            <Trophy size={16} color="#141414" />
           </div>
           <div>
-            <span style={{ fontFamily: 'Outfit', fontWeight: '900', fontSize: '1rem', color: 'white', display: 'block', lineHeight: 1, letterSpacing: '0.02em' }}>
-              KALLI<span style={{ color: '#FF0000' }}>KALAM</span>
+            <span style={{ fontFamily: 'Outfit', fontWeight: '900', fontSize: '1rem', color: '#D9D9D9', display: 'block', lineHeight: 1, letterSpacing: '0.02em' }}>
+              KALLI<span style={{ color: '#CF3030' }}>KALAM</span>
             </span>
-            <span style={{ fontSize: '0.55rem', color: '#950101', letterSpacing: '0.05em', fontWeight: '800' }}>
+            <span style={{ fontSize: '0.55rem', color: '#E88A1A', letterSpacing: '0.05em', fontWeight: '800' }}>
               LIVE SCOREBOARD
             </span>
           </div>
