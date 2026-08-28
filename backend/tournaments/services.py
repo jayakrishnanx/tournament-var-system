@@ -23,6 +23,7 @@ def broadcast_match_update(match):
                     "current_period": match.current_period,
                     "timer_seconds_elapsed": match.timer_seconds_elapsed,
                     "is_timer_running": match.is_timer_running,
+                    "timer_last_updated_at": match.timer_last_updated_at.isoformat() if match.timer_last_updated_at else None,
                 }
             }
         )

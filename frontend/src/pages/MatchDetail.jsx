@@ -18,6 +18,18 @@ export const MatchDetail = () => {
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
+  const getCalculatedSeconds = (m) => {
+    if (!m) return 0;
+    let base = m.timer_seconds_elapsed || 0;
+    if (m.is_timer_running && m.timer_last_updated_at) {
+      const last = new Date(m.timer_last_updated_at).getTime();
+      const now = new Date().getTime();
+      const diff = Math.max(0, Math.floor((now - last) / 1000));
+      return base + diff;
+    }
+    return base;
+  };
+
   const fetchMatchDetails = async () => {
     try {
       const [mRes, vRes] = await Promise.all([
@@ -25,7 +37,7 @@ export const MatchDetail = () => {
         api.get(`/tournaments/var-incidents/?match=${id}`)
       ]);
       setMatch(mRes.data);
-      setElapsedSeconds(mRes.data.timer_seconds_elapsed || 0);
+      setElapsedSeconds(getCalculatedSeconds(mRes.data));
       setVarIncidents(vRes.data);
     } catch (err) {
       console.error(err);
@@ -43,7 +55,7 @@ export const MatchDetail = () => {
         if (data.type === 'match_update') {
           setMatch(prev => {
             const nextMatch = prev ? ({ ...prev, ...data.match }) : data.match;
-            setElapsedSeconds(nextMatch.timer_seconds_elapsed || 0);
+            setElapsedSeconds(getCalculatedSeconds(nextMatch));
             return nextMatch;
           });
         }
@@ -54,16 +66,8 @@ export const MatchDetail = () => {
 
     const pollInterval = setInterval(() => {
       api.get(`/tournaments/matches/${id}/`).then(mRes => {
-        setMatch(prev => {
-          if (!prev) return mRes.data;
-          const updated = { ...mRes.data };
-          if (!prev.is_timer_running && mRes.data.is_timer_running) {
-            setElapsedSeconds(mRes.data.timer_seconds_elapsed || 0);
-          } else if (Math.abs((prev.timer_seconds_elapsed || 0) - (mRes.data.timer_seconds_elapsed || 0)) > 3) {
-            setElapsedSeconds(mRes.data.timer_seconds_elapsed || 0);
-          }
-          return updated;
-        });
+        setMatch(mRes.data);
+        setElapsedSeconds(getCalculatedSeconds(mRes.data));
       }).catch(() => {});
     }, 1500);
 
@@ -74,26 +78,16 @@ export const MatchDetail = () => {
   }, [id]);
 
   useEffect(() => {
-    if (match) {
-      setElapsedSeconds(match.timer_seconds_elapsed || 0);
-    }
-  }, [match?.timer_seconds_elapsed]);
-
-  useEffect(() => {
-    let timerInterval = null;
-    if (match && match.is_timer_running) {
-      timerInterval = setInterval(() => {
-        setElapsedSeconds(prev => prev + 1);
-      }, 1000);
-    }
-    return () => {
-      if (timerInterval) clearInterval(timerInterval);
-    };
-  }, [match?.is_timer_running]);
+    setElapsedSeconds(getCalculatedSeconds(match));
+    const timerInterval = setInterval(() => {
+      setElapsedSeconds(getCalculatedSeconds(match));
+    }, 1000);
+    return () => clearInterval(timerInterval);
+  }, [match]);
 
   const handleMatchUpdate = (updatedMatch) => {
     setMatch(updatedMatch);
-    setElapsedSeconds(updatedMatch.timer_seconds_elapsed || 0);
+    setElapsedSeconds(getCalculatedSeconds(updatedMatch));
   };
 
   if (loading) return <div style={{ padding: '40px', color: '#94a3b8', textAlign: 'center' }}>Loading match details...</div>;
