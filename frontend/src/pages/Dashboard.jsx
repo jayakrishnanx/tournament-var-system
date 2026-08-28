@@ -2,31 +2,34 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
-import { Activity, PlusCircle, ArrowRight } from 'lucide-react';
+import { Activity, PlusCircle, ArrowRight, Award } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const Dashboard = () => {
   const [matches, setMatches] = useState([]);
+  const [stats, setStats] = useState({ top_scorers: [], yellow_cards: [], red_cards: [] });
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
-    const fetchMatches = async () => {
+    const fetchData = async () => {
       try {
-        const res = await api.get('/tournaments/matches/');
-        setMatches(res.data);
+        const [mRes, sRes] = await Promise.all([
+          api.get('/tournaments/matches/'),
+          api.get('/tournaments/matches/stats/')
+        ]);
+        setMatches(mRes.data);
+        setStats(sRes.data || { top_scorers: [], yellow_cards: [], red_cards: [] });
       } catch (err) {
-        console.error('Error fetching matches:', err);
+        console.error('Error fetching dashboard data:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchMatches();
+    fetchData();
   }, []);
 
-  const liveMatches = matches.filter(m => m.status === 'LIVE' || m.status === 'PAUSED');
-  const scheduledMatches = matches.filter(m => m.status === 'SCHEDULED');
-  const endedMatches = matches.filter(m => m.status === 'ENDED');
+  const topScorer = stats.top_scorers[0];
 
   return (
     <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>
@@ -57,6 +60,36 @@ export const Dashboard = () => {
             <PlusCircle size={16} /> New Tournament
           </Link>
         )}
+      </div>
+
+      {/* Top Goal Scorer Card (Shown on both Admin and User Dashboards) */}
+      <div className="glass-panel" style={{ padding: '16px', marginBottom: '20px', borderTop: '3px solid #10b981' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94a3b8' }}>
+          <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Award size={18} color="#10b981" /> 🏆 TOURNAMENT TOP GOAL SCORER
+          </span>
+        </div>
+        <div style={{ marginTop: '8px' }}>
+          {topScorer ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+              <div>
+                <div style={{ fontSize: '1.2rem', fontWeight: '900', color: '#f8fafc' }}>
+                  {topScorer.player_name}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '600' }}>
+                  Team: <strong style={{ color: '#cbd5e1' }}>{topScorer.team_name}</strong>
+                </div>
+              </div>
+              <span style={{ fontWeight: '900', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '4px 12px', borderRadius: '8px', fontSize: '0.9rem' }}>
+                ⚽ {topScorer.goals} {topScorer.goals === 1 ? 'Goal' : 'Goals'}
+              </span>
+            </div>
+          ) : (
+            <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#64748b' }}>
+              No goals recorded in active matches yet.
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main Live & Match Hub */}

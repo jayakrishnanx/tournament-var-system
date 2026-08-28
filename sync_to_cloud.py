@@ -60,6 +60,15 @@ def sync():
             cloud_team = post('/tournaments/teams/', team_payload)
             if cloud_team:
                 team_map[team.id] = cloud_team['id']
+                for p in team.players.all():
+                    print(f"    * Syncing Player: {p.name}...")
+                    player_payload = {
+                        "team": cloud_team['id'],
+                        "name": p.name,
+                        "jersey_number": p.jersey_number,
+                        "position": p.position
+                    }
+                    post('/tournaments/players/', player_payload)
 
         for match in t.matches.all():
             print(f"  - Syncing Match: {match.match_code}...")
@@ -79,7 +88,7 @@ def sync():
                 }
                 post('/tournaments/matches/', match_payload)
 
-    print("Sync complete! All local tournaments and matches uploaded to Cloud.")
+    print("Sync complete! All local tournaments, teams, players, and matches uploaded to Cloud.")
 
 if __name__ == '__main__':
     sync()
