@@ -47,8 +47,10 @@ export const SplashScreen = ({ children }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          width: '100vw',
-          height: '100vh',
+          width: '90vw',
+          height: '90vw',
+          maxWidth: '200px',
+          maxHeight: '200px',
           overflow: 'hidden',
         }}>
           <video
