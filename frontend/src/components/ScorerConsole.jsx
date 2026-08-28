@@ -149,7 +149,7 @@ export const ScorerConsole = ({ match, onUpdate }) => {
                 disabled={loading}
                 style={{
                   backgroundColor: '#f59e0b',
-                  color: '#000000',
+                  color: '#618764',
                   fontWeight: '900',
                   padding: '6px 12px',
                   borderRadius: '6px',

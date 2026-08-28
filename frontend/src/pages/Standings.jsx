@@ -53,7 +53,7 @@ export const Standings = () => {
           <span style={{ backgroundColor: 'rgba(29, 33, 40, 0.8)', border: '1px solid #343a46', color: '#EAECF0', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '800' }}>
             🟨 DRAW = 1 PT
           </span>
-          <span style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: '1px solid #000000', color: '#9aa4b2', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '800' }}>
+          <span style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: '1px solid #618764', color: '#9aa4b2', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '800' }}>
             ⬛ LOSS = 0 PTS
           </span>
         </div>
