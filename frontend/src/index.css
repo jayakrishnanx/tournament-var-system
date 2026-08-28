@@ -2,16 +2,16 @@
 
 :root {
   --bg-dark: #000000;
-  --bg-card: #233D4D;
-  --bg-card-hover: #2c4c60;
-  --accent-primary: #FE7F2D;
-  --accent-primary-hover: #e0681b;
-  --accent-emerald: #FE7F2D;
+  --bg-card: #1D2128;
+  --bg-card-hover: #2b303b;
+  --accent-primary: #7B2525;
+  --accent-primary-hover: #5d1b1b;
+  --accent-emerald: #7B2525;
   --accent-rose: #ef4444;
-  --accent-amber: #FE7F2D;
+  --accent-amber: #7B2525;
   --text-main: #EAECF0;
-  --text-muted: #a3b3c2;
-  --border-color: #2e4f64;
+  --text-muted: #9aa4b2;
+  --border-color: #343a46;
   --font-heading: 'Outfit', sans-serif;
   --font-body: 'Inter', sans-serif;
 }
@@ -67,7 +67,7 @@ button:disabled {
 
 /* Glass Card */
 .glass-panel {
-  background: rgba(35, 61, 77, 0.92);
+  background: rgba(29, 33, 40, 0.95);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
   border-radius: 10px;
@@ -77,7 +77,7 @@ button:disabled {
 .card-hover:hover {
   border-color: var(--accent-primary);
   transform: translateY(-2px);
-  box-shadow: 0 0 15px rgba(254, 127, 45, 0.35);
+  box-shadow: 0 0 15px rgba(123, 37, 37, 0.4);
 }
 
 /* Responsive Grids & Layout Utilities */
@@ -101,38 +101,40 @@ button:disabled {
 
 /* Compact Mobile-First Buttons */
 .btn-primary {
-  background: linear-gradient(135deg, #FE7F2D, #d6671c);
-  color: #000000;
+  background: linear-gradient(135deg, #7B2525, #5d1b1b);
+  color: #EAECF0;
   padding: 6px 14px;
   border-radius: 6px;
   font-size: 0.82rem;
-  font-weight: 900;
+  font-weight: 800;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: 0 0 10px rgba(254, 127, 45, 0.35);
+  box-shadow: 0 0 10px rgba(123, 37, 37, 0.35);
+  border: 1px solid #7B2525;
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #d6671c, #b0500f);
-  box-shadow: 0 0 15px rgba(254, 127, 45, 0.5);
+  background: linear-gradient(135deg, #5d1b1b, #421313);
+  box-shadow: 0 0 15px rgba(123, 37, 37, 0.5);
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #FE7F2D, #d6671c);
-  color: #000000;
+  background: linear-gradient(135deg, #7B2525, #5d1b1b);
+  color: #EAECF0;
   padding: 6px 14px;
   border-radius: 6px;
   font-size: 0.82rem;
-  font-weight: 900;
+  font-weight: 800;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: 0 0 10px rgba(254, 127, 45, 0.35);
+  box-shadow: 0 0 10px rgba(123, 37, 37, 0.35);
+  border: 1px solid #7B2525;
 }
 .btn-success:hover {
-  background: linear-gradient(135deg, #d6671c, #b0500f);
+  background: linear-gradient(135deg, #5d1b1b, #421313);
 }
 
 .btn-danger {
@@ -149,7 +151,7 @@ button:disabled {
 }
 
 .btn-secondary {
-  background: #233D4D;
+  background: #1D2128;
   color: var(--text-main);
   padding: 6px 12px;
   border-radius: 6px;
@@ -162,8 +164,8 @@ button:disabled {
   gap: 6px;
 }
 .btn-secondary:hover {
-  background: #2c4c60;
-  border-color: #FE7F2D;
+  background: #2b303b;
+  border-color: #7B2525;
 }
 
 /* Scoreboard display */
@@ -172,7 +174,7 @@ button:disabled {
   font-size: 2.8rem;
   font-weight: 900;
   color: #EAECF0;
-  text-shadow: 0 0 15px rgba(254, 127, 45, 0.6);
+  text-shadow: 0 0 15px rgba(123, 37, 37, 0.6);
 }
 
 /* Mobile Media Queries for iPhone / Android */

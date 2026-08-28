@@ -21,9 +21,9 @@ export const Navbar = () => {
     borderRadius: '6px',
     fontSize: '0.8rem',
     fontWeight: '800',
-    color: location.pathname === path ? '#FE7F2D' : '#EAECF0',
-    backgroundColor: location.pathname === path ? 'rgba(254, 127, 45, 0.18)' : 'transparent',
-    border: location.pathname === path ? '1px solid rgba(254, 127, 45, 0.4)' : '1px solid transparent',
+    color: location.pathname === path ? '#7B2525' : '#EAECF0',
+    backgroundColor: location.pathname === path ? 'rgba(123, 37, 37, 0.18)' : 'transparent',
+    border: location.pathname === path ? '1px solid rgba(123, 37, 37, 0.4)' : '1px solid transparent',
     transition: 'all 0.2s ease',
   });
 
@@ -36,7 +36,7 @@ export const Navbar = () => {
       justifyContent: 'space-between',
       padding: '10px 16px',
       backgroundColor: '#000000',
-      borderBottom: '1px solid #2e4f64',
+      borderBottom: '1px solid #343a46',
       position: 'sticky',
       top: 0,
       zIndex: 50
@@ -44,18 +44,18 @@ export const Navbar = () => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
         <Link to={isAdmin ? "/matches" : "/"} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <div style={{
-            background: 'linear-gradient(135deg, #FE7F2D, #d6671c)',
+            background: 'linear-gradient(135deg, #7B2525, #5d1b1b)',
             padding: '5px',
             borderRadius: '6px',
             display: 'flex'
           }}>
-            <Trophy size={16} color="#000000" />
+            <Trophy size={16} color="#EAECF0" />
           </div>
           <div>
             <span style={{ fontFamily: 'Outfit', fontWeight: '900', fontSize: '1rem', color: '#EAECF0', display: 'block', lineHeight: 1, letterSpacing: '0.02em' }}>
-              KALLI<span style={{ color: '#FE7F2D' }}>KALAM</span>
+              KALLI<span style={{ color: '#7B2525' }}>KALAM</span>
             </span>
-            <span style={{ fontSize: '0.55rem', color: '#FE7F2D', letterSpacing: '0.05em', fontWeight: '800' }}>
+            <span style={{ fontSize: '0.55rem', color: '#7B2525', letterSpacing: '0.05em', fontWeight: '800' }}>
               LIVE SCOREBOARD
             </span>
           </div>
