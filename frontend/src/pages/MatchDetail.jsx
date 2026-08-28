@@ -99,13 +99,32 @@ export const MatchDetail = () => {
     setElapsedSeconds(getCalculatedSeconds(updatedMatch));
   };
 
+  const renderEventIcon = (type) => {
+    switch (type) {
+      case 'GOAL': return '⚽';
+      case 'YELLOW_CARD': return '🟨';
+      case 'RED_CARD': return '🟥';
+      case 'SUBSTITUTION': return '🔄';
+      default: return '📋';
+    }
+  };
+
+  const renderEventLabel = (type) => {
+    switch (type) {
+      case 'GOAL': return { text: 'GOAL SCORED', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.4)' };
+      case 'YELLOW_CARD': return { text: 'YELLOW CARD', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.4)' };
+      case 'RED_CARD': return { text: 'RED CARD', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.4)' };
+      case 'SUBSTITUTION': return { text: 'SUBSTITUTION', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.4)' };
+      default: return { text: type, color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)', border: 'rgba(148, 163, 184, 0.4)' };
+    }
+  };
+
   if (loading) return <div style={{ padding: '40px', color: '#94a3b8', textAlign: 'center' }}>Loading match details...</div>;
   if (!match) return <div style={{ padding: '40px', color: '#f43f5e', textAlign: 'center' }}>Match record not found.</div>;
 
   const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
   const seconds = (elapsedSeconds % 60).toString().padStart(2, '0');
   const matchEvents = match.recent_events || [];
-  const goalEvents = matchEvents.filter(e => e.event_type === 'GOAL');
 
   return (
     <div style={{ padding: '16px', maxWidth: '1400px', margin: '0 auto' }}>
@@ -177,44 +196,47 @@ export const MatchDetail = () => {
       {/* Conditional Rendering: User View (Goal Scorers & Timeline) vs Admin View (Scorer & VAR Station) */}
       {user?.role !== 'ADMIN' ? (
         <div className="glass-panel" style={{ padding: '20px' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981' }}>
-            <Award size={18} color="#10b981" /> ⚽ Match Goal Scorers & Timeline
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6' }}>
+            <Award size={18} color="#3b82f6" /> 📋 Live Match Events & Cards Timeline
           </h3>
 
-          {goalEvents.length === 0 ? (
+          {matchEvents.length === 0 ? (
             <div style={{ padding: '20px', backgroundColor: '#0f172a', borderRadius: '8px', color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center' }}>
-              No goals recorded in this match yet.
+              No match events or cards recorded yet.
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {goalEvents.map((event, idx) => (
-                <div key={idx} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '12px 16px',
-                  backgroundColor: '#0f172a',
-                  borderRadius: '8px',
-                  border: '1px solid #334155'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontWeight: '900', color: '#10b981', fontSize: '1.1rem' }}>
-                      ⚽ {event.match_minute}'
-                    </span>
-                    <div>
-                      <div style={{ fontWeight: '800', fontSize: '0.95rem', color: '#f8fafc' }}>
-                        {event.player_name || 'Goal Scored'}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                        {event.team_name}
+              {matchEvents.map((event, idx) => {
+                const badge = renderEventLabel(event.event_type);
+                return (
+                  <div key={idx} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '12px 16px',
+                    backgroundColor: '#0f172a',
+                    borderRadius: '8px',
+                    border: '1px solid #334155'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontWeight: '900', fontSize: '1.1rem' }}>
+                        {renderEventIcon(event.event_type)} {event.match_minute}'
+                      </span>
+                      <div>
+                        <div style={{ fontWeight: '800', fontSize: '0.95rem', color: '#f8fafc' }}>
+                          {event.player_name || 'Match Event'}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                          {event.team_name}
+                        </div>
                       </div>
                     </div>
+                    <span style={{ fontSize: '0.75rem', fontWeight: '800', color: badge.color, backgroundColor: badge.bg, padding: '4px 10px', borderRadius: '6px', border: `1px solid ${badge.border}` }}>
+                      {badge.text}
+                    </span>
                   </div>
-                  <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.15)', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-                    GOAL SCORED
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
