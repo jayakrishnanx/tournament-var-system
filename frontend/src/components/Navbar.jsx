@@ -89,12 +89,12 @@ export const Navbar = () => {
         )}
       </div>
 
-      <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
         <Link to="/" style={navItemStyle('/')}>
           <Activity size={14} /> Matches & Live Scores
         </Link>
         <Link to="/standings" style={navItemStyle('/standings')}>
-          <Trophy size={14} /> Points Table
+          <Trophy size={14} color="#10b981" /> 📊 Points Table
         </Link>
         {isAdmin && (
           <>

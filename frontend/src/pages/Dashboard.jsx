@@ -261,15 +261,13 @@ export const Dashboard = () => {
 
       {/* Main Live & Match Hub */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Activity size={18} color="#3b82f6" /> Live & Scheduled Matches
           </h2>
-          {user?.role === 'ADMIN' && (
-            <Link to="/tournaments" style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              Manage Tournaments <ArrowRight size={14} />
-            </Link>
-          )}
+          <Link to="/standings" className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem', backgroundColor: '#10b981', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '800' }}>
+            📊 View Points Table
+          </Link>
         </div>
 
         {loading ? (
