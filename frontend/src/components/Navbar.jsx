@@ -26,6 +26,8 @@ export const Navbar = () => {
     transition: 'all 0.2s ease',
   });
 
+  const isAdmin = user?.role === 'ADMIN';
+
   return (
     <nav className="nav-container" style={{
       display: 'flex',
@@ -53,12 +55,12 @@ export const Navbar = () => {
               KALLI<span style={{ color: '#3b82f6' }}>KALAM</span>
             </span>
             <span style={{ fontSize: '0.55rem', color: '#94a3b8', letterSpacing: '0.05em', fontWeight: '700' }}>
-              MULTI-CAM VAR
+              LIVE SCOREBOARD
             </span>
           </div>
         </Link>
 
-        {user?.role === 'ADMIN' ? (
+        {isAdmin ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             <span style={{
               fontSize: '0.7rem',
@@ -89,17 +91,18 @@ export const Navbar = () => {
 
       <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
         <Link to="/" style={navItemStyle('/')}>
-          <Activity size={14} /> Dashboard
+          <Activity size={14} /> Matches & Live Scores
         </Link>
-        <Link to="/tournaments" style={navItemStyle('/tournaments')}>
-          <Trophy size={14} /> Tournaments
-        </Link>
-        <Link to="/teams" style={navItemStyle('/teams')}>
-          <Users size={14} /> Teams
-        </Link>
-        <Link to="/matches" style={navItemStyle('/matches')}>
-          <Calendar size={14} /> Matches
-        </Link>
+        {isAdmin && (
+          <>
+            <Link to="/tournaments" style={navItemStyle('/tournaments')}>
+              <Trophy size={14} /> Manage Tournaments
+            </Link>
+            <Link to="/teams" style={navItemStyle('/teams')}>
+              <Users size={14} /> Manage Teams
+            </Link>
+          </>
+        )}
       </div>
     </nav>
   );
