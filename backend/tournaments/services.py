@@ -48,6 +48,7 @@ def update_match_score(match_id, team_id, delta, actor=None, ip_address=None):
     """
     Transactional score modification using database select_for_update locking.
     Creates audit log entry and broadcasts to WebSockets.
+    Automatically manages Goal events based on delta.
     """
     match = Match.objects.select_for_update().get(id=match_id)
     team = Team.objects.get(id=team_id)
@@ -57,15 +58,37 @@ def update_match_score(match_id, team_id, delta, actor=None, ip_address=None):
         "away_score": match.away_score
     }
 
-    if team == match.home_team:
-        new_score = max(0, match.home_score + delta)
-        match.home_score = new_score
-    elif team == match.away_team:
-        new_score = max(0, match.away_score + delta)
-        match.away_score = new_score
-    else:
+    if team != match.home_team and team != match.away_team:
         raise ValueError("Team is not part of this match")
 
+    # If increasing goal, create GOAL event
+    if delta > 0:
+        for _ in range(delta):
+            match_minute = match.timer_seconds_elapsed // 60
+            MatchEvent.objects.create(
+                match=match,
+                team=team,
+                event_type=MatchEvent.EventType.GOAL,
+                match_minute=match_minute,
+                match_second=match.timer_seconds_elapsed % 60,
+                details={"logged_by": "Rapid Score Adjust"}
+            )
+    # If decreasing goal, delete latest GOAL events
+    elif delta < 0:
+        for _ in range(abs(delta)):
+            latest_goal = MatchEvent.objects.filter(
+                match=match,
+                team=team,
+                event_type=MatchEvent.EventType.GOAL
+            ).order_by('-created_at').first()
+            if latest_goal:
+                latest_goal.delete()
+
+    # Recalculate scores from match events to keep database completely in sync
+    home_goals = MatchEvent.objects.filter(match=match, event_type=MatchEvent.EventType.GOAL, team=match.home_team).count()
+    away_goals = MatchEvent.objects.filter(match=match, event_type=MatchEvent.EventType.GOAL, team=match.away_team).count()
+    match.home_score = home_goals
+    match.away_score = away_goals
     match.save()
 
     after_state = {

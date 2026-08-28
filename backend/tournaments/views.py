@@ -125,7 +125,7 @@ class MatchViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[IsScorerOrAdmin])
     def set_next(self, request, pk=None):
         try:
-            match = self.get_object()
+            match = Match.objects.get(pk=pk)
             if match.status != Match.Status.SCHEDULED:
                 return Response({'error': 'Only scheduled matches can be set as Next Match.'}, status=status.HTTP_400_BAD_REQUEST)
 
