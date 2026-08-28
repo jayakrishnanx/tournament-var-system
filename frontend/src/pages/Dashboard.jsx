@@ -92,6 +92,8 @@ export const Dashboard = () => {
     if (a.status !== 'LIVE' && b.status === 'LIVE') return 1;
     if (a.status === 'PAUSED' && b.status !== 'PAUSED') return -1;
     if (a.status !== 'PAUSED' && b.status === 'PAUSED') return 1;
+    if (a.status === 'ENDED' && b.status !== 'ENDED') return 1;
+    if (a.status !== 'ENDED' && b.status === 'ENDED') return -1;
     return (a.match_number || 0) - (b.match_number || 0);
   });
 
