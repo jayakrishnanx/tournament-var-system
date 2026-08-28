@@ -18,10 +18,6 @@ export const ScorerConsole = ({ match, onUpdate }) => {
   const [editMinute, setEditMinute] = useState(0);
   const [editSecond, setEditSecond] = useState(0);
 
-  if (user?.role !== 'ADMIN') {
-    return null;
-  }
-
   const [elapsedSeconds, setElapsedSeconds] = useState(match.computed_elapsed_seconds || match.timer_seconds_elapsed || 0);
 
   useEffect(() => {
@@ -39,6 +35,10 @@ export const ScorerConsole = ({ match, onUpdate }) => {
       if (timerInterval) clearInterval(timerInterval);
     };
   }, [match.is_timer_running]);
+
+  if (user?.role !== 'ADMIN') {
+    return null;
+  }
 
   const homePlayers = match.home_team_details?.players || [];
   const awayPlayers = match.away_team_details?.players || [];
