@@ -18,20 +18,7 @@ export const Bracket = () => {
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [bracketGenerating, setBracketGenerating] = useState(false);
 
-  const fetchTournaments = async () => {
-    try {
-      const res = await api.get('/tournaments/tournaments/');
-      setTournaments(res.data);
-      if (res.data.length > 0 && !selectedTournament) {
-        setSelectedTournament(res.data[0].id);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchTournamentData = async (tId) => {
-    if (!tId) return;
+  const fetchAll = async (tId) => {
     setLoading(true);
     try {
       const [tRes, mRes, tmRes] = await Promise.all([
@@ -50,12 +37,28 @@ export const Bracket = () => {
   };
 
   useEffect(() => {
-    fetchTournaments();
+    const init = async () => {
+      try {
+        const res = await api.get('/tournaments/tournaments/');
+        setTournaments(res.data);
+        if (res.data.length > 0) {
+          const firstId = res.data[0].id;
+          setSelectedTournament(firstId);
+          await fetchAll(firstId);
+        } else {
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error(err);
+        setLoading(false);
+      }
+    };
+    init();
   }, []);
 
   useEffect(() => {
     if (selectedTournament) {
-      fetchTournamentData(selectedTournament);
+      fetchAll(selectedTournament);
     }
   }, [selectedTournament]);
 
@@ -87,7 +90,7 @@ export const Bracket = () => {
         team_ids: selectedTeams
       });
       alert('🏆 Knockout Bracket generated successfully!');
-      fetchTournamentData(selectedTournament);
+      fetchAll(selectedTournament);
       setSelectedTeams([]);
     } catch (err) {
       alert('Failed to generate bracket: ' + (err.response?.data?.error || err.message));
