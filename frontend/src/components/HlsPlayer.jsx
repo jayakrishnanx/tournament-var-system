@@ -11,7 +11,10 @@ export const HlsPlayer = ({ src, fallbackUrl, label = 'Camera Stream' }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const streamHost = window.location.hostname || 'localhost';
+  const isVercel = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+  const streamHost = isVercel ? '100.64.92.46' : (window.location.hostname || 'localhost');
+  const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'https:' : 'http:';
+
   let pathName = '';
   try {
     const urlObj = new URL(src);
