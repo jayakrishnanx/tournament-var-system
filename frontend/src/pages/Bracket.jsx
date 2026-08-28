@@ -114,7 +114,20 @@ export const Bracket = () => {
       fetchAll(selectedTournament);
       setSelectedTeams([]);
     } catch (err) {
-      alert('Failed to reset bracket: ' + (err.response?.data?.error || err.message));
+      console.warn('Dedicated reset_bracket endpoint error, attempting fallback match deletion...', err);
+      try {
+        const knockoutMatches = matches.filter(m => m.stage !== 'REGULAR');
+        if (knockoutMatches.length > 0) {
+          await Promise.all(knockoutMatches.map(m => api.delete(`/tournaments/matches/${m.id}/`)));
+          alert('Knockout Bracket has been reset successfully!');
+          fetchAll(selectedTournament);
+          setSelectedTeams([]);
+          return;
+        }
+      } catch (fallbackErr) {
+        console.error('Fallback deletion error:', fallbackErr);
+      }
+      alert('Failed to reset bracket: ' + (err.response?.data?.error || err.response?.data?.detail || err.message));
     } finally {
       setBracketResetting(false);
     }

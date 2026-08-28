@@ -25,139 +25,154 @@ class TournamentViewSet(viewsets.ModelViewSet):
     serializer_class = TournamentSerializer
     permission_classes = [IsAdminOrReadOnly]
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminOrReadOnly])
     def generate_bracket(self, request, pk=None):
-        tournament = self.get_object()
-        team_ids = request.data.get('team_ids', [])
-        
-        if len(team_ids) not in [4, 8]:
-            return Response({'error': 'Please select exactly 4 or 8 teams for the bracket.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Verify all team_ids belong to this tournament
-        teams = list(Team.objects.filter(tournament=tournament, id__in=team_ids))
-        if len(teams) != len(team_ids):
-            return Response({'error': 'Some selected teams do not belong to this tournament.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # We need to map team_ids list to team objects in order
-        team_map = {str(t.id): t for t in teams}
-        ordered_teams = [team_map[tid] for tid in team_ids]
-        
-        # Delete any existing bracket matches for this tournament to avoid duplicates
-        Match.objects.filter(tournament=tournament).exclude(stage=Match.Stage.REGULAR).delete()
-        
-        from django.utils import timezone
-        now = timezone.now()
-        
-        if len(team_ids) == 8:
-            # Create Quarter Finals
-            qf1 = Match.objects.create(
-                tournament=tournament,
-                home_team=ordered_teams[0],
-                away_team=ordered_teams[1],
-                stage=Match.Stage.QUARTER_FINAL,
-                bracket_code='QF1',
-                scheduled_time=now + timezone.timedelta(hours=2)
-            )
-            qf2 = Match.objects.create(
-                tournament=tournament,
-                home_team=ordered_teams[2],
-                away_team=ordered_teams[3],
-                stage=Match.Stage.QUARTER_FINAL,
-                bracket_code='QF2',
-                scheduled_time=now + timezone.timedelta(hours=4)
-            )
-            qf3 = Match.objects.create(
-                tournament=tournament,
-                home_team=ordered_teams[4],
-                away_team=ordered_teams[5],
-                stage=Match.Stage.QUARTER_FINAL,
-                bracket_code='QF3',
-                scheduled_time=now + timezone.timedelta(hours=6)
-            )
-            qf4 = Match.objects.create(
-                tournament=tournament,
-                home_team=ordered_teams[6],
-                away_team=ordered_teams[7],
-                stage=Match.Stage.QUARTER_FINAL,
-                bracket_code='QF4',
-                scheduled_time=now + timezone.timedelta(hours=8)
-            )
+        try:
+            tournament = self.get_object()
+            team_ids = request.data.get('team_ids', [])
             
-            # Create Semi Finals (Placeholders)
-            sf1 = Match.objects.create(
-                tournament=tournament,
-                home_team=None,
-                away_team=None,
-                stage=Match.Stage.SEMI_FINAL,
-                bracket_code='SF1',
-                scheduled_time=now + timezone.timedelta(days=1)
-            )
-            sf2 = Match.objects.create(
-                tournament=tournament,
-                home_team=None,
-                away_team=None,
-                stage=Match.Stage.SEMI_FINAL,
-                bracket_code='SF2',
-                scheduled_time=now + timezone.timedelta(days=1, hours=2)
-            )
+            if len(team_ids) not in [4, 8]:
+                return Response({'error': 'Please select exactly 4 or 8 teams for the bracket.'}, status=status.HTTP_400_BAD_REQUEST)
             
-            # Create Final (Placeholder)
-            f = Match.objects.create(
-                tournament=tournament,
-                home_team=None,
-                away_team=None,
-                stage=Match.Stage.FINAL,
-                bracket_code='F',
-                scheduled_time=now + timezone.timedelta(days=2)
-            )
+            # Normalize team_ids to strings
+            team_ids_str = [str(tid).strip() for tid in team_ids]
             
-        elif len(team_ids) == 4:
-            # Create Semi Finals
-            sf1 = Match.objects.create(
-                tournament=tournament,
-                home_team=ordered_teams[0],
-                away_team=ordered_teams[1],
-                stage=Match.Stage.SEMI_FINAL,
-                bracket_code='SF1',
-                scheduled_time=now + timezone.timedelta(hours=2)
-            )
-            sf2 = Match.objects.create(
-                tournament=tournament,
-                home_team=ordered_teams[2],
-                away_team=ordered_teams[3],
-                stage=Match.Stage.SEMI_FINAL,
-                bracket_code='SF2',
-                scheduled_time=now + timezone.timedelta(hours=4)
-            )
+            # Verify all team_ids belong to this tournament
+            teams = list(Team.objects.filter(tournament=tournament, id__in=team_ids_str))
+            team_map = {str(t.id): t for t in teams}
+            ordered_teams = [team_map[tid] for tid in team_ids_str if tid in team_map]
             
-            # Create Final (Placeholder)
-            f = Match.objects.create(
-                tournament=tournament,
-                home_team=None,
-                away_team=None,
-                stage=Match.Stage.FINAL,
-                bracket_code='F',
-                scheduled_time=now + timezone.timedelta(days=1)
-            )
+            if len(ordered_teams) not in [4, 8]:
+                return Response({'error': f'Some selected teams do not belong to this tournament ({len(ordered_teams)} found).'}, status=status.HTTP_400_BAD_REQUEST)
             
-        return Response({'success': 'Bracket generated successfully!'}, status=status.HTTP_201_CREATED)
+            # Delete any existing bracket matches for this tournament to avoid duplicates
+            bracket_matches = Match.objects.filter(tournament=tournament).exclude(stage=Match.Stage.REGULAR)
+            from .models import MatchEvent
+            MatchEvent.objects.filter(match__in=bracket_matches).delete()
+            bracket_matches.delete()
+            
+            from django.utils import timezone
+            now = timezone.now()
+            
+            if len(ordered_teams) == 8:
+                # Create Quarter Finals
+                Match.objects.create(
+                    tournament=tournament,
+                    home_team=ordered_teams[0],
+                    away_team=ordered_teams[1],
+                    stage=Match.Stage.QUARTER_FINAL,
+                    bracket_code='QF1',
+                    scheduled_time=now + timezone.timedelta(hours=2)
+                )
+                Match.objects.create(
+                    tournament=tournament,
+                    home_team=ordered_teams[2],
+                    away_team=ordered_teams[3],
+                    stage=Match.Stage.QUARTER_FINAL,
+                    bracket_code='QF2',
+                    scheduled_time=now + timezone.timedelta(hours=4)
+                )
+                Match.objects.create(
+                    tournament=tournament,
+                    home_team=ordered_teams[4],
+                    away_team=ordered_teams[5],
+                    stage=Match.Stage.QUARTER_FINAL,
+                    bracket_code='QF3',
+                    scheduled_time=now + timezone.timedelta(hours=6)
+                )
+                Match.objects.create(
+                    tournament=tournament,
+                    home_team=ordered_teams[6],
+                    away_team=ordered_teams[7],
+                    stage=Match.Stage.QUARTER_FINAL,
+                    bracket_code='QF4',
+                    scheduled_time=now + timezone.timedelta(hours=8)
+                )
+                
+                # Create Semi Finals (Placeholders)
+                Match.objects.create(
+                    tournament=tournament,
+                    home_team=None,
+                    away_team=None,
+                    stage=Match.Stage.SEMI_FINAL,
+                    bracket_code='SF1',
+                    scheduled_time=now + timezone.timedelta(days=1)
+                )
+                Match.objects.create(
+                    tournament=tournament,
+                    home_team=None,
+                    away_team=None,
+                    stage=Match.Stage.SEMI_FINAL,
+                    bracket_code='SF2',
+                    scheduled_time=now + timezone.timedelta(days=1, hours=2)
+                )
+                
+                # Create Final (Placeholder)
+                Match.objects.create(
+                    tournament=tournament,
+                    home_team=None,
+                    away_team=None,
+                    stage=Match.Stage.FINAL,
+                    bracket_code='F',
+                    scheduled_time=now + timezone.timedelta(days=2)
+                )
+                
+            elif len(ordered_teams) == 4:
+                # Create Semi Finals
+                Match.objects.create(
+                    tournament=tournament,
+                    home_team=ordered_teams[0],
+                    away_team=ordered_teams[1],
+                    stage=Match.Stage.SEMI_FINAL,
+                    bracket_code='SF1',
+                    scheduled_time=now + timezone.timedelta(hours=2)
+                )
+                Match.objects.create(
+                    tournament=tournament,
+                    home_team=ordered_teams[2],
+                    away_team=ordered_teams[3],
+                    stage=Match.Stage.SEMI_FINAL,
+                    bracket_code='SF2',
+                    scheduled_time=now + timezone.timedelta(hours=4)
+                )
+                
+                # Create Final (Placeholder)
+                Match.objects.create(
+                    tournament=tournament,
+                    home_team=None,
+                    away_team=None,
+                    stage=Match.Stage.FINAL,
+                    bracket_code='F',
+                    scheduled_time=now + timezone.timedelta(days=1)
+                )
+                
+            return Response({'success': 'Bracket generated successfully!'}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': f'Failed to generate bracket: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminOrReadOnly])
     def reset_bracket(self, request, pk=None):
         """
         Deletes all knockout (bracket) matches for this tournament.
         """
-        tournament = self.get_object()
-        knockout_matches = Match.objects.filter(tournament=tournament).exclude(stage=Match.Stage.REGULAR)
-        
-        from .models import MatchEvent
-        MatchEvent.objects.filter(match__in=knockout_matches).delete()
-        count = knockout_matches.count()
-        knockout_matches.delete()
-        
-        return Response({'success': f'Knockout bracket reset successfully. ({count} matches cleared)'}, status=status.HTTP_200_OK)
+        try:
+            tournament = self.get_object()
+            knockout_matches = Match.objects.filter(tournament=tournament).exclude(stage=Match.Stage.REGULAR)
+            
+            from .models import MatchEvent
+            MatchEvent.objects.filter(match__in=knockout_matches).delete()
+            count = knockout_matches.count()
+            knockout_matches.delete()
+            
+            return Response({'success': f'Knockout bracket reset successfully. ({count} matches cleared)'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': f'Failed to reset bracket: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminOrReadOnly])
     def reset_standings(self, request, pk=None):
         """
         Resets all REGULAR (group/league) matches for this tournament:
