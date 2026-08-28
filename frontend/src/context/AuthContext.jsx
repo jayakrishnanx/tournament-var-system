@@ -9,19 +9,24 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const fetchMe = async () => {
+      const isAdmin = localStorage.getItem('is_admin') === 'true';
       const token = localStorage.getItem('access_token');
-      if (!token) {
+      if (!token || !isAdmin) {
         setUser({ id: 'guest', username: 'Public Spectator', role: 'VIEWER' });
         setLoading(false);
         return;
       }
       try {
         const res = await api.get('/auth/me/');
-        setUser(res.data);
+        if (res.data && res.data.role === 'ADMIN') {
+          setUser(res.data);
+        } else {
+          setUser({ id: 'guest', username: 'Public Spectator', role: 'VIEWER' });
+        }
       } catch (err) {
-        console.error('Session restore failed:', err);
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
+        localStorage.removeItem('is_admin');
         setUser({ id: 'guest', username: 'Public Spectator', role: 'VIEWER' });
       } finally {
         setLoading(false);
@@ -34,6 +39,11 @@ export const AuthProvider = ({ children }) => {
     const res = await api.post('/auth/login/', { username, password });
     localStorage.setItem('access_token', res.data.access);
     localStorage.setItem('refresh_token', res.data.refresh);
+    if (res.data.user && res.data.user.role === 'ADMIN') {
+      localStorage.setItem('is_admin', 'true');
+    } else {
+      localStorage.removeItem('is_admin');
+    }
     setUser(res.data.user);
     return res.data.user;
   };
@@ -41,6 +51,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('is_admin');
     setUser({ id: 'guest', username: 'Public Spectator', role: 'VIEWER' });
   };
 
