@@ -35,7 +35,7 @@ export const Navbar = () => {
       alignItems: 'center',
       justifyContent: 'space-between',
       padding: '10px 16px',
-      backgroundColor: '#618764',
+      backgroundColor: '#181818',
       borderBottom: '1px solid #343a46',
       position: 'sticky',
       top: 0,
