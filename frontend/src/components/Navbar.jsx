@@ -103,7 +103,7 @@ export const Navbar = () => {
           </>
         ) : (
           <>
-            <Link to="/tournaments" style={navItemStyle('/tournaments')}>
+            <Link to="/tournaments" className="hide-on-mobile" style={navItemStyle('/tournaments')}>
               <Trophy size={14} /> Manage Tournaments
             </Link>
             <Link to="/teams" style={navItemStyle('/teams')}>

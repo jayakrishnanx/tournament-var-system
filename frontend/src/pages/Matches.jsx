@@ -171,7 +171,7 @@ export const Matches = () => {
           <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: '4px' }}>
             ⚡ Admin Quick Links:
           </span>
-          <Link to="/tournaments" className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none', color: '#cbd5e1', fontWeight: '700' }}>
+          <Link to="/tournaments" className="btn-secondary hide-on-mobile" style={{ padding: '6px 12px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none', color: '#cbd5e1', fontWeight: '700' }}>
             🏆 Manage Tournaments
           </Link>
           <Link to="/teams" className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none', color: '#cbd5e1', fontWeight: '700' }}>
