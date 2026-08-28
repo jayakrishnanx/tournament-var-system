@@ -5,7 +5,7 @@ import { connectMatchWebSocket } from '../services/websocket';
 import { StatusBadge } from '../components/StatusBadge';
 import { ScorerConsole } from '../components/ScorerConsole';
 import { VarOperatorStation } from '../components/VarOperatorStation';
-import { Play, Pause, Plus, Minus, ArrowLeft, Radio, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Radio, Award } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const MatchDetail = () => {
@@ -16,7 +16,6 @@ export const MatchDetail = () => {
   const [wsConnected, setWsConnected] = useState(false);
   const { user } = useAuth();
 
-  // Active Real-Time Match Clock Ticker State for Scoreboard Header
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const fetchMatchDetails = async () => {
@@ -81,22 +80,24 @@ export const MatchDetail = () => {
     setElapsedSeconds(updatedMatch.timer_seconds_elapsed || 0);
   };
 
-  if (loading) return <div style={{ padding: '40px', color: '#94a3b8', textAlign: 'center' }}>Loading Master Admin Console...</div>;
+  if (loading) return <div style={{ padding: '40px', color: '#94a3b8', textAlign: 'center' }}>Loading match details...</div>;
   if (!match) return <div style={{ padding: '40px', color: '#f43f5e', textAlign: 'center' }}>Match record not found.</div>;
 
   const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
   const seconds = (elapsedSeconds % 60).toString().padStart(2, '0');
+  const matchEvents = match.recent_events || [];
+  const goalEvents = matchEvents.filter(e => e.event_type === 'GOAL');
 
   return (
     <div style={{ padding: '16px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-        <Link to="/matches" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#3b82f6', fontWeight: '700', fontSize: '0.85rem' }}>
-          <ArrowLeft size={14} /> Back to Matches
+        <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#3b82f6', fontWeight: '700', fontSize: '0.85rem' }}>
+          <ArrowLeft size={14} /> Back to Live Matches
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: wsConnected ? '#10b981' : '#94a3b8' }}>
           <Radio size={12} className={wsConnected ? 'animate-pulse' : ''} />
-          <span>{wsConnected ? 'LIVE SYNC ACTIVE' : 'RECONNECTING...'}</span>
+          <span>{wsConnected ? 'LIVE SCORE SYNC ACTIVE' : 'RECONNECTING...'}</span>
         </div>
       </div>
 
@@ -115,7 +116,7 @@ export const MatchDetail = () => {
             </span>
           </div>
           <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-            Match #{match.match_code || match.id}
+            Match #{match.match_number || match.match_code}
           </span>
         </div>
 
@@ -149,15 +150,60 @@ export const MatchDetail = () => {
         </div>
       </div>
 
-      {/* 1. Master Scorer Controls (Score +1/-1, Clock Start/Pause, Event Logger) */}
-      <div style={{ marginBottom: '32px' }}>
-        <ScorerConsole match={match} onUpdate={handleMatchUpdate} />
-      </div>
+      {/* Conditional Rendering: User View (Goal Scorers & Timeline) vs Admin View (Scorer & VAR Station) */}
+      {user?.role !== 'ADMIN' ? (
+        <div className="glass-panel" style={{ padding: '20px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981' }}>
+            <Award size={18} color="#10b981" /> ⚽ Match Goal Scorers & Timeline
+          </h3>
 
-      {/* 2. 3-Camera VAR Station (Live WebRTC, MP4 Replay, Rewind & 4x Zoom Magnifier) */}
-      <div>
-        <VarOperatorStation match={match} incidents={varIncidents} onUpdate={fetchMatchDetails} />
-      </div>
+          {goalEvents.length === 0 ? (
+            <div style={{ padding: '20px', backgroundColor: '#0f172a', borderRadius: '8px', color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center' }}>
+              No goals recorded in this match yet.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {goalEvents.map((event, idx) => (
+                <div key={idx} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '12px 16px',
+                  backgroundColor: '#0f172a',
+                  borderRadius: '8px',
+                  border: '1px solid #334155'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontWeight: '900', color: '#10b981', fontSize: '1.1rem' }}>
+                      ⚽ {event.match_minute}'
+                    </span>
+                    <div>
+                      <div style={{ fontWeight: '800', fontSize: '0.95rem', color: '#f8fafc' }}>
+                        {event.player_name || 'Goal Scored'}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                        {event.team_name}
+                      </div>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.15)', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                    GOAL SCORED
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          <div style={{ marginBottom: '24px' }}>
+            <ScorerConsole match={match} onUpdate={handleMatchUpdate} />
+          </div>
+          <div>
+            <VarOperatorStation match={match} incidents={varIncidents} onUpdate={fetchMatchDetails} />
+          </div>
+        </>
+      )}
     </div>
   );
 };
