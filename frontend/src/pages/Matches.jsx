@@ -80,6 +80,16 @@ export const Matches = () => {
     }
   };
 
+  const handleSetNextMatch = async (matchId) => {
+    try {
+      await api.post(`/tournaments/matches/${matchId}/set_next/`);
+      fetchMatches();
+    } catch (err) {
+      console.error('Failed to set next match:', err);
+      alert('Failed to set as next match.');
+    }
+  };
+
   const tournamentTeams = teams.filter(t => t.tournament === selectedTournament || !selectedTournament);
 
   const sortedMatches = [...matches].sort((a, b) => {
