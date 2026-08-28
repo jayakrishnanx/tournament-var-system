@@ -52,8 +52,24 @@ export const MatchDetail = () => {
       (err) => setWsConnected(false)
     );
 
+    const pollInterval = setInterval(() => {
+      api.get(`/tournaments/matches/${id}/`).then(mRes => {
+        setMatch(prev => {
+          if (!prev) return mRes.data;
+          const updated = { ...mRes.data };
+          if (!prev.is_timer_running && mRes.data.is_timer_running) {
+            setElapsedSeconds(mRes.data.timer_seconds_elapsed || 0);
+          } else if (Math.abs((prev.timer_seconds_elapsed || 0) - (mRes.data.timer_seconds_elapsed || 0)) > 3) {
+            setElapsedSeconds(mRes.data.timer_seconds_elapsed || 0);
+          }
+          return updated;
+        });
+      }).catch(() => {});
+    }, 1500);
+
     return () => {
       ws.close();
+      clearInterval(pollInterval);
     };
   }, [id]);
 
