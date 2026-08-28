@@ -171,7 +171,7 @@ export const Dashboard = () => {
       {user?.role !== 'ADMIN' && (
         <div className="glass-panel" style={{ padding: '14px 16px', marginBottom: '20px', borderTop: '3px solid #2B5748' }}>
           <div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#2B5748', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', textAlign: 'center' }}>
-            ✨ OFFICIAL TOURNAMENT SPONSORS
+            ✨ TOURNAMENT OFFICIAL SPONSORS
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', alignItems: 'center' }}>
             {/* Sponsor Logo 1: Quick Mix */}
