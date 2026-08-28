@@ -44,6 +44,9 @@ export const TournamentDetail = () => {
     scheduled_date: ''
   });
 
+  const [showEditTeamModal, setShowEditTeamModal] = useState(false);
+  const [editTeamForm, setEditTeamForm] = useState({ id: null, name: '' });
+
   const handleAutoSelect = (count) => {
     if (!tournament?.teams || tournament.teams.length < count) {
       alert(`Tournament only has ${tournament?.teams?.length || 0} teams. Need at least ${count} teams.`);
@@ -229,6 +232,22 @@ export const TournamentDetail = () => {
     }
   };
 
+  const handleEditTeam = (t) => {
+    setEditTeamForm({ id: t.id, name: t.name });
+    setShowEditTeamModal(true);
+  };
+
+  const handleUpdateTeam = async (e) => {
+    e.preventDefault();
+    try {
+      await api.patch(`/tournaments/teams/${editTeamForm.id}/`, { name: editTeamForm.name });
+      setShowEditTeamModal(false);
+      fetchData();
+    } catch (err) {
+      alert('Error updating team: ' + (err.response?.data?.detail || err.message));
+    }
+  };
+
   const bracketMatches = matches.filter(m => m.stage !== 'REGULAR');
   const hasBracket = bracketMatches.length > 0;
   const getBracketMatch = (code) => bracketMatches.find(m => m.bracket_code === code);
@@ -348,40 +367,63 @@ export const TournamentDetail = () => {
               const isSelected = selectedTeams.includes(t.id);
               const orderIndex = selectedTeams.indexOf(t.id);
               return (
-                <button
-                  key={t.id}
-                  onClick={() => handleToggleTeamSelection(t.id)}
-                  type="button"
-                  style={{
-                    backgroundColor: isSelected ? 'rgba(16, 185, 129, 0.2)' : '#1D2128',
-                    border: isSelected ? '1px solid #10b981' : '1px solid #334155',
-                    color: isSelected ? '#10b981' : '#cbd5e1',
-                    borderRadius: '6px',
-                    padding: '8px 12px',
-                    fontSize: '0.75rem',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <span style={{
-                    width: '16px',
-                    height: '16px',
-                    borderRadius: '50%',
-                    backgroundColor: isSelected ? '#10b981' : '#334155',
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.65rem'
-                  }}>
-                    {isSelected ? orderIndex + 1 : ''}
-                  </span>
-                  {t.name}
-                </button>
+                <div key={t.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                  <button
+                    onClick={() => handleToggleTeamSelection(t.id)}
+                    type="button"
+                    style={{
+                      backgroundColor: isSelected ? 'rgba(16, 185, 129, 0.2)' : '#1D2128',
+                      border: isSelected ? '1px solid #10b981' : '1px solid #334155',
+                      color: isSelected ? '#10b981' : '#cbd5e1',
+                      borderRadius: '6px 0 0 6px',
+                      padding: '8px 12px',
+                      fontSize: '0.75rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <span style={{
+                      width: '16px',
+                      height: '16px',
+                      borderRadius: '50%',
+                      backgroundColor: isSelected ? '#10b981' : '#334155',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.65rem'
+                    }}>
+                      {isSelected ? orderIndex + 1 : ''}
+                    </span>
+                    {t.name}
+                  </button>
+                  {user?.role === 'ADMIN' && (
+                    <button
+                      type="button"
+                      onClick={() => handleEditTeam(t)}
+                      title="Edit team name"
+                      style={{
+                        backgroundColor: '#1D2128',
+                        border: isSelected ? '1px solid #10b981' : '1px solid #334155',
+                        borderLeft: 'none',
+                        color: '#94a3b8',
+                        borderRadius: '0 6px 6px 0',
+                        padding: '8px 7px',
+                        fontSize: '0.7rem',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Pencil size={11} />
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -745,6 +787,34 @@ export const TournamentDetail = () => {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
                 <button type="button" onClick={() => setShowEditMatchModal(false)} className="btn-secondary">Cancel</button>
                 <button type="submit" className="btn-primary">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Team Modal */}
+      {showEditTeamModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '28px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Pencil size={18} color="#10b981" /> Edit Team Name
+            </h3>
+            <form onSubmit={handleUpdateTeam} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '4px' }}>Team Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editTeamForm.name}
+                  onChange={e => setEditTeamForm({ ...editTeamForm, name: e.target.value })}
+                  style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white', fontSize: '1rem' }}
+                  autoFocus
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+                <button type="button" onClick={() => setShowEditTeamModal(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary">Save Name</button>
               </div>
             </form>
           </div>
