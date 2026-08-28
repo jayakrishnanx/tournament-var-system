@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import api from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
 import { Activity, PlusCircle, Award, ArrowRight } from 'lucide-react';
@@ -20,6 +20,10 @@ export const Dashboard = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const { user } = useAuth();
+
+  if (user?.role === 'ADMIN') {
+    return <Navigate to="/matches" replace />;
+  }
 
   const fetchData = async () => {
     try {

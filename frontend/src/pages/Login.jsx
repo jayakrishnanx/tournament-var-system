@@ -18,7 +18,7 @@ export const Login = () => {
 
     try {
       await login(username, password);
-      navigate('/');
+      navigate('/matches');
     } catch (err) {
       setError('Invalid username or password.');
     } finally {
