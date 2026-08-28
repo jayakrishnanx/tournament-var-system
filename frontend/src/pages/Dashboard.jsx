@@ -163,78 +163,63 @@ export const Dashboard = () => {
       )}
 
       {/* 1. OFFICIAL SPONSORS BANNER (POSITION #1 AT VERY TOP) */}
-      <div className="glass-panel" style={{ padding: '16px', marginBottom: '20px', borderTop: '3px solid #3b82f6' }}>
-        <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px', textAlign: 'center' }}>
+      <div className="glass-panel" style={{ padding: '14px 16px', marginBottom: '20px', borderTop: '3px solid #3b82f6' }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', textAlign: 'center' }}>
           ✨ OFFICIAL TOURNAMENT SPONSORS
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', alignItems: 'center' }}>
-          {/* Sponsor Logo 1 */}
+          {/* Sponsor Logo 1: Quick Mix */}
           <div style={{
-            backgroundColor: '#0f172a',
+            backgroundColor: '#ffffff',
             borderRadius: '8px',
-            border: '1px solid #334155',
-            padding: '12px 8px',
+            padding: '6px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '65px',
-            textAlign: 'center'
+            height: '60px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
           }}>
             <img
               src="/sponsors/sponsor1.png"
-              alt="Sponsor 1"
-              onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'block'; }}
-              style={{ maxHeight: '45px', maxWidth: '100%', objectFit: 'contain' }}
+              alt="Quick Mix"
+              style={{ maxHeight: '48px', maxWidth: '100%', objectFit: 'contain' }}
             />
-            <span style={{ display: 'none', fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8' }}>
-              🤝 SPONSOR 1
-            </span>
           </div>
 
-          {/* Sponsor Logo 2 */}
+          {/* Sponsor Logo 2: NEO */}
           <div style={{
-            backgroundColor: '#0f172a',
+            backgroundColor: '#ffffff',
             borderRadius: '8px',
-            border: '1px solid #334155',
-            padding: '12px 8px',
+            padding: '6px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '65px',
-            textAlign: 'center'
+            height: '60px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
           }}>
             <img
               src="/sponsors/sponsor2.png"
-              alt="Sponsor 2"
-              onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'block'; }}
-              style={{ maxHeight: '45px', maxWidth: '100%', objectFit: 'contain' }}
+              alt="NEO"
+              style={{ maxHeight: '48px', maxWidth: '100%', objectFit: 'contain' }}
             />
-            <span style={{ display: 'none', fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8' }}>
-              🤝 SPONSOR 2
-            </span>
           </div>
 
-          {/* Sponsor Logo 3 */}
+          {/* Sponsor Logo 3: N N STEELS */}
           <div style={{
-            backgroundColor: '#0f172a',
+            backgroundColor: '#ffffff',
             borderRadius: '8px',
-            border: '1px solid #334155',
-            padding: '12px 8px',
+            padding: '6px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '65px',
-            textAlign: 'center'
+            height: '60px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
           }}>
             <img
               src="/sponsors/sponsor3.png"
-              alt="Sponsor 3"
-              onError={(e) => { e.target.style.display = 'none'; if (e.target.nextSibling) e.target.nextSibling.style.display = 'block'; }}
-              style={{ maxHeight: '45px', maxWidth: '100%', objectFit: 'contain' }}
+              alt="N N STEELS"
+              style={{ maxHeight: '48px', maxWidth: '100%', objectFit: 'contain' }}
             />
-            <span style={{ display: 'none', fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8' }}>
-              🤝 SPONSOR 3
-            </span>
           </div>
         </div>
       </div>
