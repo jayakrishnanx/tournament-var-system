@@ -156,6 +156,30 @@ export const Matches = () => {
         </div>
       </div>
 
+      {user?.role === 'ADMIN' && (
+        <div style={{
+          display: 'flex',
+          gap: '10px',
+          flexWrap: 'wrap',
+          marginBottom: '20px',
+          padding: '12px 14px',
+          backgroundColor: 'rgba(43, 87, 72, 0.15)',
+          border: '1px solid rgba(43, 87, 72, 0.3)',
+          borderRadius: '8px',
+          alignItems: 'center'
+        }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: '4px' }}>
+            ⚡ Admin Quick Links:
+          </span>
+          <Link to="/tournaments" className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none', color: '#cbd5e1', fontWeight: '700' }}>
+            🏆 Manage Tournaments
+          </Link>
+          <Link to="/teams" className="btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none', color: '#cbd5e1', fontWeight: '700' }}>
+            👥 Manage Teams
+          </Link>
+        </div>
+      )}
+
       {/* Schedule Match Modal for Admin */}
       {showModal && (
         <div style={{
