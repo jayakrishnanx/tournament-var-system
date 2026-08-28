@@ -173,55 +173,55 @@ export const Dashboard = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', alignItems: 'center' }}>
             {/* Sponsor Logo 1: Quick Mix */}
             <div style={{
-              backgroundColor: '#ffffff',
+              backgroundColor: '#090d16',
               borderRadius: '8px',
+              border: '1px solid #334155',
               padding: '6px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              height: '60px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              height: '65px'
             }}>
               <img
                 src="/sponsors/sponsor1.png"
                 alt="Quick Mix"
-                style={{ maxHeight: '48px', maxWidth: '100%', objectFit: 'contain' }}
+                style={{ maxHeight: '52px', maxWidth: '100%', objectFit: 'contain' }}
               />
             </div>
 
             {/* Sponsor Logo 2: NEO */}
             <div style={{
-              backgroundColor: '#ffffff',
+              backgroundColor: '#090d16',
               borderRadius: '8px',
+              border: '1px solid #334155',
               padding: '6px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              height: '60px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              height: '65px'
             }}>
               <img
                 src="/sponsors/sponsor2.png"
                 alt="NEO"
-                style={{ maxHeight: '48px', maxWidth: '100%', objectFit: 'contain' }}
+                style={{ maxHeight: '52px', maxWidth: '100%', objectFit: 'contain' }}
               />
             </div>
 
             {/* Sponsor Logo 3: N N STEELS */}
             <div style={{
-              backgroundColor: '#ffffff',
+              backgroundColor: '#090d16',
               borderRadius: '8px',
+              border: '1px solid #334155',
               padding: '6px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              height: '60px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              height: '65px'
             }}>
               <img
                 src="/sponsors/sponsor3.png"
                 alt="N N STEELS"
-                style={{ maxHeight: '48px', maxWidth: '100%', objectFit: 'contain' }}
+                style={{ maxHeight: '52px', maxWidth: '100%', objectFit: 'contain' }}
               />
             </div>
           </div>
