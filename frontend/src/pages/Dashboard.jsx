@@ -166,8 +166,8 @@ export const Dashboard = () => {
 
       {/* 1. OFFICIAL SPONSORS BANNER (SPECTATORS ONLY) */}
       {user?.role !== 'ADMIN' && (
-        <div className="glass-panel" style={{ padding: '14px 16px', marginBottom: '20px', borderTop: '3px solid #3b82f6' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', textAlign: 'center' }}>
+        <div className="glass-panel" style={{ padding: '14px 16px', marginBottom: '20px', borderTop: '3px solid #FE7F2D' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#FE7F2D', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', textAlign: 'center' }}>
             ✨ OFFICIAL TOURNAMENT SPONSORS
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', alignItems: 'center' }}>
@@ -239,26 +239,26 @@ export const Dashboard = () => {
         <div className="glass-panel" style={{
           padding: '16px 20px',
           marginBottom: '20px',
-          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.95))',
-          border: '1px solid rgba(245, 158, 11, 0.4)',
-          borderLeft: '4px solid #f59e0b'
+          background: 'linear-gradient(135deg, rgba(254, 127, 45, 0.18), #233D4D)',
+          border: '1px solid rgba(254, 127, 45, 0.4)',
+          borderLeft: '4px solid #FE7F2D'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#FE7F2D', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
               📌 UPCOMING NEXT MATCH
             </span>
-            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#94a3b8' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#a3b3c2' }}>
               Match #{nextMatch.match_number}
             </span>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#f8fafc' }}>
-              {nextMatch.home_team_details?.name} <span style={{ color: '#f59e0b', margin: '0 6px' }}>VS</span> {nextMatch.away_team_details?.name}
+            <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#EAECF0' }}>
+              {nextMatch.home_team_details?.name} <span style={{ color: '#FE7F2D', margin: '0 6px' }}>VS</span> {nextMatch.away_team_details?.name}
             </div>
 
             <Link to={`/matches/${nextMatch.id}`} style={{
-              backgroundColor: '#f59e0b',
+              backgroundColor: '#FE7F2D',
               color: '#000000',
               fontWeight: '900',
               padding: '6px 14px',
@@ -276,20 +276,20 @@ export const Dashboard = () => {
       <div style={{ marginBottom: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Activity size={18} color="#3b82f6" /> Live & Scheduled Matches
+            <Activity size={18} color="#FE7F2D" /> Live & Scheduled Matches
           </h2>
-          <Link to="/standings" className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem', backgroundColor: '#10b981', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '800' }}>
+          <Link to="/standings" className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '800' }}>
             📊 View Points Table
           </Link>
         </div>
 
         {loading ? (
-          <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
+          <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#a3b3c2' }}>
             Loading match schedule...
           </div>
         ) : matches.length === 0 ? (
-          <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
-            <p style={{ fontSize: '0.95rem', color: '#f8fafc', fontWeight: '700' }}>No active matches scheduled yet.</p>
+          <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#a3b3c2' }}>
+            <p style={{ fontSize: '0.95rem', color: '#EAECF0', fontWeight: '700' }}>No active matches scheduled yet.</p>
           </div>
         ) : (
           <div className="responsive-grid-2">
@@ -299,7 +299,7 @@ export const Dashboard = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '6px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <StatusBadge status={m.status} />
-                      <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#FE7F2D', backgroundColor: 'rgba(254, 127, 45, 0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(254, 127, 45, 0.3)' }}>
                         🏆 {m.tournament_name || 'Kakkikalam'}
                       </span>
                     </div>

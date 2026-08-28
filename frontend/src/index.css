@@ -1,18 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap');
 
 :root {
-  --bg-dark: #0f172a;
-  --bg-card: #1e293b;
-  --bg-card-hover: #334155;
-  --accent-primary: #3b82f6;
-  --accent-primary-hover: #2563eb;
-  --accent-emerald: #10b981;
-  --accent-rose: #f43f5e;
-  --accent-amber: #f59e0b;
-  --accent-purple: #8b5cf6;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --border-color: #334155;
+  --bg-dark: #000000;
+  --bg-card: #233D4D;
+  --bg-card-hover: #2c4c60;
+  --accent-primary: #FE7F2D;
+  --accent-primary-hover: #e0681b;
+  --accent-emerald: #FE7F2D;
+  --accent-rose: #ef4444;
+  --accent-amber: #FE7F2D;
+  --text-main: #EAECF0;
+  --text-muted: #a3b3c2;
+  --border-color: #2e4f64;
   --font-heading: 'Outfit', sans-serif;
   --font-body: 'Inter', sans-serif;
 }
@@ -68,16 +67,17 @@ button:disabled {
 
 /* Glass Card */
 .glass-panel {
-  background: rgba(30, 41, 59, 0.85);
+  background: rgba(35, 61, 77, 0.92);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
   border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .card-hover:hover {
   border-color: var(--accent-primary);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px -4px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 15px rgba(254, 127, 45, 0.35);
 }
 
 /* Responsive Grids & Layout Utilities */
@@ -101,42 +101,47 @@ button:disabled {
 
 /* Compact Mobile-First Buttons */
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-primary), #1d4ed8);
-  color: white;
+  background: linear-gradient(135deg, #FE7F2D, #d6671c);
+  color: #000000;
   padding: 6px 14px;
   border-radius: 6px;
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 900;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  box-shadow: 0 0 10px rgba(254, 127, 45, 0.35);
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--accent-primary-hover), #1e40af);
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.25);
+  background: linear-gradient(135deg, #d6671c, #b0500f);
+  box-shadow: 0 0 15px rgba(254, 127, 45, 0.5);
 }
 
 .btn-success {
-  background: linear-gradient(135deg, var(--accent-emerald), #047857);
-  color: white;
+  background: linear-gradient(135deg, #FE7F2D, #d6671c);
+  color: #000000;
   padding: 6px 14px;
   border-radius: 6px;
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 900;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  box-shadow: 0 0 10px rgba(254, 127, 45, 0.35);
+}
+.btn-success:hover {
+  background: linear-gradient(135deg, #d6671c, #b0500f);
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, var(--accent-rose), #be123c);
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
   color: white;
   padding: 6px 14px;
   border-radius: 6px;
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 800;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -144,12 +149,12 @@ button:disabled {
 }
 
 .btn-secondary {
-  background: var(--bg-card-hover);
+  background: #233D4D;
   color: var(--text-main);
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
   border: 1px solid var(--border-color);
   display: inline-flex;
   align-items: center;
@@ -157,7 +162,8 @@ button:disabled {
   gap: 6px;
 }
 .btn-secondary:hover {
-  background: #475569;
+  background: #2c4c60;
+  border-color: #FE7F2D;
 }
 
 /* Scoreboard display */
@@ -165,8 +171,8 @@ button:disabled {
   font-family: var(--font-heading);
   font-size: 2.8rem;
   font-weight: 900;
-  color: #ffffff;
-  text-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+  color: #EAECF0;
+  text-shadow: 0 0 15px rgba(254, 127, 45, 0.6);
 }
 
 /* Mobile Media Queries for iPhone / Android */

@@ -47,14 +47,14 @@ export const Standings = () => {
       {/* Rules & Tournament Selection Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-          <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#10b981', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '800' }}>
-            🟩 WIN = 3 PTS
+          <span style={{ backgroundColor: 'rgba(254, 127, 45, 0.2)', border: '1px solid #FE7F2D', color: '#FE7F2D', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '800' }}>
+            🟧 WIN = 3 PTS
           </span>
-          <span style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#f59e0b', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '800' }}>
-            🟨 DRAW = 1 PT
+          <span style={{ backgroundColor: 'rgba(35, 61, 77, 0.6)', border: '1px solid #233D4D', color: '#EAECF0', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '800' }}>
+            🟦 DRAW = 1 PT
           </span>
-          <span style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '800' }}>
-            🟥 LOSS = 0 PTS
+          <span style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', border: '1px solid #000000', color: '#a3b3c2', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '800' }}>
+            ⬛ LOSS = 0 PTS
           </span>
         </div>
 
@@ -64,16 +64,16 @@ export const Standings = () => {
             onChange={(e) => setSelectedTournament(e.target.value)}
             style={{
               padding: '3px 6px',
-              backgroundColor: '#0f172a',
-              border: '1px solid #334155',
+              backgroundColor: '#233D4D',
+              border: '1px solid #2e4f64',
               borderRadius: '4px',
-              color: 'white',
+              color: '#EAECF0',
               fontSize: '0.7rem',
               fontWeight: '700'
             }}
           >
             {tournaments.map(t => (
-              <option key={t.id} value={t.id} style={{ background: '#1e293b' }}>
+              <option key={t.id} value={t.id} style={{ background: '#233D4D' }}>
                 {t.name}
               </option>
             ))}
@@ -84,13 +84,13 @@ export const Standings = () => {
       {/* Standings Table Card */}
       <div className="glass-panel" style={{ padding: '0', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         {loading ? (
-          <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '0.8rem' }}>Loading standings...</div>
+          <div style={{ padding: '20px', textAlign: 'center', color: '#a3b3c2', fontSize: '0.8rem' }}>Loading standings...</div>
         ) : standings.length === 0 ? (
-          <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '0.8rem' }}>No team standings available.</div>
+          <div style={{ padding: '20px', textAlign: 'center', color: '#a3b3c2', fontSize: '0.8rem' }}>No team standings available.</div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
-              <tr style={{ backgroundColor: '#0f172a', borderBottom: '1px solid #334155', color: '#94a3b8', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <tr style={{ backgroundColor: '#233D4D', borderBottom: '1px solid #2e4f64', color: '#EAECF0', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 <th style={{ padding: '6px 2px', textAlign: 'center', width: '22px' }}>#</th>
                 <th style={{ padding: '6px 4px' }}>TEAM</th>
                 <th style={{ padding: '6px 2px', textAlign: 'center', width: '20px' }}>P</th>
@@ -98,30 +98,30 @@ export const Standings = () => {
                 <th style={{ padding: '6px 2px', textAlign: 'center', width: '20px' }}>D</th>
                 <th style={{ padding: '6px 2px', textAlign: 'center', width: '20px' }}>L</th>
                 <th style={{ padding: '6px 2px', textAlign: 'center', width: '24px' }}>GD</th>
-                <th style={{ padding: '6px 4px', textAlign: 'center', width: '32px', fontWeight: '900', color: '#10b981' }}>PTS</th>
+                <th style={{ padding: '6px 4px', textAlign: 'center', width: '32px', fontWeight: '900', color: '#FE7F2D' }}>PTS</th>
               </tr>
             </thead>
             <tbody>
               {standings.map((team, idx) => (
                 <tr key={team.team_id} style={{
-                  borderBottom: '1px solid #1e293b',
-                  backgroundColor: idx === 0 ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
+                  borderBottom: '1px solid #2e4f64',
+                  backgroundColor: idx === 0 ? 'rgba(254, 127, 45, 0.15)' : 'transparent',
                   transition: 'background-color 0.2s'
                 }}>
-                  <td style={{ padding: '6px 2px', textAlign: 'center', fontWeight: '900', fontSize: '0.75rem', color: idx === 0 ? '#f59e0b' : idx === 1 ? '#cbd5e1' : idx === 2 ? '#b45309' : '#94a3b8' }}>
+                  <td style={{ padding: '6px 2px', textAlign: 'center', fontWeight: '900', fontSize: '0.75rem', color: idx === 0 ? '#FE7F2D' : idx === 1 ? '#EAECF0' : idx === 2 ? '#d6671c' : '#a3b3c2' }}>
                     {idx === 0 ? '🏆1' : idx === 1 ? '🥈2' : idx === 2 ? '🥉3' : idx + 1}
                   </td>
-                  <td style={{ padding: '6px 4px', fontWeight: '800', color: '#f8fafc', fontSize: '0.75rem', wordBreak: 'break-word', lineHeight: 1.2 }}>
+                  <td style={{ padding: '6px 4px', fontWeight: '800', color: '#EAECF0', fontSize: '0.75rem', wordBreak: 'break-word', lineHeight: 1.2 }}>
                     {team.team_name}
                   </td>
-                  <td style={{ padding: '6px 2px', textAlign: 'center', color: '#cbd5e1', fontWeight: '600', fontSize: '0.75rem' }}>{team.played}</td>
-                  <td style={{ padding: '6px 2px', textAlign: 'center', color: '#10b981', fontWeight: '700', fontSize: '0.75rem' }}>{team.won}</td>
-                  <td style={{ padding: '6px 2px', textAlign: 'center', color: '#f59e0b', fontWeight: '700', fontSize: '0.75rem' }}>{team.drawn}</td>
+                  <td style={{ padding: '6px 2px', textAlign: 'center', color: '#EAECF0', fontWeight: '600', fontSize: '0.75rem' }}>{team.played}</td>
+                  <td style={{ padding: '6px 2px', textAlign: 'center', color: '#FE7F2D', fontWeight: '700', fontSize: '0.75rem' }}>{team.won}</td>
+                  <td style={{ padding: '6px 2px', textAlign: 'center', color: '#a3b3c2', fontWeight: '700', fontSize: '0.75rem' }}>{team.drawn}</td>
                   <td style={{ padding: '6px 2px', textAlign: 'center', color: '#ef4444', fontWeight: '700', fontSize: '0.75rem' }}>{team.lost}</td>
-                  <td style={{ padding: '6px 2px', textAlign: 'center', fontWeight: '800', fontSize: '0.75rem', color: team.goal_difference > 0 ? '#10b981' : team.goal_difference < 0 ? '#ef4444' : '#94a3b8' }}>
+                  <td style={{ padding: '6px 2px', textAlign: 'center', fontWeight: '800', fontSize: '0.75rem', color: team.goal_difference > 0 ? '#FE7F2D' : team.goal_difference < 0 ? '#ef4444' : '#a3b3c2' }}>
                     {team.goal_difference > 0 ? `+${team.goal_difference}` : team.goal_difference}
                   </td>
-                  <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: '900', color: '#10b981', fontSize: '0.85rem', backgroundColor: 'rgba(16, 185, 129, 0.12)' }}>
+                  <td style={{ padding: '6px 4px', textAlign: 'center', fontWeight: '900', color: '#FE7F2D', fontSize: '0.85rem', backgroundColor: 'rgba(254, 127, 45, 0.2)' }}>
                     {team.points}
                   </td>
                 </tr>
