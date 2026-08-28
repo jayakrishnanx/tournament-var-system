@@ -441,28 +441,45 @@ export const Dashboard = () => {
         )}
       </div>
 
-      {/* 3. TOURNAMENT TOP GOAL SCORER (POSITION #3 THIRD) */}
+      {/* 3. TOURNAMENT TOP GOAL SCORERS */}
       <div className="glass-panel" style={{ padding: '16px', marginBottom: '20px', borderTop: '3px solid #10b981' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94a3b8' }}>
           <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Award size={18} color="#10b981" /> 🏆 TOURNAMENT TOP GOAL SCORER
+            <Award size={18} color="#10b981" /> 🏆 TOURNAMENT TOP 3 GOAL SCORERS
           </span>
         </div>
-        <div style={{ marginTop: '8px' }}>
-          {topScorer ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-              <div>
-                <div style={{ fontSize: '1.2rem', fontWeight: '900', color: '#f8fafc' }}>
-                  {topScorer.player_name}
+        <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {stats.top_scorers && stats.top_scorers.length > 0 ? (
+            stats.top_scorers.slice(0, 3).map((scorer, index) => (
+              <div key={index} style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '8px',
+                padding: '10px 14px',
+                backgroundColor: '#1D2128',
+                borderRadius: '8px',
+                border: '1px solid #334155'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '1.2rem', fontWeight: '900' }}>
+                    {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                  </span>
+                  <div>
+                    <div style={{ fontSize: '1rem', fontWeight: '900', color: '#f8fafc' }}>
+                      {scorer.player_name}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '600' }}>
+                      Team: <strong style={{ color: '#cbd5e1' }}>{scorer.team_name}</strong>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '600' }}>
-                  Team: <strong style={{ color: '#cbd5e1' }}>{topScorer.team_name}</strong>
-                </div>
+                <span style={{ fontWeight: '900', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '4px 12px', borderRadius: '8px', fontSize: '0.85rem' }}>
+                  ⚽ {scorer.goals} {scorer.goals === 1 ? 'Goal' : 'Goals'}
+                </span>
               </div>
-              <span style={{ fontWeight: '900', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '4px 12px', borderRadius: '8px', fontSize: '0.9rem' }}>
-                ⚽ {topScorer.goals} {topScorer.goals === 1 ? 'Goal' : 'Goals'}
-              </span>
-            </div>
+            ))
           ) : (
             <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#64748b' }}>
               No goals recorded in active matches yet.
