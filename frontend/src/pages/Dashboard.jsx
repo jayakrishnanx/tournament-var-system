@@ -94,12 +94,14 @@ export const Dashboard = () => {
     if (a.status !== 'LIVE' && b.status === 'LIVE') return 1;
     if (a.status === 'PAUSED' && b.status !== 'PAUSED') return -1;
     if (a.status !== 'PAUSED' && b.status === 'PAUSED') return 1;
+    if (a.is_next_match && !b.is_next_match && a.status === 'SCHEDULED') return -1;
+    if (!a.is_next_match && b.is_next_match && b.status === 'SCHEDULED') return 1;
     if (a.status === 'ENDED' && b.status !== 'ENDED') return 1;
     if (a.status !== 'ENDED' && b.status === 'ENDED') return -1;
     return (a.match_number || 0) - (b.match_number || 0);
   });
 
-  const nextMatch = matches.find(m => m.is_next_match) || matches.find(m => m.status === 'SCHEDULED');
+  const nextMatch = matches.find(m => m.is_next_match && m.status === 'SCHEDULED') || matches.find(m => m.status === 'SCHEDULED');
 
   return (
     <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>

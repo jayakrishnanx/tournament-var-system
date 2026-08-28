@@ -126,9 +126,16 @@ class MatchViewSet(viewsets.ModelViewSet):
     def set_next(self, request, pk=None):
         try:
             match = self.get_object()
+            if match.status != Match.Status.SCHEDULED:
+                return Response({'error': 'Only scheduled matches can be set as Next Match.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            is_currently_next = match.is_next_match
             Match.objects.filter(tournament=match.tournament).update(is_next_match=False)
-            match.is_next_match = True
-            match.save(update_fields=['is_next_match'])
+
+            if not is_currently_next:
+                match.is_next_match = True
+                match.save(update_fields=['is_next_match'])
+
             broadcast_match_update(match)
             return Response(MatchSerializer(match).data)
         except Exception as e:

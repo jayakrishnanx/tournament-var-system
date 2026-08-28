@@ -87,6 +87,8 @@ export const Matches = () => {
     if (a.status !== 'LIVE' && b.status === 'LIVE') return 1;
     if (a.status === 'PAUSED' && b.status !== 'PAUSED') return -1;
     if (a.status !== 'PAUSED' && b.status === 'PAUSED') return 1;
+    if (a.is_next_match && !b.is_next_match && a.status === 'SCHEDULED') return -1;
+    if (!a.is_next_match && b.is_next_match && b.status === 'SCHEDULED') return 1;
     if (a.status === 'ENDED' && b.status !== 'ENDED') return 1;
     if (a.status !== 'ENDED' && b.status === 'ENDED') return -1;
     return (a.match_number || 0) - (b.match_number || 0);
@@ -287,22 +289,22 @@ export const Matches = () => {
                 </div>
               </div>
 
-              <div style={{ paddingTop: '14px', borderTop: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                {user?.role === 'ADMIN' && m.status === 'SCHEDULED' && !m.is_next_match && (
+              <div style={{ paddingTop: '14px', borderTop: '1px solid #343a46', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                {user?.role === 'ADMIN' && m.status === 'SCHEDULED' && (
                   <button
                     onClick={() => handleSetNextMatch(m.id)}
                     style={{
-                      backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                      color: '#f59e0b',
-                      border: '1px solid rgba(245, 158, 11, 0.4)',
-                      padding: '5px 10px',
+                      backgroundColor: m.is_next_match ? '#7B2525' : 'rgba(123, 37, 37, 0.18)',
+                      color: m.is_next_match ? '#EAECF0' : '#7B2525',
+                      border: '1px solid #7B2525',
+                      padding: '5px 12px',
                       borderRadius: '6px',
                       fontSize: '0.75rem',
                       fontWeight: '800',
                       cursor: 'pointer'
                     }}
                   >
-                    📌 Set as Next Match
+                    {m.is_next_match ? '📌 Next Match Active (Unset)' : '📌 Set as Next Match'}
                   </button>
                 )}
 
