@@ -175,58 +175,61 @@ export const Dashboard = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', alignItems: 'center' }}>
             {/* Sponsor Logo 1: Quick Mix */}
             <div style={{
-              backgroundColor: '#1D2128',
+              backgroundColor: '#ffffff',
               borderRadius: '8px',
-              border: '1px solid #343a46',
-              padding: '4px',
+              border: '1px solid #ffffff',
+              padding: '6px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               height: '85px',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
             }}>
               <img
                 src="/sponsors/sponsor1.png"
                 alt="Quick Mix"
-                style={{ height: '100%', width: '100%', maxHeight: '78px', objectFit: 'contain' }}
+                style={{ height: '100%', width: '100%', maxHeight: '76px', objectFit: 'contain' }}
               />
             </div>
 
             {/* Sponsor Logo 2: NEO */}
             <div style={{
-              backgroundColor: '#1D2128',
+              backgroundColor: '#ffffff',
               borderRadius: '8px',
-              border: '1px solid #343a46',
-              padding: '4px',
+              border: '1px solid #ffffff',
+              padding: '6px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               height: '85px',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
             }}>
               <img
                 src="/sponsors/sponsor2.png"
                 alt="NEO"
-                style={{ height: '100%', width: '100%', maxHeight: '78px', objectFit: 'contain' }}
+                style={{ height: '100%', width: '100%', maxHeight: '76px', objectFit: 'contain' }}
               />
             </div>
 
             {/* Sponsor Logo 3: N N STEELS */}
             <div style={{
-              backgroundColor: '#1D2128',
+              backgroundColor: '#ffffff',
               borderRadius: '8px',
-              border: '1px solid #343a46',
-              padding: '4px',
+              border: '1px solid #ffffff',
+              padding: '6px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               height: '85px',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)'
             }}>
               <img
                 src="/sponsors/sponsor3.png"
                 alt="N N STEELS"
-                style={{ height: '100%', width: '100%', maxHeight: '78px', objectFit: 'contain' }}
+                style={{ height: '100%', width: '100%', maxHeight: '76px', objectFit: 'contain' }}
               />
             </div>
           </div>
