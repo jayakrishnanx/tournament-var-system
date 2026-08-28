@@ -106,6 +106,9 @@ export const Navbar = () => {
           </>
         ) : (
           <>
+            <Link to="/tournaments" style={navItemStyle('/tournaments')}>
+              <Trophy size={14} /> Tournaments
+            </Link>
             <Link to="/matches" style={navItemStyle('/matches')}>
               <Calendar size={14} /> Matches
             </Link>
