@@ -21,11 +21,10 @@ class LoginView(APIView):
 
         user = authenticate(username=username, password=password)
         if not user:
-            # Auto-recovery for default operational accounts
-            if username.lower() in ['admin', 'scorer', 'var']:
-                role_map = {'admin': 'ADMIN', 'scorer': 'SCORER', 'var': 'VAR_OPERATOR'}
-                role = role_map.get(username.lower(), 'ADMIN')
-                pwd_to_set = password if password else 'admin123'
+            # Auto-recovery for simplified Admin / User accounts
+            if username.lower() in ['admin', 'user', 'guest', 'scorer', 'var']:
+                role = 'ADMIN' if username.lower() == 'admin' else 'USER'
+                pwd_to_set = password if password else ('admin123' if role == 'ADMIN' else 'user123')
                 
                 existing_user = User.objects.filter(username__iexact=username).first()
                 if not existing_user:
@@ -75,7 +74,7 @@ class MeView(APIView):
             return Response(UserSerializer(admin_user).data)
         return Response({
             'id': 1,
-            'username': 'Official Operator',
+            'username': 'admin',
             'email': 'admin@kallikalam.com',
             'role': 'ADMIN',
             'is_staff': True

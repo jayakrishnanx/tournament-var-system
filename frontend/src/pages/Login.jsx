@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { Shield, UserCheck, Lock, AlertCircle, Mail, UserPlus, LogIn } from 'lucide-react';
+import { Shield, UserCheck, Lock, AlertCircle, Mail, UserPlus, LogIn, Eye } from 'lucide-react';
 
 export const Login = () => {
   const [isRegister, setIsRegister] = useState(false);
@@ -25,11 +25,11 @@ export const Login = () => {
     if (isRegister) {
       try {
         await api.post('/auth/register/', { username, email, password, role });
-        setSuccess('Account registered successfully! Logging you in...');
+        setSuccess('Account created! Logging you in...');
         await login(username, password);
         navigate('/');
       } catch (err) {
-        setError(err.response?.data?.username?.[0] || err.response?.data?.error || 'Registration failed. Try a different username.');
+        setError(err.response?.data?.username?.[0] || err.response?.data?.error || 'Registration failed.');
       } finally {
         setLoading(false);
       }
@@ -54,14 +54,10 @@ export const Login = () => {
       await login(user, pass);
       navigate('/');
     } catch (err) {
-      setError(`Failed to login as ${user}. Make sure server is running.`);
+      setError(`Failed to login as ${user}.`);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handlePasswordlessAccess = () => {
-    navigate('/');
   };
 
   return (
@@ -70,38 +66,38 @@ export const Login = () => {
       justifyContent: 'center',
       alignItems: 'center',
       minHeight: 'calc(100vh - 80px)',
-      padding: '20px'
+      padding: '16px'
     }}>
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '36px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+      <div className="glass-panel" style={{ width: '100%', maxWidth: '440px', padding: '24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <div style={{
             display: 'inline-flex',
             background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-            padding: '12px',
-            borderRadius: '12px',
-            marginBottom: '12px'
+            padding: '10px',
+            borderRadius: '10px',
+            marginBottom: '10px'
           }}>
-            <Shield size={32} color="white" />
+            <Shield size={28} color="white" />
           </div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: '900', letterSpacing: '0.02em' }}>KALLIKALAM</h2>
-          <p style={{ color: '#3b82f6', fontSize: '0.8rem', fontWeight: '800', marginTop: '4px', letterSpacing: '0.05em' }}>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '0.02em' }}>KALLIKALAM</h2>
+          <p style={{ color: '#3b82f6', fontSize: '0.75rem', fontWeight: '800', marginTop: '2px', letterSpacing: '0.05em' }}>
             TOURNAMENT MANAGEMENT & MULTI-CAM VAR
           </p>
         </div>
 
         {/* Tab Toggle */}
-        <div style={{ display: 'flex', borderBottom: '1px solid #334155', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid #334155', marginBottom: '16px' }}>
           <button
             onClick={() => { setIsRegister(false); setError(''); setSuccess(''); }}
             style={{
               flex: 1,
-              padding: '10px',
+              padding: '8px',
               backgroundColor: 'transparent',
               border: 'none',
               borderBottom: !isRegister ? '2px solid #3b82f6' : '2px solid transparent',
               color: !isRegister ? '#3b82f6' : '#94a3b8',
               fontWeight: '800',
-              cursor: 'pointer'
+              fontSize: '0.85rem'
             }}
           >
             Sign In
@@ -110,13 +106,13 @@ export const Login = () => {
             onClick={() => { setIsRegister(true); setError(''); setSuccess(''); }}
             style={{
               flex: 1,
-              padding: '10px',
+              padding: '8px',
               backgroundColor: 'transparent',
               border: 'none',
               borderBottom: isRegister ? '2px solid #3b82f6' : '2px solid transparent',
               color: isRegister ? '#3b82f6' : '#94a3b8',
               fontWeight: '800',
-              cursor: 'pointer'
+              fontSize: '0.85rem'
             }}
           >
             Create Account
@@ -127,16 +123,16 @@ export const Login = () => {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
+            gap: '8px',
             backgroundColor: 'rgba(244, 63, 94, 0.15)',
             border: '1px solid rgba(244, 63, 94, 0.4)',
             color: '#f43f5e',
-            padding: '12px',
-            borderRadius: '8px',
-            marginBottom: '20px',
-            fontSize: '0.85rem'
+            padding: '10px',
+            borderRadius: '6px',
+            marginBottom: '16px',
+            fontSize: '0.8rem'
           }}>
-            <AlertCircle size={18} />
+            <AlertCircle size={16} />
             <span>{error}</span>
           </div>
         )}
@@ -145,27 +141,27 @@ export const Login = () => {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
+            gap: '8px',
             backgroundColor: 'rgba(16, 185, 129, 0.15)',
             border: '1px solid rgba(16, 185, 129, 0.4)',
             color: '#10b981',
-            padding: '12px',
-            borderRadius: '8px',
-            marginBottom: '20px',
-            fontSize: '0.85rem'
+            padding: '10px',
+            borderRadius: '6px',
+            marginBottom: '16px',
+            fontSize: '0.8rem'
           }}>
-            <UserCheck size={18} />
+            <UserCheck size={16} />
             <span>{success}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px', color: '#cbd5e1' }}>
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px', color: '#cbd5e1' }}>
               Username
             </label>
             <div style={{ position: 'relative' }}>
-              <UserCheck size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: '#64748b' }} />
+              <UserCheck size={16} style={{ position: 'absolute', left: '10px', top: '10px', color: '#64748b' }} />
               <input
                 type="text"
                 required
@@ -174,12 +170,12 @@ export const Login = () => {
                 placeholder="Enter username"
                 style={{
                   width: '100%',
-                  padding: '10px 12px 10px 38px',
+                  padding: '8px 10px 8px 34px',
                   backgroundColor: '#0f172a',
                   border: '1px solid #334155',
-                  borderRadius: '8px',
+                  borderRadius: '6px',
                   color: 'white',
-                  fontSize: '0.9rem'
+                  fontSize: '0.85rem'
                 }}
               />
             </div>
@@ -187,11 +183,11 @@ export const Login = () => {
 
           {isRegister && (
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px', color: '#cbd5e1' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px', color: '#cbd5e1' }}>
                 Email Address
               </label>
               <div style={{ position: 'relative' }}>
-                <Mail size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: '#64748b' }} />
+                <Mail size={16} style={{ position: 'absolute', left: '10px', top: '10px', color: '#64748b' }} />
                 <input
                   type="email"
                   required
@@ -200,12 +196,12 @@ export const Login = () => {
                   placeholder="Enter email address"
                   style={{
                     width: '100%',
-                    padding: '10px 12px 10px 38px',
+                    padding: '8px 10px 8px 34px',
                     backgroundColor: '#0f172a',
                     border: '1px solid #334155',
-                    borderRadius: '8px',
+                    borderRadius: '6px',
                     color: 'white',
-                    fontSize: '0.9rem'
+                    fontSize: '0.85rem'
                   }}
                 />
               </div>
@@ -213,11 +209,11 @@ export const Login = () => {
           )}
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px', color: '#cbd5e1' }}>
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px', color: '#cbd5e1' }}>
               Password
             </label>
             <div style={{ position: 'relative' }}>
-              <Lock size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: '#64748b' }} />
+              <Lock size={16} style={{ position: 'absolute', left: '10px', top: '10px', color: '#64748b' }} />
               <input
                 type="password"
                 required
@@ -226,12 +222,12 @@ export const Login = () => {
                 placeholder="Enter password"
                 style={{
                   width: '100%',
-                  padding: '10px 12px 10px 38px',
+                  padding: '8px 10px 8px 34px',
                   backgroundColor: '#0f172a',
                   border: '1px solid #334155',
-                  borderRadius: '8px',
+                  borderRadius: '6px',
                   color: 'white',
-                  fontSize: '0.9rem'
+                  fontSize: '0.85rem'
                 }}
               />
             </div>
@@ -239,7 +235,7 @@ export const Login = () => {
 
           {isRegister && (
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px', color: '#cbd5e1' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px', color: '#cbd5e1' }}>
                 System Role
               </label>
               <select
@@ -247,52 +243,44 @@ export const Login = () => {
                 onChange={(e) => setRole(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '10px 12px',
+                  padding: '8px 10px',
                   backgroundColor: '#0f172a',
                   border: '1px solid #334155',
-                  borderRadius: '8px',
+                  borderRadius: '6px',
                   color: 'white',
-                  fontSize: '0.9rem'
+                  fontSize: '0.85rem'
                 }}
               >
-                <option value="ADMIN">System Administrator (Full Access)</option>
-                <option value="SCORER">Official Scorer</option>
-                <option value="VAR_OPERATOR">VAR Operator</option>
-                <option value="SPECTATOR">Viewer / Spectator</option>
+                <option value="ADMIN">Admin (Full Edit Access)</option>
+                <option value="USER">User (View-Only Access)</option>
               </select>
             </div>
           )}
 
-          <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: '8px', width: '100%', padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            {isRegister ? <UserPlus size={18} /> : <LogIn size={18} />}
-            <span>{loading ? 'Processing...' : (isRegister ? 'Create Free Account' : 'Sign In')}</span>
+          <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: '6px', width: '100%', padding: '9px' }}>
+            {isRegister ? <UserPlus size={16} /> : <LogIn size={16} />}
+            <span>{loading ? 'Processing...' : (isRegister ? 'Create Account' : 'Sign In')}</span>
           </button>
         </form>
 
-        {/* 1-Click Quick Demo Accounts */}
+        {/* 1-Click Quick Access */}
         {!isRegister && (
-          <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #334155' }}>
+          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #334155' }}>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '10px', textAlign: 'center', fontWeight: '700' }}>
-              ⚡ 1-CLICK QUICK LOGIN DEMO ACCOUNTS
+              ⚡ 1-CLICK QUICK LOGIN
             </span>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <button
                 onClick={() => handleQuickLogin('admin', 'admin123')}
-                style={{ backgroundColor: '#1e293b', border: '1px solid #3b82f6', color: '#3b82f6', padding: '8px 4px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}
+                style={{ backgroundColor: '#1e293b', border: '1px solid #3b82f6', color: '#3b82f6', padding: '8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               >
-                👑 Admin
+                👑 Admin Login
               </button>
               <button
-                onClick={() => handleQuickLogin('scorer', 'scorer123')}
-                style={{ backgroundColor: '#1e293b', border: '1px solid #10b981', color: '#10b981', padding: '8px 4px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}
+                onClick={() => handleQuickLogin('user', 'user123')}
+                style={{ backgroundColor: '#1e293b', border: '1px solid #10b981', color: '#10b981', padding: '8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               >
-                ⚽ Scorer
-              </button>
-              <button
-                onClick={() => handleQuickLogin('var', 'var123')}
-                style={{ backgroundColor: '#1e293b', border: '1px solid #8b5cf6', color: '#8b5cf6', padding: '8px 4px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}
-              >
-                📹 VAR Op
+                👁️ Viewer Mode
               </button>
             </div>
           </div>

@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Play, Pause, Plus, Minus, RotateCcw, Award, Flag, Clock } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export const ScorerConsole = ({ match, onUpdate }) => {
+  const { user } = useAuth();
   const [selectedTeam, setSelectedTeam] = useState(match.home_team);
   const [eventType, setEventType] = useState('GOAL');
   const [selectedPlayer, setSelectedPlayer] = useState('');
   const [loading, setLoading] = useState(false);
+
+  if (user?.role !== 'ADMIN') {
+    return null; // Spectators & Viewers see clean live scoreboard & video player only!
+  }
 
   // Active Real-Time Match Clock Ticker State
   const [elapsedSeconds, setElapsedSeconds] = useState(match.timer_seconds_elapsed || 0);

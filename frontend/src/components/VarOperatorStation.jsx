@@ -3,8 +3,10 @@ import api from '../services/api';
 import { HlsPlayer } from './HlsPlayer';
 import { StatusBadge } from './StatusBadge';
 import { ShieldAlert, Play, Pause, Rewind, FastForward, CheckCircle, XCircle, Film, RotateCcw, Maximize2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
+  const { user } = useAuth();
   const [recordings, setRecordings] = useState([]);
   const [selectedMp4Url, setSelectedMp4Url] = useState('');
   const [playbackRate, setPlaybackRate] = useState(1.0);
@@ -355,10 +357,14 @@ export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
         {/* Decision Submission Panel */}
         <div style={{ backgroundColor: '#0f172a', padding: '20px', borderRadius: '12px', border: '1px solid #334155' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '12px', color: '#f8fafc' }}>
-            Render VAR Referee Decision
+            {user?.role === 'ADMIN' ? 'Render VAR Referee Decision' : '👁️ Public VAR Monitor Mode Active'}
           </h3>
 
-          {selectedIncident ? (
+          {user?.role !== 'ADMIN' ? (
+            <div style={{ padding: '16px', color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center' }}>
+              Spectators and viewers can watch live 3-angle streams, slow-mo replays, and digital zoom. Only System Admins can submit official VAR decisions.
+            </div>
+          ) : selectedIncident ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>
                 Selected: <strong style={{ color: '#f43f5e' }}>{selectedIncident.event_type}</strong> (at {Math.floor(selectedIncident.timestamp_seconds / 60)}m {selectedIncident.timestamp_seconds % 60}s)
