@@ -43,14 +43,7 @@ export const Navbar = () => {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
         <Link to={isAdmin ? "/matches" : "/"} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #7B2525, #5d1b1b)',
-            padding: '5px',
-            borderRadius: '6px',
-            display: 'flex'
-          }}>
-            <Trophy size={16} color="#EAECF0" />
-          </div>
+          <img src="/logo.png" alt="Kallikalam Logo" style={{ height: '32px', objectFit: 'contain' }} />
           <div>
             <span style={{ fontFamily: 'Outfit', fontWeight: '900', fontSize: '1rem', color: '#EAECF0', display: 'block', lineHeight: 1, letterSpacing: '0.02em' }}>
               KALLI<span style={{ color: '#7B2525' }}>KALAM</span>
