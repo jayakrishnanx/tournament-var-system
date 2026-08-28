@@ -13,11 +13,15 @@ start "Kallikalam - MediaMTX Engine" /D "%PROJECT_DIR%" .\mediamtx.exe
 
 :: 2. Start Django Backend Server
 echo [2/3] Launching Django ASGI Backend Server (Port 8000)...
-start "Kallikalam - Django Backend" /D "%PROJECT_DIR%backend" py -3 manage.py runserver 0.0.0.0:8000
+if exist "%PROJECT_DIR%backend\venv\Scripts\python.exe" (
+    start "Kallikalam - Django Backend" /D "%PROJECT_DIR%backend" "%PROJECT_DIR%backend\venv\Scripts\python.exe" manage.py runserver 0.0.0.0:8000
+) else (
+    start "Kallikalam - Django Backend" /D "%PROJECT_DIR%backend" py -3 manage.py runserver 0.0.0.0:8000
+)
 
 :: 3. Start React Web Server
 echo [3/3] Launching Web Application Interface (Port 5173)...
-start "Kallikalam - Frontend Web App" /D "%PROJECT_DIR%frontend" npx vite --host 0.0.0.0 --port 5173
+start "Kallikalam - Frontend Web App" /D "%PROJECT_DIR%frontend" cmd /k "npm run dev -- --host 0.0.0.0 --port 5173"
 
 timeout /t 3 >nul
 
@@ -31,3 +35,4 @@ echo   ✅ Kallikalam System is LIVE and running!
 echo   👉 Web Console: http://localhost:5173/
 echo   👉 Match Recordings Folder: %PROJECT_DIR%recordings\
 echo ========================================================================
+pause
