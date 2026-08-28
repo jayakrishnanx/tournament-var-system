@@ -1,11 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export const Standings = () => {
+  const { user } = useAuth();
   const [standings, setStandings] = useState([]);
   const [tournaments, setTournaments] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState('');
   const [loading, setLoading] = useState(true);
+  const [resetting, setResetting] = useState(false);
+
+  const handleResetStandings = async () => {
+    if (!selectedTournament) return;
+    if (!window.confirm('⚠️ Are you sure you want to RESET the Points Table?\n\nThis will:\n• Clear all goals and match events\n• Reset all regular match scores to 0-0\n• Mark all matches as SCHEDULED again\n\nThis cannot be undone!')) return;
+    setResetting(true);
+    try {
+      const res = await api.post(`/tournaments/tournaments/${selectedTournament}/reset_standings/`);
+      alert('✅ ' + res.data.success);
+    } catch (err) {
+      alert('Failed to reset: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setResetting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchTournaments = async () => {
@@ -58,27 +75,50 @@ export const Standings = () => {
           </span>
         </div>
 
-        {tournaments.length > 0 && (
-          <select
-            value={selectedTournament}
-            onChange={(e) => setSelectedTournament(e.target.value)}
-            style={{
-              padding: '3px 6px',
-              backgroundColor: '#1D2128',
-              border: '1px solid #343a46',
-              borderRadius: '4px',
-              color: '#EAECF0',
-              fontSize: '0.7rem',
-              fontWeight: '700'
-            }}
-          >
-            {tournaments.map(t => (
-              <option key={t.id} value={t.id} style={{ background: '#1D2128' }}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        )}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {tournaments.length > 0 && (
+            <select
+              value={selectedTournament}
+              onChange={(e) => setSelectedTournament(e.target.value)}
+              style={{
+                padding: '3px 6px',
+                backgroundColor: '#1D2128',
+                border: '1px solid #343a46',
+                borderRadius: '4px',
+                color: '#EAECF0',
+                fontSize: '0.7rem',
+                fontWeight: '700'
+              }}
+            >
+              {tournaments.map(t => (
+                <option key={t.id} value={t.id} style={{ background: '#1D2128' }}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          )}
+          {user?.role === 'ADMIN' && (
+            <button
+              onClick={handleResetStandings}
+              disabled={resetting || !selectedTournament}
+              style={{
+                padding: '4px 10px',
+                backgroundColor: resetting ? '#334155' : '#7f1d1d',
+                border: '1px solid #ef4444',
+                borderRadius: '4px',
+                color: '#fca5a5',
+                fontSize: '0.7rem',
+                fontWeight: '800',
+                cursor: resetting ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              🔄 {resetting ? 'Resetting...' : 'Reset Points Table'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Standings Table Card */}

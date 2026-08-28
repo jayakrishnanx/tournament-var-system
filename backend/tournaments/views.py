@@ -142,6 +142,42 @@ class TournamentViewSet(viewsets.ModelViewSet):
             
         return Response({'success': 'Bracket generated successfully!'}, status=status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def reset_standings(self, request, pk=None):
+        """
+        Resets all REGULAR (group/league) matches for this tournament:
+        - Deletes all match events
+        - Sets scores back to 0
+        - Sets status back to SCHEDULED
+        - Resets timer
+        Points table is recomputed dynamically, so it resets automatically.
+        """
+        tournament = self.get_object()
+        regular_matches = Match.objects.filter(tournament=tournament, stage=Match.Stage.REGULAR)
+        
+        count = regular_matches.count()
+        
+        # Delete all events for these matches
+        from .models import MatchEvent
+        MatchEvent.objects.filter(match__in=regular_matches).delete()
+        
+        # Reset all regular matches
+        regular_matches.update(
+            home_score=0,
+            away_score=0,
+            status=Match.Status.SCHEDULED,
+            is_timer_running=False,
+            timer_seconds_elapsed=0,
+            timer_last_updated_at=None,
+            is_next_match=False,
+            actual_start_time=None,
+            actual_end_time=None,
+        )
+        
+        return Response({
+            'success': f'Points table reset. {count} regular matches cleared back to 0-0 SCHEDULED.'
+        }, status=status.HTTP_200_OK)
+
 class TeamViewSet(viewsets.ModelViewSet):
     queryset = Team.objects.all().order_by('name')
     serializer_class = TeamSerializer
