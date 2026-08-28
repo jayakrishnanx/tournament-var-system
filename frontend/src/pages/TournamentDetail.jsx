@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
-import { Trophy, Plus, Users, Calendar, ArrowLeft, Trash2, RotateCcw } from 'lucide-react';
+import { Trophy, Plus, Users, Calendar, ArrowLeft, Trash2, RotateCcw, Pencil } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const formatDateDDMMYYYY = (dateStr) => {
@@ -28,13 +28,21 @@ export const TournamentDetail = () => {
   const [matchForm, setMatchForm] = useState({
     home_team: '',
     away_team: '',
-    scheduled_date: '2026-08-29'
+    scheduled_date: new Date().toISOString().split('T')[0]
   });
 
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [bracketGenerating, setBracketGenerating] = useState(false);
   const [bracketResetting, setBracketResetting] = useState(false);
   const [activeTab, setActiveTab] = useState('SCHEDULE'); // SCHEDULE or BRACKET
+
+  const [showEditMatchModal, setShowEditMatchModal] = useState(false);
+  const [editMatchForm, setEditMatchForm] = useState({
+    id: null,
+    home_team: '',
+    away_team: '',
+    scheduled_date: ''
+  });
 
   const handleAutoSelect = (count) => {
     if (!tournament?.teams || tournament.teams.length < count) {
@@ -188,6 +196,36 @@ export const TournamentDetail = () => {
       fetchData();
     } catch (err) {
       alert('Error creating match: ' + (err.response?.data?.detail || err.message));
+    }
+  };
+
+  const handleEditMatch = (m) => {
+    const dateStr = m.scheduled_time ? m.scheduled_time.split('T')[0] : '';
+    setEditMatchForm({
+      id: m.id,
+      home_team: m.home_team ? String(m.home_team) : '',
+      away_team: m.away_team ? String(m.away_team) : '',
+      scheduled_date: dateStr
+    });
+    setShowEditMatchModal(true);
+  };
+
+  const handleUpdateMatch = async (e) => {
+    e.preventDefault();
+    if (editMatchForm.home_team === editMatchForm.away_team) {
+      alert('Home and Away teams must be different');
+      return;
+    }
+    try {
+      await api.patch(`/tournaments/matches/${editMatchForm.id}/`, {
+        home_team: editMatchForm.home_team,
+        away_team: editMatchForm.away_team,
+        scheduled_time: `${editMatchForm.scheduled_date}T00:00:00Z`
+      });
+      setShowEditMatchModal(false);
+      fetchData();
+    } catch (err) {
+      alert('Error updating match: ' + (err.response?.data?.detail || err.message));
     }
   };
 
@@ -517,8 +555,17 @@ export const TournamentDetail = () => {
                       </div>
                     </div>
 
-                    <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #334155', display: 'flex', justifyContent: 'flex-end' }}>
-                      <Link to={`/matches/${m.id}`} className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem' }}>
+                    <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {user?.role === 'ADMIN' && (
+                        <button
+                          onClick={() => handleEditMatch(m)}
+                          className="btn-secondary"
+                          style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                        >
+                          <Pencil size={13} /> Edit Match
+                        </button>
+                      )}
+                      <Link to={`/matches/${m.id}`} className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem', marginLeft: 'auto' }}>
                         Open Match Console
                       </Link>
                     </div>
@@ -627,21 +674,77 @@ export const TournamentDetail = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '4px' }}>Select Match Date</label>
-                <select
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '4px' }}>Match Date</label>
+                <input
+                  type="date"
                   required
                   value={matchForm.scheduled_date}
                   onChange={e => setMatchForm({ ...matchForm, scheduled_date: e.target.value })}
-                  style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white', fontWeight: '700' }}
-                >
-                  <option value="2026-08-29">29/08/2026</option>
-                  <option value="2026-08-30">30/08/2026</option>
-                </select>
+                  style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white', fontWeight: '700', colorScheme: 'dark' }}
+                />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
                 <button type="button" onClick={() => setShowMatchModal(false)} className="btn-secondary">Cancel</button>
                 <button type="submit" className="btn-primary">Schedule Match</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Match Modal */}
+      {showEditMatchModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100 }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '440px', padding: '28px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Pencil size={18} color="#3b82f6" /> Edit Match
+            </h3>
+            <form onSubmit={handleUpdateMatch} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '4px' }}>Home Team</label>
+                <select
+                  required
+                  value={editMatchForm.home_team}
+                  onChange={e => setEditMatchForm({ ...editMatchForm, home_team: e.target.value })}
+                  style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
+                >
+                  <option value="">Select Home Team</option>
+                  {tournament.teams?.map(t => (
+                    <option key={t.id} value={String(t.id)}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '4px' }}>Away Team</label>
+                <select
+                  required
+                  value={editMatchForm.away_team}
+                  onChange={e => setEditMatchForm({ ...editMatchForm, away_team: e.target.value })}
+                  style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
+                >
+                  <option value="">Select Away Team</option>
+                  {tournament.teams?.map(t => (
+                    <option key={t.id} value={String(t.id)}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '4px' }}>Match Date</label>
+                <input
+                  type="date"
+                  required
+                  value={editMatchForm.scheduled_date}
+                  onChange={e => setEditMatchForm({ ...editMatchForm, scheduled_date: e.target.value })}
+                  style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white', fontWeight: '700', colorScheme: 'dark' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button type="button" onClick={() => setShowEditMatchModal(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary">Save Changes</button>
               </div>
             </form>
           </div>
