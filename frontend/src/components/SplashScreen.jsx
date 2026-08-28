@@ -33,7 +33,7 @@ export const SplashScreen = ({ children }) => {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: '#618764',
+        backgroundColor: '#000000',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -47,11 +47,9 @@ export const SplashScreen = ({ children }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          width: '90vw',
-          maxWidth: '320px',
-          aspectRatio: '1',
+          width: '100vw',
+          height: '100vh',
           overflow: 'hidden',
-          borderRadius: '24px',
         }}>
           <video
             src="/loading.webm"
