@@ -115,13 +115,18 @@ export const Dashboard = () => {
           </div>
         ) : (
           <div className="responsive-grid-2">
-            {matches.map(m => (
+            {matches.map((m, idx) => (
               <div key={m.id} className="glass-panel card-hover" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                    <StatusBadge status={m.status} />
-                    <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '600' }}>
-                      Period: <strong>{m.current_period}</strong>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <StatusBadge status={m.status} />
+                      <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                        🏆 {m.tournament_name || 'Kakkikalam'}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '700' }}>
+                      Match #{m.match_number || (idx + 1)}
                     </span>
                   </div>
 

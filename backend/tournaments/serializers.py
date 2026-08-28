@@ -41,6 +41,7 @@ class VarIncidentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class MatchSerializer(serializers.ModelSerializer):
+    tournament_name = serializers.CharField(source='tournament.name', read_only=True)
     home_team_details = TeamSerializer(source='home_team', read_only=True)
     away_team_details = TeamSerializer(source='away_team', read_only=True)
     camera_feeds = CameraFeedSerializer(many=True, read_only=True)
