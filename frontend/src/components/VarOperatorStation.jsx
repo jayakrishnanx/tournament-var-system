@@ -4,6 +4,7 @@ import { HlsPlayer } from './HlsPlayer';
 import { StatusBadge } from './StatusBadge';
 import { ShieldAlert, Play, Pause, Rewind, FastForward, CheckCircle, XCircle, Film, RotateCcw, Maximize2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getStreamHost, setStreamHost } from '../services/streamConfig';
 
 export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
   const { user } = useAuth();
@@ -19,8 +20,24 @@ export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
   const [reviewNotes, setReviewNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const [streamHost, setStreamHostState] = useState(getStreamHost());
+  const [customHostInput, setCustomHostInput] = useState(getStreamHost());
+  const [hostSaved, setHostSaved] = useState(false);
+
   const videoRef = useRef(null);
   const videoContainerRef = useRef(null);
+
+  const isCloud = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+
+  const handleSaveHost = (newHost) => {
+    const hostToSave = (newHost || customHostInput).trim();
+    if (!hostToSave) return;
+    setStreamHost(hostToSave);
+    setStreamHostState(hostToSave);
+    setCustomHostInput(hostToSave);
+    setHostSaved(true);
+    setTimeout(() => setHostSaved(false), 2000);
+  };
 
   // Fetch recorded MP4 video files for this match
   const fetchRecordings = async () => {
@@ -85,48 +102,30 @@ export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
     setIsDragging(false);
   };
 
-  const handleDecision = async (incidentId, decisionStatus) => {
-    if (!incidentId) {
-      alert('Please select an incident to resolve');
-      return;
-    }
+  const handleIncidentDecision = async (status, decision) => {
+    if (!selectedIncident) return;
     setSubmitting(true);
     try {
-      await api.patch(`/tournaments/var-incidents/${incidentId}/`, {
-        status: decisionStatus,
+      await api.post(`/tournaments/var-incidents/${selectedIncident.id}/review/`, {
+        status,
+        decision,
         review_notes: reviewNotes
       });
-
-      await api.post(`/tournaments/matches/${match.id}/event/`, {
-        event_type: 'VAR_DECISION',
-        team_id: match.home_team,
-        details: {
-          incident_id: incidentId,
-          decision: decisionStatus,
-          review_notes: reviewNotes,
-          operator_role: 'VAR_OPERATOR'
-        }
-      });
-
-      alert(`VAR Decision recorded: ${decisionStatus}`);
       setSelectedIncident(null);
       setReviewNotes('');
-
-      const mRes = await api.get(`/tournaments/matches/${match.id}/`);
-      if (onUpdate) onUpdate(mRes.data);
+      if (onUpdate) onUpdate();
     } catch (err) {
-      alert('Error submitting VAR decision: ' + (err.response?.data?.error || err.message));
+      alert('Failed to update incident: ' + (err.response?.data?.error || err.message));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const streamHost = window.location.hostname || 'localhost';
   const matchCode = match?.match_code || (match?.match_number ? `match${match.match_number}` : 'match1');
 
   return (
     <div className="glass-panel" style={{ padding: '28px', borderLeft: '4px solid #f43f5e' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>
           <h2 style={{ fontSize: '1.35rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <ShieldAlert size={22} color="#f43f5e" /> 3-Camera VAR Review & Digital Zoom Replay Station
@@ -134,6 +133,85 @@ export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
           <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '4px' }}>
             Live WebRTC feeds + Interactive Digital Zoom Magnifier (1x to 4x) for line calls & fouls.
           </p>
+        </div>
+      </div>
+
+      {/* Cloud Environment Help Banner */}
+      {isCloud && (
+        <div style={{
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          border: '1px solid #3b82f6',
+          padding: '12px 16px',
+          borderRadius: '8px',
+          marginBottom: '16px',
+          fontSize: '0.8rem',
+          color: '#cbd5e1'
+        }}>
+          <strong style={{ color: '#60a5fa' }}>💡 Note on Cloud Streaming:</strong> Video streams (MediaMTX) run locally on the Arena PC.
+          To view live streams, enter your Arena PC's Wi-Fi IP address below (e.g. <code>192.168.1.15</code>), OR open <code>http://localhost:5173</code> directly on the Arena PC running <code>start_arena_var.bat</code>.
+        </div>
+      )}
+
+      {/* Stream Server Host / IP Settings Bar */}
+      <div style={{
+        backgroundColor: '#111827',
+        padding: '12px 16px',
+        borderRadius: '8px',
+        border: '1px solid #374151',
+        marginBottom: '16px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#f8fafc' }}>
+            📡 Stream Server IP:
+          </span>
+          <input
+            type="text"
+            value={customHostInput}
+            onChange={e => setCustomHostInput(e.target.value)}
+            placeholder="e.g. 192.168.1.15, localhost, or jayakrishnan.local"
+            style={{
+              padding: '6px 10px',
+              backgroundColor: '#1D2128',
+              border: '1px solid #3b82f6',
+              borderRadius: '6px',
+              color: '#10b981',
+              fontSize: '0.82rem',
+              fontWeight: '800',
+              minWidth: '160px'
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => handleSaveHost()}
+            className="btn-primary"
+            style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+          >
+            {hostSaved ? '✓ Saved!' : 'Apply IP'}
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <button
+            type="button"
+            onClick={() => handleSaveHost('localhost')}
+            className="btn-secondary"
+            style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+          >
+            localhost
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSaveHost('jayakrishnan.local')}
+            className="btn-secondary"
+            style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+          >
+            jayakrishnan.local
+          </button>
         </div>
       </div>
 

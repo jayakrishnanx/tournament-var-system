@@ -1,13 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HlsPlayer } from './HlsPlayer';
 import { LayoutGrid, Maximize2, Smartphone, Info, Copy, Check } from 'lucide-react';
+import { getStreamHost, setStreamHost } from '../services/streamConfig';
 
 export const MultiCamGrid = ({ matchId }) => {
   const [activeTab, setActiveTab] = useState('GRID'); // GRID, CAM1, CAM2, CAM3
   const [showIngestModal, setShowIngestModal] = useState(false);
   const [copiedKey, setCopiedKey] = useState(null);
+  const [streamHost, setStreamHostState] = useState(getStreamHost());
 
-  const streamHost = window.location.hostname || 'localhost';
+  useEffect(() => {
+    const handleHostChange = () => setStreamHostState(getStreamHost());
+    window.addEventListener('stream_host_changed', handleHostChange);
+    return () => window.removeEventListener('stream_host_changed', handleHostChange);
+  }, []);
 
   const streams = [
     { id: 'cam1', label: 'CAM 1 (Left Angle)', url: `http://${streamHost}:8888/live/cam1/index.m3u8`, fallbackUrl: `http://${streamHost}:8888/cam1/index.m3u8`, rtmp: `rtmp://${streamHost}:1935/live/cam1` },

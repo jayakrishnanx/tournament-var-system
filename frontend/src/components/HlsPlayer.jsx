@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
 import { VideoOff, RefreshCw, Radio, Play, VolumeX, Volume2, Zap } from 'lucide-react';
+import { getStreamHost } from '../services/streamConfig';
 
 export const HlsPlayer = ({ src, fallbackUrl, label = 'Camera Stream' }) => {
   const videoRef = useRef(null);
@@ -10,8 +11,16 @@ export const HlsPlayer = ({ src, fallbackUrl, label = 'Camera Stream' }) => {
   const [needUserPlay, setNeedUserPlay] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [streamHost, setStreamHostState] = useState(getStreamHost());
 
-  const streamHost = window.location.hostname || 'localhost';
+  useEffect(() => {
+    const handleHostChange = () => {
+      setStreamHostState(getStreamHost());
+    };
+    window.addEventListener('stream_host_changed', handleHostChange);
+    return () => window.removeEventListener('stream_host_changed', handleHostChange);
+  }, []);
+
   let pathName = '';
   try {
     const urlObj = new URL(src);
@@ -19,6 +28,9 @@ export const HlsPlayer = ({ src, fallbackUrl, label = 'Camera Stream' }) => {
   } catch (e) {
     pathName = src.replace(/^http:\/\/[^\/]+\//, '').replace(/\/index\.m3u8$/, '');
   }
+
+  // Build resolved URLs using dynamic streamHost
+  const resolvedSrc = `http://${streamHost}:8888/${pathName}/index.m3u8`;
   const webrtcUrl = `http://${streamHost}:8889/${pathName}`;
 
   useEffect(() => {
@@ -45,7 +57,7 @@ export const HlsPlayer = ({ src, fallbackUrl, label = 'Camera Stream' }) => {
           enableWorker: true,
         });
 
-        hls.loadSource(src);
+        hls.loadSource(resolvedSrc);
         hls.attachMedia(video);
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -64,14 +76,14 @@ export const HlsPlayer = ({ src, fallbackUrl, label = 'Camera Stream' }) => {
             // Retry loading HLS manifest after 2 seconds
             retryTimer = setTimeout(() => {
               if (hls) {
-                hls.loadSource(src);
+                hls.loadSource(resolvedSrc);
                 hls.startLoad();
               }
             }, 2000);
           }
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = src;
+        video.src = resolvedSrc;
         video.addEventListener('loadedmetadata', () => {
           setIsOnline(true);
           setLoading(false);
@@ -86,7 +98,7 @@ export const HlsPlayer = ({ src, fallbackUrl, label = 'Camera Stream' }) => {
       if (hls) hls.destroy();
       if (retryTimer) clearTimeout(retryTimer);
     };
-  }, [src, useWebRtc]);
+  }, [resolvedSrc, streamHost, useWebRtc]);
 
   return (
     <div style={{

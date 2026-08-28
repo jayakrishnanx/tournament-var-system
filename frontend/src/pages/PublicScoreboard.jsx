@@ -5,6 +5,7 @@ import { connectMatchWebSocket } from '../services/websocket';
 import { StatusBadge } from '../components/StatusBadge';
 import { HlsPlayer } from '../components/HlsPlayer';
 import { Trophy, Radio, Activity, Volume2, ShieldAlert, ArrowLeft } from 'lucide-react';
+import { getStreamHost } from '../services/streamConfig';
 
 export const PublicScoreboard = () => {
   const { id } = useParams();
@@ -12,8 +13,13 @@ export const PublicScoreboard = () => {
   const [loading, setLoading] = useState(true);
   const [wsConnected, setWsConnected] = useState(false);
   const [activeCam, setActiveCam] = useState('cam1');
+  const [streamHost, setStreamHostState] = useState(getStreamHost());
 
-  const streamHost = window.location.hostname || 'localhost';
+  useEffect(() => {
+    const handleHostChange = () => setStreamHostState(getStreamHost());
+    window.addEventListener('stream_host_changed', handleHostChange);
+    return () => window.removeEventListener('stream_host_changed', handleHostChange);
+  }, []);
 
   const streams = {
     cam1: { label: 'CAM 1 (Left Angle)', url: `http://${streamHost}:8888/live/cam1/index.m3u8`, fallback: `http://${streamHost}:8888/cam1/index.m3u8` },
