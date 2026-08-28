@@ -90,19 +90,28 @@ export const Navbar = () => {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '2px' }}>
-        <Link to="/" style={navItemStyle('/')}>
-          <Activity size={14} /> Matches & Live Scores
-        </Link>
-        <Link to="/standings" style={navItemStyle('/standings')}>
-          <Trophy size={14} color="#10b981" /> 📊 Points Table
-        </Link>
-        {isAdmin && (
+        {!isAdmin ? (
+          <>
+            <Link to="/" style={navItemStyle('/')}>
+              <Activity size={14} /> Matches & Live Scores
+            </Link>
+            <Link to="/standings" style={navItemStyle('/standings')}>
+              <Trophy size={14} color="#10b981" /> 📊 Points Table
+            </Link>
+          </>
+        ) : (
           <>
             <Link to="/tournaments" style={navItemStyle('/tournaments')}>
               <Trophy size={14} /> Manage Tournaments
             </Link>
             <Link to="/teams" style={navItemStyle('/teams')}>
               <Users size={14} /> Manage Teams
+            </Link>
+            <Link to="/matches" style={navItemStyle('/matches')}>
+              <Calendar size={14} /> Manage Matches
+            </Link>
+            <Link to="/standings" style={navItemStyle('/standings')}>
+              <Trophy size={14} color="#10b981" /> Points Table
             </Link>
           </>
         )}

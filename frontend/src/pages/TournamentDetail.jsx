@@ -132,26 +132,7 @@ export const TournamentDetail = () => {
         </div>
       </div>
 
-      <div className="responsive-grid-2">
-        {/* Teams List */}
-        <div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '16px' }}>Participating Teams</h2>
-          {tournament.teams?.length === 0 ? (
-            <div className="glass-panel" style={{ padding: '24px', color: '#94a3b8', fontSize: '0.9rem' }}>No teams added yet.</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {tournament.teams?.map(t => (
-                <div key={t.id} className="glass-panel" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <span style={{ fontWeight: '700', fontSize: '1rem', color: 'white' }}>{t.name}</span>
-                  </div>
-                  <span style={{ fontSize: '0.8rem', color: '#3b82f6', fontWeight: '600' }}>{t.players?.length || 0} players</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
+      <div>
         {/* Matches List */}
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '16px' }}>Match Schedule</h2>
