@@ -283,10 +283,54 @@ export const ScorerConsole = ({ match, onUpdate }) => {
             </select>
 
             <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.75rem', fontWeight: '800' }}>
-              Log
+              Log Event
             </button>
           </div>
         </form>
+      </div>
+
+      {/* 4. Match Events & Cards Timeline Feed */}
+      <div className="glass-panel" style={{ padding: '12px 14px' }}>
+        <h4 style={{ fontSize: '0.8rem', fontWeight: '800', marginBottom: '8px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          📋 Recorded Match Events ({match.recent_events?.length || 0})
+        </h4>
+
+        {(!match.recent_events || match.recent_events.length === 0) ? (
+          <div style={{ padding: '10px', color: '#94a3b8', fontSize: '0.75rem', textAlign: 'center', backgroundColor: '#0f172a', borderRadius: '6px' }}>
+            No match events or cards recorded yet.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {match.recent_events.map((ev, idx) => (
+              <div key={idx} style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '8px 10px',
+                backgroundColor: '#0f172a',
+                borderRadius: '6px',
+                border: '1px solid #334155'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontWeight: '800', color: '#3b82f6', fontSize: '0.75rem' }}>
+                    {ev.event_type === 'GOAL' ? '⚽' : ev.event_type === 'YELLOW_CARD' ? '🟨' : ev.event_type === 'RED_CARD' ? '🟥' : '🔄'} [{ev.match_minute}']
+                  </span>
+                  <div>
+                    <span style={{ fontWeight: '700', color: '#f8fafc', fontSize: '0.75rem' }}>
+                      {ev.player_name || ev.event_type.replace('_', ' ')}
+                    </span>
+                    <span style={{ color: '#94a3b8', fontSize: '0.7rem', marginLeft: '6px' }}>
+                      ({ev.team_name})
+                    </span>
+                  </div>
+                </div>
+                <span style={{ fontSize: '0.65rem', fontWeight: '800', color: ev.event_type === 'GOAL' ? '#10b981' : ev.event_type === 'YELLOW_CARD' ? '#f59e0b' : ev.event_type === 'RED_CARD' ? '#ef4444' : '#3b82f6' }}>
+                  {ev.event_type}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
     </div>
