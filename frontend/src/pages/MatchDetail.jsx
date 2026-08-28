@@ -88,62 +88,63 @@ export const MatchDetail = () => {
   const seconds = (elapsedSeconds % 60).toString().padStart(2, '0');
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ padding: '16px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <Link to="/matches" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#3b82f6', fontWeight: '700' }}>
-          <ArrowLeft size={16} /> Back to Matches List
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+        <Link to="/matches" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#3b82f6', fontWeight: '700', fontSize: '0.85rem' }}>
+          <ArrowLeft size={14} /> Back to Matches
         </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: wsConnected ? '#10b981' : '#94a3b8' }}>
-          <Radio size={14} className={wsConnected ? 'animate-pulse' : ''} />
-          <span>{wsConnected ? 'LIVE WEBSOCKET SYNC ACTIVE' : 'RECONNECTING WEBSOCKET...'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: wsConnected ? '#10b981' : '#94a3b8' }}>
+          <Radio size={12} className={wsConnected ? 'animate-pulse' : ''} />
+          <span>{wsConnected ? 'LIVE SYNC ACTIVE' : 'RECONNECTING...'}</span>
         </div>
       </div>
 
       {/* Main Scoreboard Header */}
       <div className="glass-panel" style={{
-        padding: '28px',
-        marginBottom: '32px',
+        padding: '16px',
+        marginBottom: '20px',
         background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))',
         border: '1px solid #334155'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <StatusBadge status={match.status} />
-            <span style={{ backgroundColor: '#0f172a', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '700', color: '#94a3b8', border: '1px solid #334155' }}>
+            <span style={{ backgroundColor: '#0f172a', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', border: '1px solid #334155' }}>
               {match.current_period}
             </span>
           </div>
-          <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
-            Tournament Match #{match.id}
+          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+            Match #{match.match_code || match.id}
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '32px', textAlign: 'center' }}>
+        <div className="responsive-grid-3" style={{ alignItems: 'center', textAlign: 'center' }}>
           {/* Home Team */}
           <div>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#f8fafc' }}>{match.home_team_details?.name}</h2>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#f8fafc', wordBreak: 'break-word' }}>{match.home_team_details?.name}</h2>
           </div>
 
           {/* Master Score Display & Active Clock */}
-          <div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div className="digital-score" style={{
               backgroundColor: '#090d16',
-              padding: '16px 40px',
-              borderRadius: '16px',
+              padding: '8px 20px',
+              borderRadius: '12px',
               border: '2px solid #3b82f6',
-              boxShadow: '0 0 25px rgba(59, 130, 246, 0.25)'
+              boxShadow: '0 0 20px rgba(59, 130, 246, 0.25)',
+              display: 'inline-block'
             }}>
               {match.home_score} : {match.away_score}
             </div>
-            <div style={{ marginTop: '12px', fontSize: '1.75rem', fontWeight: '900', fontFamily: 'monospace', color: match.is_timer_running ? '#10b981' : '#f8fafc' }}>
+            <div style={{ marginTop: '6px', fontSize: '1.3rem', fontWeight: '900', fontFamily: 'monospace', color: match.is_timer_running ? '#10b981' : '#f8fafc' }}>
               {minutes}:{seconds}
             </div>
           </div>
 
           {/* Away Team */}
           <div>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#f8fafc' }}>{match.away_team_details?.name}</h2>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#f8fafc', wordBreak: 'break-word' }}>{match.away_team_details?.name}</h2>
           </div>
         </div>
       </div>

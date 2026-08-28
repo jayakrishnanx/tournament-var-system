@@ -76,25 +76,26 @@ export const Matches = () => {
                     </span>
                   </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0' }}>
-                  <div style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{m.home_team_details?.name}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '14px 0', gap: '6px' }}>
+                  <div style={{ flex: 1, textAlign: 'center', wordBreak: 'break-word', fontSize: '0.95rem', fontWeight: '800', color: 'white' }}>
+                    {m.home_team_details?.name}
                   </div>
 
                   <div style={{
                     backgroundColor: '#0f172a',
-                    padding: '8px 20px',
-                    borderRadius: '10px',
-                    fontSize: '1.75rem',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    fontSize: '1.3rem',
                     fontWeight: '900',
                     color: '#ffffff',
-                    border: '1px solid #334155'
+                    border: '1px solid #334155',
+                    flexShrink: 0
                   }}>
                     {m.home_score} - {m.away_score}
                   </div>
 
-                  <div style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{m.away_team_details?.name}</div>
+                  <div style={{ flex: 1, textAlign: 'center', wordBreak: 'break-word', fontSize: '0.95rem', fontWeight: '800', color: 'white' }}>
+                    {m.away_team_details?.name}
                   </div>
                 </div>
               </div>

@@ -38,38 +38,39 @@ export const Navbar = () => {
       top: 0,
       zIndex: 50
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '16px' }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <div style={{
             background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-            padding: '6px',
-            borderRadius: '8px',
+            padding: '5px',
+            borderRadius: '6px',
             display: 'flex'
           }}>
-            <Trophy size={20} color="white" />
+            <Trophy size={16} color="white" />
           </div>
           <div>
-            <span style={{ fontFamily: 'Outfit', fontWeight: '900', fontSize: '1.1rem', color: 'white', display: 'block', lineHeight: 1, letterSpacing: '0.02em' }}>
+            <span style={{ fontFamily: 'Outfit', fontWeight: '900', fontSize: '1rem', color: 'white', display: 'block', lineHeight: 1, letterSpacing: '0.02em' }}>
               KALLI<span style={{ color: '#3b82f6' }}>KALAM</span>
             </span>
-            <span style={{ fontSize: '0.6rem', color: '#94a3b8', letterSpacing: '0.05em', fontWeight: '700' }}>
+            <span style={{ fontSize: '0.55rem', color: '#94a3b8', letterSpacing: '0.05em', fontWeight: '700' }}>
               MULTI-CAM VAR
             </span>
           </div>
         </Link>
 
         {user ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: '700', color: 'white' }}>{user.username}</div>
+              <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'white', lineHeight: 1.1 }}>{user.username}</div>
               <span style={{
-                fontSize: '0.6rem',
+                fontSize: '0.55rem',
                 fontWeight: '800',
-                padding: '1px 6px',
+                padding: '1px 5px',
                 borderRadius: '4px',
                 backgroundColor: user.role === 'ADMIN' ? 'rgba(244, 63, 94, 0.2)' : user.role === 'SCORER' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(139, 92, 246, 0.2)',
                 color: user.role === 'ADMIN' ? '#f43f5e' : user.role === 'SCORER' ? '#10b981' : '#8b5cf6',
-                border: '1px solid currentColor'
+                border: '1px solid currentColor',
+                display: 'inline-block'
               }}>
                 {user.role}
               </span>
@@ -77,14 +78,14 @@ export const Navbar = () => {
             <button
               onClick={handleLogout}
               className="btn-secondary"
-              style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 10px', fontSize: '0.8rem' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', fontSize: '0.75rem' }}
             >
-              <LogOut size={14} /> Logout
+              <LogOut size={12} /> Logout
             </button>
           </div>
         ) : (
-          <Link to="/login" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '0.8rem' }}>
-            <Shield size={14} /> Sign In
+          <Link to="/login" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '0.75rem' }}>
+            <Shield size={12} /> Sign In
           </Link>
         )}
       </div>

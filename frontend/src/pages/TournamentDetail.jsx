@@ -102,37 +102,37 @@ export const TournamentDetail = () => {
   if (!tournament) return <div style={{ padding: '40px', color: '#f43f5e' }}>Tournament not found</div>;
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1280px', margin: '0 auto' }}>
-      <Link to="/tournaments" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#3b82f6', marginBottom: '24px', fontWeight: '600' }}>
-        <ArrowLeft size={16} /> Back to Tournaments
+    <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>
+      <Link to="/tournaments" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#3b82f6', marginBottom: '16px', fontWeight: '600', fontSize: '0.85rem' }}>
+        <ArrowLeft size={14} /> Back to Tournaments
       </Link>
 
-      <div className="glass-panel" style={{ padding: '32px', marginBottom: '32px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="glass-panel mobile-stack" style={{ padding: '20px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <h1 style={{ fontSize: '2rem', fontWeight: '800' }}>{tournament.name}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h1 style={{ fontSize: '1.4rem', fontWeight: '800' }}>{tournament.name}</h1>
               <StatusBadge status={tournament.status} />
             </div>
-            <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '6px' }}>
+            <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '4px' }}>
               🏆 {tournament.sport} | 📅 {formatDateDDMMYYYY(tournament.start_date)} to {formatDateDDMMYYYY(tournament.end_date)} | 📍 {tournament.location || 'Main Arena'}
             </p>
           </div>
 
           {user?.role === 'ADMIN' && (
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => setShowTeamModal(true)} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Users size={16} /> Add Team
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => setShowTeamModal(true)} className="btn-secondary">
+                <Users size={14} /> Add Team
               </button>
-              <button onClick={() => setShowMatchModal(true)} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Calendar size={16} /> Schedule Match
+              <button onClick={() => setShowMatchModal(true)} className="btn-primary">
+                <Calendar size={14} /> Schedule Match
               </button>
             </div>
           )}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '32px' }}>
+      <div className="responsive-grid-2">
         {/* Teams List */}
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '16px' }}>Participating Teams</h2>
