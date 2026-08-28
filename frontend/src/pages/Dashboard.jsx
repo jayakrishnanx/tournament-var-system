@@ -315,18 +315,33 @@ export const Dashboard = () => {
                       {m.home_team_details?.name || 'Home Team'}
                     </div>
 
-                    <div style={{
-                      backgroundColor: '#1D2128',
-                      padding: '6px 14px',
-                      borderRadius: '8px',
-                      fontSize: '1.4rem',
-                      fontWeight: '900',
-                      color: '#ffffff',
-                      border: '1px solid #334155',
-                      flexShrink: 0
-                    }}>
-                      {m.home_score} - {m.away_score}
-                    </div>
+                    {m.status === 'SCHEDULED' ? (
+                      <div style={{
+                        backgroundColor: 'rgba(43, 87, 72, 0.15)',
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        fontSize: '0.8rem',
+                        fontWeight: '800',
+                        color: '#2B5748',
+                        border: '1px solid rgba(43, 87, 72, 0.3)',
+                        flexShrink: 0
+                      }}>
+                        VS
+                      </div>
+                    ) : (
+                      <div style={{
+                        backgroundColor: '#1D2128',
+                        padding: '6px 14px',
+                        borderRadius: '8px',
+                        fontSize: '1.4rem',
+                        fontWeight: '900',
+                        color: '#ffffff',
+                        border: '1px solid #334155',
+                        flexShrink: 0
+                      }}>
+                        {m.home_score} - {m.away_score}
+                      </div>
+                    )}
 
                     <div style={{ flex: 1, textAlign: 'center', wordBreak: 'break-word', fontSize: '0.95rem', fontWeight: '800', color: 'white' }}>
                       {m.away_team_details?.name || 'Away Team'}
@@ -334,11 +349,13 @@ export const Dashboard = () => {
                   </div>
                 </div>
 
-                <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Link to={`/matches/${m.id}`} className="btn-primary" style={{ width: '100%', textAlign: 'center', padding: '8px 12px', fontSize: '0.85rem', fontWeight: '800' }}>
-                    Watch Live Scoreboard & Cameras
-                  </Link>
-                </div>
+                {m.status !== 'SCHEDULED' && (
+                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Link to={`/matches/${m.id}`} className="btn-primary" style={{ width: '100%', textAlign: 'center', padding: '8px 12px', fontSize: '0.85rem', fontWeight: '800' }}>
+                      Watch Live Scoreboard & Cameras
+                    </Link>
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -285,48 +285,65 @@ export const Matches = () => {
                     {m.home_team_details?.name || 'Home Team'}
                   </div>
 
-                  <div style={{
-                    backgroundColor: '#1D2128',
-                    padding: '6px 14px',
-                    borderRadius: '8px',
-                    fontSize: '1.4rem',
-                    fontWeight: '900',
-                    color: '#ffffff',
-                    border: '1px solid #334155',
-                    flexShrink: 0
-                  }}>
-                    {m.home_score} - {m.away_score}
-                  </div>
+                    {m.status === 'SCHEDULED' ? (
+                      <div style={{
+                        backgroundColor: 'rgba(43, 87, 72, 0.15)',
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        fontSize: '0.8rem',
+                        fontWeight: '800',
+                        color: '#2B5748',
+                        border: '1px solid rgba(43, 87, 72, 0.3)',
+                        flexShrink: 0
+                      }}>
+                        VS
+                      </div>
+                    ) : (
+                      <div style={{
+                        backgroundColor: '#1D2128',
+                        padding: '6px 14px',
+                        borderRadius: '8px',
+                        fontSize: '1.4rem',
+                        fontWeight: '900',
+                        color: '#ffffff',
+                        border: '1px solid #334155',
+                        flexShrink: 0
+                      }}>
+                        {m.home_score} - {m.away_score}
+                      </div>
+                    )}
 
-                  <div style={{ flex: 1, textAlign: 'center', wordBreak: 'break-word', fontSize: '0.95rem', fontWeight: '800', color: 'white' }}>
-                    {m.away_team_details?.name || 'Away Team'}
+                    <div style={{ flex: 1, textAlign: 'center', wordBreak: 'break-word', fontSize: '0.95rem', fontWeight: '800', color: 'white' }}>
+                      {m.away_team_details?.name || 'Away Team'}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ paddingTop: '14px', borderTop: '1px solid #343a46', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                {user?.role === 'ADMIN' && m.status === 'SCHEDULED' && (
-                  <button
-                    onClick={() => handleSetNextMatch(m.id)}
-                    style={{
-                      backgroundColor: m.is_next_match ? '#2B5748' : 'rgba(43, 87, 72, 0.18)',
-                      color: m.is_next_match ? '#EAECF0' : '#2B5748',
-                      border: '1px solid #2B5748',
-                      padding: '5px 12px',
-                      borderRadius: '6px',
-                      fontSize: '0.75rem',
-                      fontWeight: '800',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {m.is_next_match ? '📌 Next Match Active (Unset)' : '📌 Set as Next Match'}
-                  </button>
+                {(user?.role === 'ADMIN' || m.status !== 'SCHEDULED') && (
+                  <div style={{ paddingTop: '14px', borderTop: '1px solid #343a46', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    {user?.role === 'ADMIN' && m.status === 'SCHEDULED' && (
+                      <button
+                        onClick={() => handleSetNextMatch(m.id)}
+                        style={{
+                          backgroundColor: m.is_next_match ? '#2B5748' : 'rgba(43, 87, 72, 0.18)',
+                          color: m.is_next_match ? '#EAECF0' : '#2B5748',
+                          border: '1px solid #2B5748',
+                          padding: '5px 12px',
+                          borderRadius: '6px',
+                          fontSize: '0.75rem',
+                          fontWeight: '800',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {m.is_next_match ? '📌 Next Match Active (Unset)' : '📌 Set as Next Match'}
+                      </button>
+                    )}
+
+                    <Link to={`/matches/${m.id}`} className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem', marginLeft: 'auto' }}>
+                      {user?.role === 'ADMIN' ? 'Open Master Console' : 'Watch Live Scoreboard'}
+                    </Link>
+                  </div>
                 )}
-
-                <Link to={`/matches/${m.id}`} className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem', marginLeft: 'auto' }}>
-                  {user?.role === 'ADMIN' ? 'Open Master Console' : 'Watch Live Scoreboard'}
-                </Link>
-              </div>
             </div>
           ))}
         </div>
