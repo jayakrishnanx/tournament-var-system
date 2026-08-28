@@ -45,52 +45,6 @@ export const Standings = () => {
 
   return (
     <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>
-      {/* Header */}
-      <div className="glass-panel mobile-stack" style={{
-        padding: '20px',
-        marginBottom: '20px',
-        background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95))',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderLeft: '4px solid #10b981'
-      }}>
-        <div>
-          <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            Official Standings & Leaderboard
-          </span>
-          <h1 style={{ fontSize: '1.4rem', fontWeight: '900', marginTop: '2px' }}>
-            Tournament Points Table
-          </h1>
-          <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '2px' }}>
-            Win = 3 Pts | Draw = 1 Pt | Loss = 0 Pts (Ranked by Points & Goal Difference).
-          </p>
-        </div>
-
-        {tournaments.length > 0 && (
-          <div style={{ marginTop: '8px' }}>
-            <select
-              value={selectedTournament}
-              onChange={(e) => setSelectedTournament(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                backgroundColor: '#0f172a',
-                border: '1px solid #334155',
-                borderRadius: '6px',
-                color: 'white',
-                fontSize: '0.85rem',
-                fontWeight: '700'
-              }}
-            >
-              {tournaments.map(t => (
-                <option key={t.id} value={t.id} style={{ background: '#1e293b' }}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
 
       {/* Rules Summary Pills */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
