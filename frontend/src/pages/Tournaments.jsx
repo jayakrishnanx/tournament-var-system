@@ -13,6 +13,7 @@ export const Tournaments = () => {
 
   const [formData, setFormData] = useState({
     name: '',
+    sport_type: 'Soccer / Football',
     sport: 'Soccer / Football',
     location: '',
     start_date: new Date().toISOString().split('T')[0],
@@ -38,11 +39,15 @@ export const Tournaments = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/tournaments/tournaments/', formData);
+      const payload = {
+        ...formData,
+        sport_type: formData.sport_type || formData.sport || 'Soccer / Football'
+      };
+      await api.post('/tournaments/tournaments/', payload);
       setShowModal(false);
       fetchTournaments();
     } catch (err) {
-      alert('Error creating tournament: ' + (err.response?.data?.detail || err.message));
+      alert('Error creating tournament: ' + JSON.stringify(err.response?.data || err.message));
     }
   };
 
