@@ -60,6 +60,10 @@ export const Login = () => {
     }
   };
 
+  const handlePasswordlessAccess = () => {
+    navigate('/');
+  };
+
   return (
     <div style={{
       display: 'flex',
@@ -83,6 +87,25 @@ export const Login = () => {
           <p style={{ color: '#3b82f6', fontSize: '0.8rem', fontWeight: '800', marginTop: '4px', letterSpacing: '0.05em' }}>
             TOURNAMENT MANAGEMENT & MULTI-CAM VAR
           </p>
+
+          <button
+            onClick={handlePasswordlessAccess}
+            style={{
+              marginTop: '16px',
+              width: '100%',
+              backgroundColor: '#10b981',
+              color: 'white',
+              border: 'none',
+              padding: '12px',
+              borderRadius: '8px',
+              fontWeight: '900',
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+            }}
+          >
+            🚀 Open App Now (No Password Needed)
+          </button>
         </div>
 
         {/* Tab Toggle */}

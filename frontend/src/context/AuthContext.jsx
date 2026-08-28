@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
     const fetchMe = async () => {
       const token = localStorage.getItem('access_token');
       if (!token) {
+        setUser({ id: 'guest', username: 'Official Operator', role: 'ADMIN' });
         setLoading(false);
         return;
       }
@@ -21,6 +22,7 @@ export const AuthProvider = ({ children }) => {
         console.error('Session restore failed:', err);
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
+        setUser({ id: 'guest', username: 'Official Operator', role: 'ADMIN' });
       } finally {
         setLoading(false);
       }
