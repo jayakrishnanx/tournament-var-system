@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Trophy, Users, Calendar, Video, Shield, LogOut, Activity } from 'lucide-react';
+import { Trophy, Users, Calendar, Shield, LogOut, Activity } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
@@ -10,7 +10,7 @@ export const Navbar = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   const navItemStyle = (path) => ({
@@ -31,7 +31,7 @@ export const Navbar = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '12px 24px',
+      padding: '10px 16px',
       backgroundColor: '#1e293b',
       borderBottom: '1px solid #334155',
       position: 'sticky',
@@ -58,23 +58,20 @@ export const Navbar = () => {
           </div>
         </Link>
 
-        {user ? (
+        {user?.role === 'ADMIN' ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'white', lineHeight: 1.1 }}>{user.username}</div>
-              <span style={{
-                fontSize: '0.55rem',
-                fontWeight: '800',
-                padding: '1px 5px',
-                borderRadius: '4px',
-                backgroundColor: user.role === 'ADMIN' ? 'rgba(244, 63, 94, 0.2)' : user.role === 'SCORER' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(139, 92, 246, 0.2)',
-                color: user.role === 'ADMIN' ? '#f43f5e' : user.role === 'SCORER' ? '#10b981' : '#8b5cf6',
-                border: '1px solid currentColor',
-                display: 'inline-block'
-              }}>
-                {user.role}
-              </span>
-            </div>
+            <span style={{
+              fontSize: '0.7rem',
+              fontWeight: '800',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              backgroundColor: 'rgba(244, 63, 94, 0.2)',
+              color: '#f43f5e',
+              border: '1px solid currentColor',
+              display: 'inline-block'
+            }}>
+              👑 ADMIN
+            </span>
             <button
               onClick={handleLogout}
               className="btn-secondary"
@@ -85,27 +82,25 @@ export const Navbar = () => {
           </div>
         ) : (
           <Link to="/login" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '0.75rem' }}>
-            <Shield size={12} /> Sign In
+            <Shield size={12} /> Admin Sign In
           </Link>
         )}
       </div>
 
-      {user && (
-        <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-          <Link to="/" style={navItemStyle('/')}>
-            <Activity size={15} /> Dashboard
-          </Link>
-          <Link to="/tournaments" style={navItemStyle('/tournaments')}>
-            <Trophy size={15} /> Tournaments
-          </Link>
-          <Link to="/teams" style={navItemStyle('/teams')}>
-            <Users size={15} /> Teams
-          </Link>
-          <Link to="/matches" style={navItemStyle('/matches')}>
-            <Calendar size={15} /> Matches
-          </Link>
-        </div>
-      )}
+      <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+        <Link to="/" style={navItemStyle('/')}>
+          <Activity size={14} /> Dashboard
+        </Link>
+        <Link to="/tournaments" style={navItemStyle('/tournaments')}>
+          <Trophy size={14} /> Tournaments
+        </Link>
+        <Link to="/teams" style={navItemStyle('/teams')}>
+          <Users size={14} /> Teams
+        </Link>
+        <Link to="/matches" style={navItemStyle('/matches')}>
+          <Calendar size={14} /> Matches
+        </Link>
+      </div>
     </nav>
   );
 };

@@ -4,14 +4,14 @@ import api from '../services/api';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState({ id: 'guest', username: 'Public Spectator', role: 'VIEWER' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchMe = async () => {
       const token = localStorage.getItem('access_token');
       if (!token) {
-        setUser({ id: 'guest', username: 'Official Operator', role: 'ADMIN' });
+        setUser({ id: 'guest', username: 'Public Spectator', role: 'VIEWER' });
         setLoading(false);
         return;
       }
@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
         console.error('Session restore failed:', err);
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        setUser({ id: 'guest', username: 'Official Operator', role: 'ADMIN' });
+        setUser({ id: 'guest', username: 'Public Spectator', role: 'VIEWER' });
       } finally {
         setLoading(false);
       }
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
-    setUser(null);
+    setUser({ id: 'guest', username: 'Public Spectator', role: 'VIEWER' });
   };
 
   return (
