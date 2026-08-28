@@ -234,7 +234,7 @@ class MatchViewSet(viewsets.ModelViewSet):
             ga = 0
 
             for m in matches:
-                if m.status in [Match.Status.ENDED, Match.Status.LIVE, Match.Status.PAUSED]:
+                if m.status == Match.Status.ENDED:
                     if m.home_team_id == team.id:
                         played += 1
                         gf += m.home_score
