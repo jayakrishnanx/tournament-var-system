@@ -211,43 +211,54 @@ def toggle_match_timer(match_id, action, actor=None, ip_address=None):
         match.is_next_match = False
         match.status = Match.Status.ENDED
         match.actual_end_time = now
-        
-        # Automatic advancement logic for single elimination bracket matches
-        if match.stage != Match.Stage.REGULAR and match.bracket_code:
-            winner = None
-            if match.home_score > match.away_score:
-                winner = match.home_team
-            elif match.away_score > match.home_score:
-                winner = match.away_team
-            
-            if winner:
-                next_code = None
-                is_home = True
-                
-                if match.bracket_code in ['QF1', 'QF2']:
-                    next_code = 'SF1'
-                    is_home = (match.bracket_code == 'QF1')
-                elif match.bracket_code in ['QF3', 'QF4']:
-                    next_code = 'SF2'
-                    is_home = (match.bracket_code == 'QF3')
-                elif match.bracket_code in ['SF1', 'SF2']:
-                    next_code = 'F'
-                    is_home = (match.bracket_code == 'SF1')
-                
-                if next_code:
-                    try:
-                        next_match = Match.objects.filter(tournament=match.tournament, bracket_code=next_code).first()
-                        if next_match:
-                            if is_home:
-                                next_match.home_team = winner
-                            else:
-                                next_match.away_team = winner
-                            next_match.save()
-                            broadcast_match_update(next_match)
-                    except Exception as e:
-                        print(f"Error advancing winner of {match.bracket_code} to {next_code}: {e}")
-
     match.save()
+
+    # Automatic advancement logic ONLY when a match is finished
+    if action == 'FINISH' and match.stage != Match.Stage.REGULAR and match.bracket_code:
+        # Re-fetch from DB to get the confirmed final scores after save
+        confirmed = Match.objects.get(id=match.id)
+        winner = None
+        if confirmed.home_score > confirmed.away_score:
+            winner = confirmed.home_team
+        elif confirmed.away_score > confirmed.home_score:
+            winner = confirmed.away_team
+        # Draw: winner stays None — admin must adjust scores manually
+
+        print(f"[BRACKET] {confirmed.bracket_code} finished: {confirmed.home_score}-{confirmed.away_score}, winner={winner}")
+
+        if winner:
+            next_code = None
+            is_home = True
+
+            if confirmed.bracket_code == 'QF1':
+                next_code = 'SF1'; is_home = True
+            elif confirmed.bracket_code == 'QF2':
+                next_code = 'SF1'; is_home = False
+            elif confirmed.bracket_code == 'QF3':
+                next_code = 'SF2'; is_home = True
+            elif confirmed.bracket_code == 'QF4':
+                next_code = 'SF2'; is_home = False
+            elif confirmed.bracket_code == 'SF1':
+                next_code = 'F'; is_home = True
+            elif confirmed.bracket_code == 'SF2':
+                next_code = 'F'; is_home = False
+
+            if next_code:
+                try:
+                    next_match = Match.objects.filter(
+                        tournament=confirmed.tournament,
+                        bracket_code=next_code
+                    ).first()
+                    if next_match:
+                        if is_home:
+                            next_match.home_team = winner
+                        else:
+                            next_match.away_team = winner
+                        next_match.save(update_fields=['home_team' if is_home else 'away_team'])
+                        broadcast_match_update(next_match)
+                        print(f"[BRACKET] Advanced {winner} to {next_code} as {'home' if is_home else 'away'}")
+                except Exception as e:
+                    print(f"Error advancing winner of {confirmed.bracket_code} to {next_code}: {e}")
 
     log_action(
         actor=actor,
