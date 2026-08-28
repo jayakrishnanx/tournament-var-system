@@ -294,9 +294,9 @@ export const Matches = () => {
                   <button
                     onClick={() => handleSetNextMatch(m.id)}
                     style={{
-                      backgroundColor: m.is_next_match ? '#7B2525' : 'rgba(123, 37, 37, 0.18)',
-                      color: m.is_next_match ? '#EAECF0' : '#7B2525',
-                      border: '1px solid #7B2525',
+                      backgroundColor: m.is_next_match ? '#2B5748' : 'rgba(43, 87, 72, 0.18)',
+                      color: m.is_next_match ? '#EAECF0' : '#2B5748',
+                      border: '1px solid #2B5748',
                       padding: '5px 12px',
                       borderRadius: '6px',
                       fontSize: '0.75rem',

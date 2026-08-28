@@ -37,7 +37,7 @@ export const SplashScreen = ({ children }) => {
           <style>{`
             @keyframes pulseLogo {
               0% { transform: scale(0.95); opacity: 0.85; }
-              50% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 20px rgba(123, 37, 37, 0.7)); }
+              50% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 20px rgba(43, 87, 72, 0.7)); }
               100% { transform: scale(0.95); opacity: 0.85; }
             }
           `}</style>

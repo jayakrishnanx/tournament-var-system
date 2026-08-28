@@ -21,9 +21,9 @@ export const Navbar = () => {
     borderRadius: '6px',
     fontSize: '0.8rem',
     fontWeight: '800',
-    color: location.pathname === path ? '#7B2525' : '#EAECF0',
-    backgroundColor: location.pathname === path ? 'rgba(123, 37, 37, 0.18)' : 'transparent',
-    border: location.pathname === path ? '1px solid rgba(123, 37, 37, 0.4)' : '1px solid transparent',
+    color: location.pathname === path ? '#2B5748' : '#EAECF0',
+    backgroundColor: location.pathname === path ? 'rgba(43, 87, 72, 0.18)' : 'transparent',
+    border: location.pathname === path ? '1px solid rgba(43, 87, 72, 0.4)' : '1px solid transparent',
     transition: 'all 0.2s ease',
   });
 
@@ -46,9 +46,9 @@ export const Navbar = () => {
           <img src="/logo.png" alt="Kallikalam Logo" style={{ height: '32px', objectFit: 'contain' }} />
           <div>
             <span style={{ fontFamily: 'Outfit', fontWeight: '900', fontSize: '1rem', color: '#EAECF0', display: 'block', lineHeight: 1, letterSpacing: '0.02em' }}>
-              KALLI<span style={{ color: '#7B2525' }}>KALAM</span>
+              KALLI<span style={{ color: '#2B5748' }}>KALAM</span>
             </span>
-            <span style={{ fontSize: '0.55rem', color: '#7B2525', letterSpacing: '0.05em', fontWeight: '800' }}>
+            <span style={{ fontSize: '0.55rem', color: '#2B5748', letterSpacing: '0.05em', fontWeight: '800' }}>
               LIVE SCOREBOARD
             </span>
           </div>
