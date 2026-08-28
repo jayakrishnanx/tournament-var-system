@@ -101,6 +101,7 @@ export const Dashboard = () => {
     return (a.match_number || 0) - (b.match_number || 0);
   });
 
+  const liveMatch = matches.find(m => m.status === 'LIVE' || m.status === 'PAUSED');
   const nextMatch = matches.find(m => m.is_next_match && m.status === 'SCHEDULED') || matches.find(m => m.status === 'SCHEDULED');
 
   return (
@@ -233,6 +234,74 @@ export const Dashboard = () => {
               />
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 1.5 ACTIVE LIVE MATCH HIGHLIGHT CARD FOR SPECTATORS */}
+      {liveMatch && (
+        <div className="glass-panel" style={{
+          padding: '16px 20px',
+          marginBottom: '20px',
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), #1D2128)',
+          border: '1px solid rgba(239, 68, 68, 0.4)',
+          borderLeft: '4px solid #ef4444',
+          boxShadow: '0 0 15px rgba(239, 68, 68, 0.15)',
+          animation: 'pulseLiveBorder 2s infinite'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444', display: 'inline-block', animation: 'blinkLive 1.1s infinite' }}></span>
+              🔴 MATCH IS LIVE NOW
+            </span>
+            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#9aa4b2' }}>
+              Match #{liveMatch.match_number}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: '900', color: '#EAECF0', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <span>{liveMatch.home_team_details?.name}</span>
+              <span style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                color: '#ef4444',
+                fontSize: '1.1rem',
+                fontWeight: '900',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                display: 'inline-block'
+              }}>
+                {liveMatch.home_score} - {liveMatch.away_score}
+              </span>
+              <span>{liveMatch.away_team_details?.name}</span>
+            </div>
+
+            <Link to={`/matches/${liveMatch.id}`} style={{
+              backgroundColor: '#ef4444',
+              color: '#ffffff',
+              fontWeight: '900',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              fontSize: '0.82rem',
+              whiteSpace: 'nowrap',
+              border: 'none',
+              boxShadow: '0 4px 10px rgba(239, 68, 68, 0.3)'
+            }}>
+              Watch Live Scoreboard & Cameras
+            </Link>
+          </div>
+          <style>{`
+            @keyframes blinkLive {
+              0% { opacity: 0.3; }
+              50% { opacity: 1; }
+              100% { opacity: 0.3; }
+            }
+            @keyframes pulseLiveBorder {
+              0% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.1); }
+              50% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.25); }
+              100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.1); }
+            }
+          `}</style>
         </div>
       )}
 
