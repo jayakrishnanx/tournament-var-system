@@ -14,6 +14,12 @@ def broadcast_match_update(match):
         delta = (timezone.now() - match.timer_last_updated_at).total_seconds()
         current_elapsed += int(max(0, delta))
 
+    current_period = match.current_period
+    if current_elapsed >= 300 and current_period == '1ST_HALF':
+        current_period = '2ND_HALF'
+        match.current_period = Match.Period.SECOND_HALF
+        match.save(update_fields=['current_period'])
+
     channel_layer = get_channel_layer()
     if channel_layer:
         async_to_sync(channel_layer.group_send)(

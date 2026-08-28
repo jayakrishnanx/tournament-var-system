@@ -150,7 +150,7 @@ export const MatchDetail = () => {
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <StatusBadge status={match.status} />
             <span style={{ backgroundColor: '#0f172a', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', border: '1px solid #334155' }}>
-              {match.current_period}
+              {elapsedSeconds >= 300 ? '2nd Half' : (match.current_period === '1ST_HALF' ? '1st Half' : match.current_period)}
             </span>
           </div>
           <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
