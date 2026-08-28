@@ -64,10 +64,16 @@ class Match(models.Model):
         EXTRA_TIME = 'EXTRA_TIME', 'Extra Time'
         PENALTIES = 'PENALTIES', 'Penalties'
 
+    class Stage(models.TextChoices):
+        REGULAR = 'REGULAR', 'Regular Group/League'
+        QUARTER_FINAL = 'QUARTER_FINAL', 'Quarter-Final'
+        SEMI_FINAL = 'SEMI_FINAL', 'Semi-Final'
+        FINAL = 'FINAL', 'Final'
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE, related_name='matches')
-    home_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='home_matches')
-    away_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='away_matches')
+    home_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='home_matches', null=True, blank=True)
+    away_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='away_matches', null=True, blank=True)
     
     home_score = models.PositiveIntegerField(default=0)
     away_score = models.PositiveIntegerField(default=0)
@@ -75,6 +81,9 @@ class Match(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.SCHEDULED)
     current_period = models.CharField(max_length=20, choices=Period.choices, default=Period.NOT_STARTED)
     
+    stage = models.CharField(max_length=30, choices=Stage.choices, default=Stage.REGULAR)
+    bracket_code = models.CharField(max_length=20, blank=True, null=True)
+
     timer_seconds_elapsed = models.PositiveIntegerField(default=0)
     is_timer_running = models.BooleanField(default=False)
     timer_last_updated_at = models.DateTimeField(null=True, blank=True)

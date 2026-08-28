@@ -25,6 +25,123 @@ class TournamentViewSet(viewsets.ModelViewSet):
     serializer_class = TournamentSerializer
     permission_classes = [IsAdminOrReadOnly]
 
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def generate_bracket(self, request, pk=None):
+        tournament = self.get_object()
+        team_ids = request.data.get('team_ids', [])
+        
+        if len(team_ids) not in [4, 8]:
+            return Response({'error': 'Please select exactly 4 or 8 teams for the bracket.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verify all team_ids belong to this tournament
+        teams = list(Team.objects.filter(tournament=tournament, id__in=team_ids))
+        if len(teams) != len(team_ids):
+            return Response({'error': 'Some selected teams do not belong to this tournament.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # We need to map team_ids list to team objects in order
+        team_map = {str(t.id): t for t in teams}
+        ordered_teams = [team_map[tid] for tid in team_ids]
+        
+        # Delete any existing bracket matches for this tournament to avoid duplicates
+        Match.objects.filter(tournament=tournament).exclude(stage=Match.Stage.REGULAR).delete()
+        
+        from django.utils import timezone
+        now = timezone.now()
+        
+        if len(team_ids) == 8:
+            # Create Quarter Finals
+            qf1 = Match.objects.create(
+                tournament=tournament,
+                home_team=ordered_teams[0],
+                away_team=ordered_teams[1],
+                stage=Match.Stage.QUARTER_FINAL,
+                bracket_code='QF1',
+                scheduled_time=now + timezone.timedelta(hours=2)
+            )
+            qf2 = Match.objects.create(
+                tournament=tournament,
+                home_team=ordered_teams[2],
+                away_team=ordered_teams[3],
+                stage=Match.Stage.QUARTER_FINAL,
+                bracket_code='QF2',
+                scheduled_time=now + timezone.timedelta(hours=4)
+            )
+            qf3 = Match.objects.create(
+                tournament=tournament,
+                home_team=ordered_teams[4],
+                away_team=ordered_teams[5],
+                stage=Match.Stage.QUARTER_FINAL,
+                bracket_code='QF3',
+                scheduled_time=now + timezone.timedelta(hours=6)
+            )
+            qf4 = Match.objects.create(
+                tournament=tournament,
+                home_team=ordered_teams[6],
+                away_team=ordered_teams[7],
+                stage=Match.Stage.QUARTER_FINAL,
+                bracket_code='QF4',
+                scheduled_time=now + timezone.timedelta(hours=8)
+            )
+            
+            # Create Semi Finals (Placeholders)
+            sf1 = Match.objects.create(
+                tournament=tournament,
+                home_team=None,
+                away_team=None,
+                stage=Match.Stage.SEMI_FINAL,
+                bracket_code='SF1',
+                scheduled_time=now + timezone.timedelta(days=1)
+            )
+            sf2 = Match.objects.create(
+                tournament=tournament,
+                home_team=None,
+                away_team=None,
+                stage=Match.Stage.SEMI_FINAL,
+                bracket_code='SF2',
+                scheduled_time=now + timezone.timedelta(days=1, hours=2)
+            )
+            
+            # Create Final (Placeholder)
+            f = Match.objects.create(
+                tournament=tournament,
+                home_team=None,
+                away_team=None,
+                stage=Match.Stage.FINAL,
+                bracket_code='F',
+                scheduled_time=now + timezone.timedelta(days=2)
+            )
+            
+        elif len(team_ids) == 4:
+            # Create Semi Finals
+            sf1 = Match.objects.create(
+                tournament=tournament,
+                home_team=ordered_teams[0],
+                away_team=ordered_teams[1],
+                stage=Match.Stage.SEMI_FINAL,
+                bracket_code='SF1',
+                scheduled_time=now + timezone.timedelta(hours=2)
+            )
+            sf2 = Match.objects.create(
+                tournament=tournament,
+                home_team=ordered_teams[2],
+                away_team=ordered_teams[3],
+                stage=Match.Stage.SEMI_FINAL,
+                bracket_code='SF2',
+                scheduled_time=now + timezone.timedelta(hours=4)
+            )
+            
+            # Create Final (Placeholder)
+            f = Match.objects.create(
+                tournament=tournament,
+                home_team=None,
+                away_team=None,
+                stage=Match.Stage.FINAL,
+                bracket_code='F',
+                scheduled_time=now + timezone.timedelta(days=1)
+            )
+            
+        return Response({'success': 'Bracket generated successfully!'}, status=status.HTTP_201_CREATED)
+
 class TeamViewSet(viewsets.ModelViewSet):
     queryset = Team.objects.all().order_by('name')
     serializer_class = TeamSerializer

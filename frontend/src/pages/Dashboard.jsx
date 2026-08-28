@@ -380,9 +380,14 @@ export const Dashboard = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '6px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <StatusBadge status={m.status} />
-                      <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#2B5748', backgroundColor: 'rgba(43, 87, 72, 0.18)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(43, 87, 72, 0.4)' }}>
-                        🏆 {m.tournament_name || 'Kakkikalam'}
-                      </span>
+                      <Link to={`/tournaments/${m.tournament}`} style={{ textDecoration: 'none', fontSize: '0.75rem', fontWeight: '800', color: '#2b5748', backgroundColor: 'rgba(43, 87, 72, 0.18)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(43, 87, 72, 0.4)' }}>
+                        🏆 {m.tournament_name || 'Tournament'}
+                      </Link>
+                      {m.stage !== 'REGULAR' && (
+                        <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                          {m.stage.replace('_', ' ')}
+                        </span>
+                      )}
                     </div>
                     <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '700' }}>
                       Match #{m.match_number || (idx + 1)}

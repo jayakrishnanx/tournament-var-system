@@ -300,9 +300,14 @@ export const Matches = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '6px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <StatusBadge status={m.status} />
-                    <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-                      🏆 {m.tournament_name || 'Kakkikalam'}
-                    </span>
+                    <Link to={`/tournaments/${m.tournament}`} style={{ textDecoration: 'none', fontSize: '0.75rem', fontWeight: '800', color: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                      🏆 {m.tournament_name || 'Tournament'}
+                    </Link>
+                    {m.stage !== 'REGULAR' && (
+                      <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                        {m.stage.replace('_', ' ')}
+                      </span>
+                    )}
                     {m.is_next_match && (
                       <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.2)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(245, 158, 11, 0.5)' }}>
                         📌 NEXT MATCH

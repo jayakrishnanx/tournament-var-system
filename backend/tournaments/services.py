@@ -211,6 +211,41 @@ def toggle_match_timer(match_id, action, actor=None, ip_address=None):
         match.is_next_match = False
         match.status = Match.Status.ENDED
         match.actual_end_time = now
+        
+        # Automatic advancement logic for single elimination bracket matches
+        if match.stage != Match.Stage.REGULAR and match.bracket_code:
+            winner = None
+            if match.home_score > match.away_score:
+                winner = match.home_team
+            elif match.away_score > match.home_score:
+                winner = match.away_team
+            
+            if winner:
+                next_code = None
+                is_home = True
+                
+                if match.bracket_code in ['QF1', 'QF2']:
+                    next_code = 'SF1'
+                    is_home = (match.bracket_code == 'QF1')
+                elif match.bracket_code in ['QF3', 'QF4']:
+                    next_code = 'SF2'
+                    is_home = (match.bracket_code == 'QF3')
+                elif match.bracket_code in ['SF1', 'SF2']:
+                    next_code = 'F'
+                    is_home = (match.bracket_code == 'SF1')
+                
+                if next_code:
+                    try:
+                        next_match = Match.objects.filter(tournament=match.tournament, bracket_code=next_code).first()
+                        if next_match:
+                            if is_home:
+                                next_match.home_team = winner
+                            else:
+                                next_match.away_team = winner
+                            next_match.save()
+                            broadcast_match_update(next_match)
+                    except Exception as e:
+                        print(f"Error advancing winner of {match.bracket_code} to {next_code}: {e}")
 
     match.save()
 
