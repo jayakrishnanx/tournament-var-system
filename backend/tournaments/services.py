@@ -9,6 +9,11 @@ def broadcast_match_update(match):
     """
     Broadcasts real-time match state to WebSocket group match_{match.id}
     """
+    current_elapsed = match.timer_seconds_elapsed
+    if match.is_timer_running and match.timer_last_updated_at:
+        delta = (timezone.now() - match.timer_last_updated_at).total_seconds()
+        current_elapsed += int(max(0, delta))
+
     channel_layer = get_channel_layer()
     if channel_layer:
         async_to_sync(channel_layer.group_send)(
@@ -21,7 +26,8 @@ def broadcast_match_update(match):
                     "away_score": match.away_score,
                     "status": match.status,
                     "current_period": match.current_period,
-                    "timer_seconds_elapsed": match.timer_seconds_elapsed,
+                    "timer_seconds_elapsed": current_elapsed,
+                    "computed_elapsed_seconds": current_elapsed,
                     "is_timer_running": match.is_timer_running,
                     "timer_last_updated_at": match.timer_last_updated_at.isoformat() if match.timer_last_updated_at else None,
                 }

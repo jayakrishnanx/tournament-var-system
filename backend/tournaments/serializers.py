@@ -47,10 +47,19 @@ class MatchSerializer(serializers.ModelSerializer):
     camera_feeds = CameraFeedSerializer(many=True, read_only=True)
     match_code = serializers.ReadOnlyField()
     recent_events = serializers.SerializerMethodField()
+    computed_elapsed_seconds = serializers.SerializerMethodField()
 
     class Meta:
         model = Match
         fields = '__all__'
+
+    def get_computed_elapsed_seconds(self, obj):
+        from django.utils import timezone
+        seconds = obj.timer_seconds_elapsed
+        if obj.is_timer_running and obj.timer_last_updated_at:
+            delta = (timezone.now() - obj.timer_last_updated_at).total_seconds()
+            seconds += int(max(0, delta))
+        return seconds
 
     def get_recent_events(self, obj):
         events = obj.events.all()[:10]

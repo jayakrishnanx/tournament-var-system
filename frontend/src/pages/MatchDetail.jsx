@@ -20,12 +20,21 @@ export const MatchDetail = () => {
 
   const getCalculatedSeconds = (m) => {
     if (!m) return 0;
+    if (typeof m.computed_elapsed_seconds === 'number') {
+      return m.computed_elapsed_seconds;
+    }
     let base = m.timer_seconds_elapsed || 0;
     if (m.is_timer_running && m.timer_last_updated_at) {
-      const last = new Date(m.timer_last_updated_at).getTime();
-      const now = new Date().getTime();
-      const diff = Math.max(0, Math.floor((now - last) / 1000));
-      return base + diff;
+      let lastStr = m.timer_last_updated_at;
+      if (typeof lastStr === 'string' && !lastStr.endsWith('Z') && !lastStr.includes('+')) {
+        lastStr += 'Z';
+      }
+      const last = new Date(lastStr).getTime();
+      const now = Date.now();
+      if (!isNaN(last) && now > last) {
+        const diff = Math.floor((now - last) / 1000);
+        return base + diff;
+      }
     }
     return base;
   };
