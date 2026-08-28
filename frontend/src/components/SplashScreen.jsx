@@ -5,15 +5,15 @@ export const SplashScreen = ({ children }) => {
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    // Start fading out after 1.8 seconds
+    // 2.2 seconds display time before fade
     const fadeTimer = setTimeout(() => {
       setFadeOut(true);
-    }, 1800);
+    }, 2200);
 
-    // Completely remove splash screen after fade completes (2.2 seconds total)
+    // Completely remove splash screen after fade completes
     const removeTimer = setTimeout(() => {
       setShowSplash(false);
-    }, 2200);
+    }, 2600);
 
     return () => {
       clearTimeout(fadeTimer);
@@ -49,8 +49,8 @@ export const SplashScreen = ({ children }) => {
           justifyContent: 'center',
           width: '90vw',
           height: '90vw',
-          maxWidth: '200px',
-          maxHeight: '200px',
+          maxWidth: '220px',
+          maxHeight: '220px',
           overflow: 'hidden',
         }}>
           <picture style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -58,6 +58,8 @@ export const SplashScreen = ({ children }) => {
             <img
               src="/loading.gif"
               alt="Loading..."
+              loading="eager"
+              decoding="async"
               style={{
                 width: '100%',
                 height: '100%',
