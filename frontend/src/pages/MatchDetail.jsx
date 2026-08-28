@@ -18,27 +18,6 @@ export const MatchDetail = () => {
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  const getCalculatedSeconds = (m) => {
-    if (!m) return 0;
-    if (typeof m.computed_elapsed_seconds === 'number') {
-      return m.computed_elapsed_seconds;
-    }
-    let base = m.timer_seconds_elapsed || 0;
-    if (m.is_timer_running && m.timer_last_updated_at) {
-      let lastStr = m.timer_last_updated_at;
-      if (typeof lastStr === 'string' && !lastStr.endsWith('Z') && !lastStr.includes('+')) {
-        lastStr += 'Z';
-      }
-      const last = new Date(lastStr).getTime();
-      const now = Date.now();
-      if (!isNaN(last) && now > last) {
-        const diff = Math.floor((now - last) / 1000);
-        return base + diff;
-      }
-    }
-    return base;
-  };
-
   const fetchMatchDetails = async () => {
     try {
       const [mRes, vRes] = await Promise.all([
@@ -46,7 +25,6 @@ export const MatchDetail = () => {
         api.get(`/tournaments/var-incidents/?match=${id}`)
       ]);
       setMatch(mRes.data);
-      setElapsedSeconds(getCalculatedSeconds(mRes.data));
       setVarIncidents(vRes.data);
     } catch (err) {
       console.error(err);
@@ -62,11 +40,7 @@ export const MatchDetail = () => {
       id,
       (data) => {
         if (data.type === 'match_update') {
-          setMatch(prev => {
-            const nextMatch = prev ? ({ ...prev, ...data.match }) : data.match;
-            setElapsedSeconds(getCalculatedSeconds(nextMatch));
-            return nextMatch;
-          });
+          setMatch(prev => prev ? ({ ...prev, ...data.match }) : data.match);
         }
         setWsConnected(true);
       },
@@ -76,7 +50,6 @@ export const MatchDetail = () => {
     const pollInterval = setInterval(() => {
       api.get(`/tournaments/matches/${id}/`).then(mRes => {
         setMatch(mRes.data);
-        setElapsedSeconds(getCalculatedSeconds(mRes.data));
       }).catch(() => {});
     }, 1500);
 
@@ -87,16 +60,25 @@ export const MatchDetail = () => {
   }, [id]);
 
   useEffect(() => {
-    setElapsedSeconds(getCalculatedSeconds(match));
-    const timerInterval = setInterval(() => {
-      setElapsedSeconds(getCalculatedSeconds(match));
-    }, 1000);
-    return () => clearInterval(timerInterval);
-  }, [match]);
+    if (match) {
+      setElapsedSeconds(match.computed_elapsed_seconds || match.timer_seconds_elapsed || 0);
+    }
+  }, [match?.computed_elapsed_seconds, match?.timer_seconds_elapsed]);
+
+  useEffect(() => {
+    let timerInterval = null;
+    if (match?.is_timer_running) {
+      timerInterval = setInterval(() => {
+        setElapsedSeconds(prev => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (timerInterval) clearInterval(timerInterval);
+    };
+  }, [match?.is_timer_running]);
 
   const handleMatchUpdate = (updatedMatch) => {
     setMatch(updatedMatch);
-    setElapsedSeconds(getCalculatedSeconds(updatedMatch));
   };
 
   const renderEventIcon = (type) => {

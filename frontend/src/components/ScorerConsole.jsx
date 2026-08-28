@@ -22,11 +22,11 @@ export const ScorerConsole = ({ match, onUpdate }) => {
     return null;
   }
 
-  const [elapsedSeconds, setElapsedSeconds] = useState(match.timer_seconds_elapsed || 0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(match.computed_elapsed_seconds || match.timer_seconds_elapsed || 0);
 
   useEffect(() => {
-    setElapsedSeconds(match.timer_seconds_elapsed || 0);
-  }, [match.timer_seconds_elapsed]);
+    setElapsedSeconds(match.computed_elapsed_seconds || match.timer_seconds_elapsed || 0);
+  }, [match.computed_elapsed_seconds, match.timer_seconds_elapsed]);
 
   useEffect(() => {
     let timerInterval = null;
