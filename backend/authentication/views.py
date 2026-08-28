@@ -54,11 +54,22 @@ class LoginView(APIView):
         })
 
 class MeView(APIView):
+    authentication_classes = []
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        if request.user and request.user.is_authenticated:
-            return Response(UserSerializer(request.user).data)
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+            try:
+                from rest_framework_simplejwt.tokens import AccessToken
+                validated_token = AccessToken(token)
+                user_id = validated_token['user_id']
+                user = User.objects.get(id=user_id)
+                return Response(UserSerializer(user).data)
+            except Exception:
+                pass
+
         admin_user = User.objects.filter(role='ADMIN').first()
         if admin_user:
             return Response(UserSerializer(admin_user).data)
