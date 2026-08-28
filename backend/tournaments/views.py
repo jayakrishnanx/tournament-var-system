@@ -412,3 +412,32 @@ class VarIncidentViewSet(viewsets.ModelViewSet):
         if match_id:
             queryset = queryset.filter(match_id=match_id)
         return queryset
+
+def recalculate_match_scores(match):
+    home_goals = MatchEvent.objects.filter(match=match, event_type=MatchEvent.EventType.GOAL, team=match.home_team).count()
+    away_goals = MatchEvent.objects.filter(match=match, event_type=MatchEvent.EventType.GOAL, team=match.away_team).count()
+    match.home_score = home_goals
+    match.away_score = away_goals
+    match.save(update_fields=['home_score', 'away_score'])
+    try:
+        broadcast_match_update(match)
+    except Exception as e:
+        print(f"Warning: broadcast_match_update failed: {e}")
+
+class MatchEventViewSet(viewsets.ModelViewSet):
+    queryset = MatchEvent.objects.all()
+    serializer_class = MatchEventSerializer
+    permission_classes = [IsScorerOrAdmin]
+
+    def perform_create(self, serializer):
+        event = serializer.save()
+        recalculate_match_scores(event.match)
+
+    def perform_update(self, serializer):
+        event = serializer.save()
+        recalculate_match_scores(event.match)
+
+    def perform_destroy(self, instance):
+        match = instance.match
+        instance.delete()
+        recalculate_match_scores(match)
