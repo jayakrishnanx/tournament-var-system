@@ -135,6 +135,10 @@ export const Matches = () => {
             </button>
           )}
 
+          <Link to="/bracket" className="btn-primary" style={{ padding: '7px 14px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '800', backgroundColor: '#10b981', borderColor: '#10b981' }}>
+            🏆 Knockout Bracket
+          </Link>
+
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}

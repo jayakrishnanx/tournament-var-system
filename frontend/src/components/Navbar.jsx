@@ -91,28 +91,28 @@ export const Navbar = () => {
         )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '2px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
         {!isAdmin ? (
           <>
             <Link to="/" style={navItemStyle('/')}>
-              <Activity size={14} /> Matches & Live Scores
+              <Activity size={14} /> Matches
             </Link>
-            <Link to="/bracket" style={navItemStyle('/bracket')}>
+            <Link to="/bracket" style={{ ...navItemStyle('/bracket'), backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#10b981', fontWeight: '800' }}>
               <Trophy size={14} color="#10b981" /> 🏆 Knockout Bracket
             </Link>
             <Link to="/standings" style={navItemStyle('/standings')}>
-              <Award size={14} color="#10b981" /> 📊 Points Table
+              <Award size={14} color="#10b981" /> Points Table
             </Link>
           </>
         ) : (
           <>
             <Link to="/matches" style={navItemStyle('/matches')}>
-              <Calendar size={14} /> Manage Matches
+              <Calendar size={14} /> Matches
             </Link>
             <Link to="/teams" style={navItemStyle('/teams')}>
-              <Users size={14} /> Manage Teams
+              <Users size={14} /> Teams
             </Link>
-            <Link to="/bracket" style={navItemStyle('/bracket')}>
+            <Link to="/bracket" style={{ ...navItemStyle('/bracket'), backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#10b981', fontWeight: '800' }}>
               <Trophy size={14} color="#10b981" /> 🏆 Knockout Bracket
             </Link>
             <Link to="/standings" style={navItemStyle('/standings')}>
