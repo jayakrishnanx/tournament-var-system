@@ -1,9 +1,6 @@
 import axios from 'axios';
 
 const getBaseUrl = () => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
     if (host.includes('vercel.app') || host.includes('onrender.com')) {
@@ -11,7 +8,7 @@ const getBaseUrl = () => {
     }
     return `http://${host}:8000/api`;
   }
-  return 'http://localhost:8000/api';
+  return import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 };
 
 const API_BASE_URL = getBaseUrl();
