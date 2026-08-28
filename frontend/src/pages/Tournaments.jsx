@@ -75,9 +75,11 @@ export const Tournaments = () => {
         </div>
 
         {user?.role === 'ADMIN' && (
-          <button onClick={() => setShowModal(true)} className="btn-primary" style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Plus size={16} /> Create Tournament
-          </button>
+          <div className="hide-on-mobile">
+            <button onClick={() => setShowModal(true)} className="btn-primary" style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Plus size={16} /> Create Tournament
+            </button>
+          </div>
         )}
       </div>
 
