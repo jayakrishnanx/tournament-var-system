@@ -22,23 +22,26 @@ def broadcast_match_update(match):
 
     channel_layer = get_channel_layer()
     if channel_layer:
-        async_to_sync(channel_layer.group_send)(
-            f"match_{match.id}",
-            {
-                "type": "match_update",
-                "match": {
-                    "id": str(match.id),
-                    "home_score": match.home_score,
-                    "away_score": match.away_score,
-                    "status": match.status,
-                    "current_period": match.current_period,
-                    "timer_seconds_elapsed": current_elapsed,
-                    "computed_elapsed_seconds": current_elapsed,
-                    "is_timer_running": match.is_timer_running,
-                    "timer_last_updated_at": match.timer_last_updated_at.isoformat() if match.timer_last_updated_at else None,
+        try:
+            async_to_sync(channel_layer.group_send)(
+                f"match_{match.id}",
+                {
+                    "type": "match_update",
+                    "match": {
+                        "id": str(match.id),
+                        "home_score": match.home_score,
+                        "away_score": match.away_score,
+                        "status": match.status,
+                        "current_period": match.current_period,
+                        "timer_seconds_elapsed": current_elapsed,
+                        "computed_elapsed_seconds": current_elapsed,
+                        "is_timer_running": match.is_timer_running,
+                        "timer_last_updated_at": match.timer_last_updated_at.isoformat() if match.timer_last_updated_at else None,
+                    }
                 }
-            }
-        )
+            )
+        except Exception as e:
+            print(f"Warning: WebSocket broadcast failed (Redis/Channels down): {e}")
 
 @transaction.atomic
 def update_match_score(match_id, team_id, delta, actor=None, ip_address=None):
