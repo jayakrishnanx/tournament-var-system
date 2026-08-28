@@ -17,4 +17,4 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "project.asgi:application", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && uvicorn project.asgi:application --host 0.0.0.0 --port 8000"]
