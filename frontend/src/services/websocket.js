@@ -1,5 +1,17 @@
 export const connectMatchWebSocket = (matchId, onMessage, onError) => {
-  const wsUrl = `ws://localhost:8000/ws/match/${matchId}/`;
+  const getWsUrl = () => {
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname;
+      if (host.includes('vercel.app') || host.includes('onrender.com')) {
+        return `wss://tournament-var-backend.onrender.com/ws/match/${matchId}/`;
+      }
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return `${protocol}//${host}:8000/ws/match/${matchId}/`;
+    }
+    return `ws://localhost:8000/ws/match/${matchId}/`;
+  };
+
+  const wsUrl = getWsUrl();
   const ws = new WebSocket(wsUrl);
 
   ws.onopen = () => {
