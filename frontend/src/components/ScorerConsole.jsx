@@ -184,24 +184,48 @@ export const ScorerConsole = ({ match, onUpdate }) => {
             </span>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             {match.is_timer_running ? (
               <button
                 onClick={() => handleTimerToggle('PAUSE')}
                 disabled={loading}
                 className="btn-danger"
-                style={{ padding: '12px 24px', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}
+                style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                <Pause size={20} /> Pause Clock
+                <Pause size={16} /> Pause Clock
               </button>
             ) : (
               <button
                 onClick={() => handleTimerToggle('START')}
                 disabled={loading}
                 className="btn-success"
-                style={{ padding: '12px 24px', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}
+                style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                <Play size={20} /> Start / Resume Clock
+                <Play size={16} /> Start / Resume Clock
+              </button>
+            )}
+
+            {match.status !== 'ENDED' && (
+              <button
+                onClick={() => {
+                  if (window.confirm('Mark this match as FINISHED / ENDED?')) {
+                    handleTimerToggle('FINISH');
+                  }
+                }}
+                disabled={loading}
+                style={{
+                  backgroundColor: '#f59e0b',
+                  color: '#000000',
+                  fontWeight: '900',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                🏁 Finish Match
               </button>
             )}
 
@@ -210,9 +234,9 @@ export const ScorerConsole = ({ match, onUpdate }) => {
               disabled={loading}
               className="btn-secondary"
               title="Reset Clock to 00:00"
-              style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem' }}
             >
-              <RotateCcw size={18} /> Reset 00:00
+              <RotateCcw size={14} /> Reset
             </button>
           </div>
         </div>

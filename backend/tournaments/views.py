@@ -108,9 +108,9 @@ class MatchViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[IsScorerOrAdmin])
     def timer(self, request, pk=None):
-        action_type = request.data.get('action') # START, PAUSE, or RESET
-        if action_type not in ['START', 'PAUSE', 'RESET']:
-            return Response({'error': 'action must be START, PAUSE, or RESET'}, status=status.HTTP_400_BAD_REQUEST)
+        action_type = request.data.get('action') # START, PAUSE, RESET, or FINISH
+        if action_type not in ['START', 'PAUSE', 'RESET', 'FINISH']:
+            return Response({'error': 'action must be START, PAUSE, RESET, or FINISH'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             match = toggle_match_timer(
                 match_id=pk,

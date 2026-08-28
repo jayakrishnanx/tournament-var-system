@@ -34,6 +34,14 @@ export const Dashboard = () => {
 
   const topScorer = stats.top_scorers[0];
 
+  const sortedMatches = [...matches].sort((a, b) => {
+    if (a.status === 'LIVE' && b.status !== 'LIVE') return -1;
+    if (a.status !== 'LIVE' && b.status === 'LIVE') return 1;
+    if (a.status === 'PAUSED' && b.status !== 'PAUSED') return -1;
+    if (a.status !== 'PAUSED' && b.status === 'PAUSED') return 1;
+    return (a.match_number || 0) - (b.match_number || 0);
+  });
+
   return (
     <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>
       {/* Header Banner */}
@@ -118,7 +126,7 @@ export const Dashboard = () => {
           </div>
         ) : (
           <div className="responsive-grid-2">
-            {matches.map((m, idx) => (
+            {sortedMatches.map((m, idx) => (
               <div key={m.id} className="glass-panel card-hover" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '6px' }}>
