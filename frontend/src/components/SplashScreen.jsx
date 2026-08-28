@@ -53,12 +53,9 @@ export const SplashScreen = ({ children }) => {
           maxHeight: '200px',
           overflow: 'hidden',
         }}>
-          <video
-            src="/loading.webm"
-            autoPlay
-            loop
-            muted
-            playsInline
+          <img
+            src="/loading.webp"
+            alt="Loading..."
             style={{
               width: '100%',
               height: '100%',
