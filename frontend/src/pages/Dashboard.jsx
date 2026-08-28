@@ -33,6 +33,38 @@ export const Dashboard = () => {
     fetchData();
   }, []);
 
+  const handleQuickDemoSetup = async () => {
+    try {
+      setLoading(true);
+      const tRes = await api.post('/tournaments/tournaments/', {
+        name: 'KALLIKALAM CHAMPIONSHIP 2026',
+        sport_type: 'Soccer / Football',
+        location: 'Kallikalam Arena',
+        start_date: new Date().toISOString().split('T')[0],
+        end_date: new Date().toISOString().split('T')[0],
+        status: 'ONGOING'
+      });
+      const tId = tRes.data.id;
+      const alphaRes = await api.post('/tournaments/teams/', { tournament: tId, name: 'Team Alpha', coach_name: 'Coach Alpha' });
+      const betaRes = await api.post('/tournaments/teams/', { tournament: tId, name: 'Team Beta', coach_name: 'Coach Beta' });
+      await api.post('/tournaments/matches/', {
+        tournament: tId,
+        home_team: alphaRes.data.id,
+        away_team: betaRes.data.id,
+        match_code: 'match1',
+        status: 'LIVE',
+        current_period: '1st Half',
+        timer_seconds_elapsed: 0
+      });
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert('Error creating demo match. Make sure server is running.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const topScorer = stats.top_scorers[0];
   const yellowLeader = stats.yellow_cards[0];
   const redLeader = stats.red_cards[0];
@@ -168,7 +200,16 @@ export const Dashboard = () => {
           {loading ? (
             <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>Loading matches...</div>
           ) : liveMatches.length === 0 ? (
-            <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>No active matches currently scheduled.</div>
+            <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
+              <p style={{ marginBottom: '16px', fontSize: '1rem', color: '#f8fafc', fontWeight: '700' }}>No active matches created yet.</p>
+              <button
+                onClick={handleQuickDemoSetup}
+                className="btn-primary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', fontWeight: '800' }}
+              >
+                <PlusCircle size={18} /> Initialize Kallikalam Championship & Demo Match 1
+              </button>
+            </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {liveMatches.map(m => (
