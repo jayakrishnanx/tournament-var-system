@@ -65,6 +65,7 @@ def seed_data(apps, schema_editor):
         ('YAS', 'BRI', 5),
         ('CLA', 'FC ', 6),
         ('SHA', 'SRFC', 7),
+        ('HEB', 'UFC', 8),
     ]
 
     now = timezone.now()
