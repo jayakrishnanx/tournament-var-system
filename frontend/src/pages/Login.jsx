@@ -38,15 +38,20 @@ export const Login = () => {
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <div style={{
             display: 'inline-flex',
-            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-            padding: '10px',
-            borderRadius: '10px',
             marginBottom: '10px'
           }}>
-            <Shield size={28} color="white" />
+            <img
+              src="/navbar-logo.png"
+              alt="Kalikkalam FC Logo"
+              style={{
+                height: '60px',
+                width: '60px',
+                objectFit: 'contain'
+              }}
+            />
           </div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '0.02em' }}>KALLIKALAM</h2>
-          <p style={{ color: '#3b82f6', fontSize: '0.75rem', fontWeight: '800', marginTop: '2px', letterSpacing: '0.05em' }}>
+          <p style={{ color: '#2B5748', fontSize: '0.75rem', fontWeight: '800', marginTop: '2px', letterSpacing: '0.05em' }}>
             ADMIN MANAGEMENT PORTAL
           </p>
         </div>
