@@ -89,7 +89,7 @@ export const Navbar = () => {
         )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '2px' }}>
         <Link to="/" style={navItemStyle('/')}>
           <Activity size={14} /> Matches & Live Scores
         </Link>
