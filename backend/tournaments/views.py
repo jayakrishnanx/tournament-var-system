@@ -6,7 +6,7 @@ from .serializers import (
     TournamentSerializer, TeamSerializer, PlayerSerializer,
     MatchSerializer, MatchEventSerializer, CameraFeedSerializer, VarIncidentSerializer
 )
-from .services import update_match_score, add_match_event, toggle_match_timer
+from .services import update_match_score, add_match_event, toggle_match_timer, broadcast_match_update
 
 class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
