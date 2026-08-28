@@ -149,7 +149,7 @@ export const MatchDetail = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <StatusBadge status={match.status} />
-            <span style={{ backgroundColor: '#0f172a', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', border: '1px solid #334155' }}>
+            <span style={{ backgroundColor: '#1D2128', padding: '2px 8px', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', border: '1px solid #334155' }}>
               {elapsedSeconds >= 300 ? '2nd Half' : (match.current_period === '1ST_HALF' ? '1st Half' : match.current_period)}
             </span>
           </div>
@@ -201,7 +201,7 @@ export const MatchDetail = () => {
           </h3>
 
           {matchEvents.length === 0 ? (
-            <div style={{ padding: '20px', backgroundColor: '#0f172a', borderRadius: '8px', color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center' }}>
+            <div style={{ padding: '20px', backgroundColor: '#1D2128', borderRadius: '8px', color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center' }}>
               No match events or cards recorded yet.
             </div>
           ) : (
@@ -214,7 +214,7 @@ export const MatchDetail = () => {
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     padding: '12px 16px',
-                    backgroundColor: '#0f172a',
+                    backgroundColor: '#1D2128',
                     borderRadius: '8px',
                     border: '1px solid #334155'
                   }}>

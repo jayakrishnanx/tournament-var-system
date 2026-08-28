@@ -155,7 +155,7 @@ export const TournamentDetail = () => {
                     </div>
 
                     <div style={{
-                      backgroundColor: '#0f172a',
+                      backgroundColor: '#1D2128',
                       padding: '6px 16px',
                       borderRadius: '8px',
                       margin: '0 16px',
@@ -196,7 +196,7 @@ export const TournamentDetail = () => {
                   placeholder="e.g. Barcelona FC"
                   value={teamForm.name}
                   onChange={e => setTeamForm({ ...teamForm, name: e.target.value })}
-                  style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
+                  style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
                 />
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
@@ -220,7 +220,7 @@ export const TournamentDetail = () => {
                   required
                   value={matchForm.home_team}
                   onChange={e => setMatchForm({ ...matchForm, home_team: e.target.value })}
-                  style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
+                  style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
                 >
                   <option value="">Select Home Team</option>
                   {tournament.teams?.map(t => (
@@ -235,7 +235,7 @@ export const TournamentDetail = () => {
                   required
                   value={matchForm.away_team}
                   onChange={e => setMatchForm({ ...matchForm, away_team: e.target.value })}
-                  style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
+                  style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
                 >
                   <option value="">Select Away Team</option>
                   {tournament.teams?.map(t => (
@@ -250,7 +250,7 @@ export const TournamentDetail = () => {
                   required
                   value={matchForm.scheduled_date}
                   onChange={e => setMatchForm({ ...matchForm, scheduled_date: e.target.value })}
-                  style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white', fontWeight: '700' }}
+                  style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white', fontWeight: '700' }}
                 >
                   <option value="2026-08-29">29/08/2026</option>
                   <option value="2026-08-30">30/08/2026</option>

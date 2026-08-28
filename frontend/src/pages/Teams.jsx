@@ -106,7 +106,7 @@ export const Teams = () => {
                     <h2 style={{ fontSize: '1.25rem', fontWeight: '700' }}>{team.name}</h2>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#94a3b8', backgroundColor: '#0f172a', padding: '4px 8px', borderRadius: '6px' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#94a3b8', backgroundColor: '#1D2128', padding: '4px 8px', borderRadius: '6px' }}>
                       {tournamentObj?.name || 'Tournament'}
                     </span>
                     {user?.role === 'ADMIN' && (
@@ -148,7 +148,7 @@ export const Teams = () => {
                       <span style={{ fontSize: '0.8rem', color: '#64748b' }}>No players added to squad.</span>
                     ) : (
                       team.players?.map(p => (
-                        <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '6px 10px', backgroundColor: '#0f172a', borderRadius: '6px' }}>
+                        <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '6px 10px', backgroundColor: '#1D2128', borderRadius: '6px' }}>
                           <span style={{ fontWeight: '700', color: '#f8fafc' }}>#{p.jersey_number} {p.name}</span>
                         </div>
                       ))
@@ -172,7 +172,7 @@ export const Teams = () => {
                 <select
                   value={teamForm.tournament}
                   onChange={e => setTeamForm({ ...teamForm, tournament: e.target.value })}
-                  style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
+                  style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
                 >
                   {tournaments.map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
@@ -188,7 +188,7 @@ export const Teams = () => {
                   placeholder="e.g. Red Dragons FC"
                   value={teamForm.name}
                   onChange={e => setTeamForm({ ...teamForm, name: e.target.value })}
-                  style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
+                  style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
                 />
               </div>
 
@@ -214,7 +214,7 @@ export const Teams = () => {
                   required
                   value={playerForm.name}
                   onChange={e => setPlayerForm({ ...playerForm, name: e.target.value })}
-                  style={{ width: '100%', padding: '8px 12px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white' }}
+                  style={{ width: '100%', padding: '8px 12px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white' }}
                 />
               </div>
 
@@ -225,7 +225,7 @@ export const Teams = () => {
                   required
                   value={playerForm.jersey_number}
                   onChange={e => setPlayerForm({ ...playerForm, jersey_number: parseInt(e.target.value) })}
-                  style={{ width: '100%', padding: '8px 12px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white' }}
+                  style={{ width: '100%', padding: '8px 12px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white' }}
                 />
               </div>
 

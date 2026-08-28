@@ -184,7 +184,7 @@ export const ScorerConsole = ({ match, onUpdate }) => {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
           {/* Home Team */}
-          <div style={{ backgroundColor: '#0f172a', padding: '10px', borderRadius: '8px', border: '1px solid #334155', textAlign: 'center' }}>
+          <div style={{ backgroundColor: '#1D2128', padding: '10px', borderRadius: '8px', border: '1px solid #334155', textAlign: 'center' }}>
             <div style={{ fontWeight: '800', fontSize: '0.85rem', color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {match.home_team_details?.name}
             </div>
@@ -212,7 +212,7 @@ export const ScorerConsole = ({ match, onUpdate }) => {
           </div>
 
           {/* Away Team */}
-          <div style={{ backgroundColor: '#0f172a', padding: '10px', borderRadius: '8px', border: '1px solid #334155', textAlign: 'center' }}>
+          <div style={{ backgroundColor: '#1D2128', padding: '10px', borderRadius: '8px', border: '1px solid #334155', textAlign: 'center' }}>
             <div style={{ fontWeight: '800', fontSize: '0.85rem', color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {match.away_team_details?.name}
             </div>
@@ -252,7 +252,7 @@ export const ScorerConsole = ({ match, onUpdate }) => {
             <select
               value={selectedTeam}
               onChange={e => setSelectedTeam(e.target.value)}
-              style={{ padding: '6px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.75rem' }}
+              style={{ padding: '6px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.75rem' }}
             >
               <option value={match.home_team}>{match.home_team_details?.name}</option>
               <option value={match.away_team}>{match.away_team_details?.name}</option>
@@ -261,7 +261,7 @@ export const ScorerConsole = ({ match, onUpdate }) => {
             <select
               value={eventType}
               onChange={e => setEventType(e.target.value)}
-              style={{ padding: '6px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.75rem' }}
+              style={{ padding: '6px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.75rem' }}
             >
               <option value="GOAL">⚽ Goal</option>
               <option value="YELLOW_CARD">🟨 Yellow Card</option>
@@ -274,7 +274,7 @@ export const ScorerConsole = ({ match, onUpdate }) => {
             <select
               value={selectedPlayer}
               onChange={e => setSelectedPlayer(e.target.value)}
-              style={{ flex: 1, padding: '6px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.75rem' }}
+              style={{ flex: 1, padding: '6px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.75rem' }}
             >
               <option value="">Select Player (Optional)</option>
               {currentPlayers.map(p => (
@@ -296,7 +296,7 @@ export const ScorerConsole = ({ match, onUpdate }) => {
         </h4>
 
         {(!match.recent_events || match.recent_events.length === 0) ? (
-          <div style={{ padding: '10px', color: '#94a3b8', fontSize: '0.75rem', textAlign: 'center', backgroundColor: '#0f172a', borderRadius: '6px' }}>
+          <div style={{ padding: '10px', color: '#94a3b8', fontSize: '0.75rem', textAlign: 'center', backgroundColor: '#1D2128', borderRadius: '6px' }}>
             No match events or cards recorded yet.
           </div>
         ) : (
@@ -307,7 +307,7 @@ export const ScorerConsole = ({ match, onUpdate }) => {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '8px 10px',
-                backgroundColor: '#0f172a',
+                backgroundColor: '#1D2128',
                 borderRadius: '6px',
                 border: '1px solid #334155'
               }}>

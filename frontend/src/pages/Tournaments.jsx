@@ -154,7 +154,7 @@ export const Tournaments = () => {
                   required
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
+                  style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
                 />
               </div>
 
@@ -166,7 +166,7 @@ export const Tournaments = () => {
                     required
                     value={formData.sport}
                     onChange={e => setFormData({ ...formData, sport: e.target.value })}
-                    style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
+                    style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
                   />
                 </div>
                 <div>
@@ -175,7 +175,7 @@ export const Tournaments = () => {
                     type="text"
                     value={formData.location}
                     onChange={e => setFormData({ ...formData, location: e.target.value })}
-                    style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
+                    style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
                   />
                 </div>
               </div>
@@ -188,7 +188,7 @@ export const Tournaments = () => {
                     required
                     value={formData.start_date}
                     onChange={e => setFormData({ ...formData, start_date: e.target.value })}
-                    style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
+                    style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
                   />
                 </div>
                 <div>
@@ -198,7 +198,7 @@ export const Tournaments = () => {
                     required
                     value={formData.end_date}
                     onChange={e => setFormData({ ...formData, end_date: e.target.value })}
-                    style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
+                    style={{ width: '100%', padding: '10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
                   />
                 </div>
               </div>

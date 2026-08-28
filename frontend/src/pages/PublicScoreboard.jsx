@@ -74,7 +74,7 @@ export const PublicScoreboard = () => {
       }}>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '16px' }}>
           <StatusBadge status={match.status} />
-          <span style={{ backgroundColor: '#0f172a', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '700', color: '#94a3b8', border: '1px solid #334155' }}>
+          <span style={{ backgroundColor: '#1D2128', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '700', color: '#94a3b8', border: '1px solid #334155' }}>
             {match.current_period}
           </span>
         </div>
@@ -154,7 +154,7 @@ export const PublicScoreboard = () => {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '360px', overflowY: 'auto' }}>
               {match.recent_events.map(ev => (
-                <div key={ev.id} style={{ padding: '10px 14px', backgroundColor: '#0f172a', borderRadius: '8px', border: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div key={ev.id} style={{ padding: '10px 14px', backgroundColor: '#1D2128', borderRadius: '8px', border: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <span style={{ color: '#3b82f6', fontWeight: '800', marginRight: '8px' }}>[{ev.match_minute}']</span>
                     <span style={{ color: 'white', fontWeight: '700' }}>{ev.event_type.replace('_', ' ')}</span>

@@ -116,7 +116,7 @@ export const Dashboard = () => {
                   value={homeTeam}
                   onChange={e => setHomeTeam(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
                 >
                   <option value="">Select Home Team</option>
                   {tournamentTeams.map(t => (
@@ -131,7 +131,7 @@ export const Dashboard = () => {
                   value={awayTeam}
                   onChange={e => setAwayTeam(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
                 >
                   <option value="">Select Away Team</option>
                   {tournamentTeams.map(t => (
@@ -147,7 +147,7 @@ export const Dashboard = () => {
                   required
                   value={scheduledDate}
                   onChange={e => setScheduledDate(e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
                 />
               </div>
 
@@ -311,7 +311,7 @@ export const Dashboard = () => {
                     </div>
 
                     <div style={{
-                      backgroundColor: '#0f172a',
+                      backgroundColor: '#1D2128',
                       padding: '6px 14px',
                       borderRadius: '8px',
                       fontSize: '1.4rem',

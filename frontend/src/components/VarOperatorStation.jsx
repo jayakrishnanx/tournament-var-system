@@ -138,10 +138,10 @@ export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
       </div>
 
       {/* Dedicated Match Video Folder Info Box */}
-      <div style={{ backgroundColor: '#0f172a', padding: '16px 20px', borderRadius: '10px', border: '1px solid #3b82f6', marginBottom: '20px' }}>
+      <div style={{ backgroundColor: '#1D2128', padding: '16px 20px', borderRadius: '10px', border: '1px solid #3b82f6', marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            📁 MATCH DEDICATED FOLDER: <code style={{ backgroundColor: '#1e293b', padding: '2px 8px', borderRadius: '4px', color: '#3b82f6' }}>./recordings/{matchCode}/</code>
+            📁 MATCH DEDICATED FOLDER: <code style={{ backgroundColor: '#1D2128', padding: '2px 8px', borderRadius: '4px', color: '#3b82f6' }}>./recordings/{matchCode}/</code>
           </span>
           <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
             All 3 camera video streams auto-record into this match folder
@@ -149,17 +149,17 @@ export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
         </div>
 
         <div className="responsive-grid-3" style={{ fontSize: '0.75rem' }}>
-          <div style={{ backgroundColor: '#1e293b', padding: '8px 12px', borderRadius: '6px', border: '1px solid #334155' }}>
+          <div style={{ backgroundColor: '#1D2128', padding: '8px 12px', borderRadius: '6px', border: '1px solid #334155' }}>
             <span style={{ color: '#f8fafc', fontWeight: '700', display: 'block' }}>📹 Cam 1 Common URL:</span>
             <code style={{ color: '#10b981', wordBreak: 'break-all', display: 'block', fontWeight: '800' }}>rtmp://{streamHost}:1935/live/cam1</code>
             <span style={{ color: '#64748b', fontSize: '0.7rem' }}>Set once in phone for ALL matches</span>
           </div>
-          <div style={{ backgroundColor: '#1e293b', padding: '8px 12px', borderRadius: '6px', border: '1px solid #334155' }}>
+          <div style={{ backgroundColor: '#1D2128', padding: '8px 12px', borderRadius: '6px', border: '1px solid #334155' }}>
             <span style={{ color: '#f8fafc', fontWeight: '700', display: 'block' }}>📹 Cam 2 Common URL:</span>
             <code style={{ color: '#10b981', wordBreak: 'break-all', display: 'block', fontWeight: '800' }}>rtmp://{streamHost}:1935/live/cam2</code>
             <span style={{ color: '#64748b', fontSize: '0.7rem' }}>Set once in phone for ALL matches</span>
           </div>
-          <div style={{ backgroundColor: '#1e293b', padding: '8px 12px', borderRadius: '6px', border: '1px solid #334155' }}>
+          <div style={{ backgroundColor: '#1D2128', padding: '8px 12px', borderRadius: '6px', border: '1px solid #334155' }}>
             <span style={{ color: '#f8fafc', fontWeight: '700', display: 'block' }}>📹 Cam 3 Common URL:</span>
             <code style={{ color: '#10b981', wordBreak: 'break-all', display: 'block', fontWeight: '800' }}>rtmp://{streamHost}:1935/live/cam3</code>
             <span style={{ color: '#64748b', fontSize: '0.7rem' }}>Set once in phone for ALL matches</span>
@@ -188,7 +188,7 @@ export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
             <select
               value={selectedMp4Url}
               onChange={e => setSelectedMp4Url(e.target.value)}
-              style={{ padding: '8px 12px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+              style={{ padding: '8px 12px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
             >
               {recordings.map((r, idx) => (
                 <option key={idx} value={r.url}>{r.rel_path.replace('.mp4.mp4', '.mp4')}</option>
@@ -253,7 +253,7 @@ export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
             </div>
 
             {/* Controls Toolbar: Instant Rewind (-5s/-10s), Slow-Mo, and Zoom Magnifier */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0f172a', padding: '12px 16px', borderRadius: '8px', border: '1px solid #334155', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1D2128', padding: '12px 16px', borderRadius: '8px', border: '1px solid #334155', flexWrap: 'wrap', gap: '12px' }}>
               {/* 1. Instant Rewind & Fast Forward Buttons */}
               <div style={{ display: 'flex', gap: '6px' }}>
                 <button onClick={() => handleSeek(-10)} className="btn-secondary" style={{ padding: '8px 12px', fontSize: '0.85rem', fontWeight: '700' }}>
@@ -271,7 +271,7 @@ export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
               </div>
 
               {/* 2. Digital Zoom Magnifier Toolbar */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#1e293b', padding: '6px 12px', borderRadius: '8px', border: '1px solid #334155' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#1D2128', padding: '6px 12px', borderRadius: '8px', border: '1px solid #334155' }}>
                 <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#f43f5e', marginRight: '4px' }}>🔍 ZOOM MAGNIFIER:</span>
                 {[1.0, 1.5, 2.0, 3.0, 4.0].map(z => (
                   <button
@@ -321,7 +321,7 @@ export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
           </h3>
 
           {incidents.length === 0 ? (
-            <div style={{ padding: '16px', backgroundColor: '#0f172a', borderRadius: '8px', color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center' }}>
+            <div style={{ padding: '16px', backgroundColor: '#1D2128', borderRadius: '8px', color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center' }}>
               No VAR incidents flagged for review.
             </div>
           ) : (
@@ -332,7 +332,7 @@ export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
                   onClick={() => setSelectedIncident(inc)}
                   style={{
                     padding: '12px',
-                    backgroundColor: selectedIncident?.id === inc.id ? 'rgba(244, 63, 94, 0.15)' : '#0f172a',
+                    backgroundColor: selectedIncident?.id === inc.id ? 'rgba(244, 63, 94, 0.15)' : '#1D2128',
                     border: `1px solid ${selectedIncident?.id === inc.id ? '#f43f5e' : '#334155'}`,
                     borderRadius: '8px',
                     cursor: 'pointer',
@@ -355,7 +355,7 @@ export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
         </div>
 
         {/* Decision Submission Panel */}
-        <div style={{ backgroundColor: '#0f172a', padding: '20px', borderRadius: '12px', border: '1px solid #334155' }}>
+        <div style={{ backgroundColor: '#1D2128', padding: '20px', borderRadius: '12px', border: '1px solid #334155' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '12px', color: '#f8fafc' }}>
             {user?.role === 'ADMIN' ? 'Render VAR Referee Decision' : '👁️ Public VAR Monitor Mode Active'}
           </h3>
@@ -377,7 +377,7 @@ export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
                   value={reviewNotes}
                   onChange={e => setReviewNotes(e.target.value)}
                   placeholder="e.g. Offside confirmed after 3-angle slow-mo review..."
-                  style={{ width: '100%', padding: '8px 12px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                  style={{ width: '100%', padding: '8px 12px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
                 />
               </div>
 

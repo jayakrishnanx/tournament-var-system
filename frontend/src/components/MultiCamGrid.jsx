@@ -90,7 +90,7 @@ export const MultiCamGrid = ({ matchId }) => {
               {streams.map(s => {
                 const universalUrl = `rtmp://jayakrishnan.local:1935/live/${s.id}`;
                 return (
-                  <div key={s.id} style={{ backgroundColor: '#0f172a', padding: '16px', borderRadius: '10px', border: '1px solid #334155', display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  <div key={s.id} style={{ backgroundColor: '#1D2128', padding: '16px', borderRadius: '10px', border: '1px solid #334155', display: 'flex', gap: '16px', alignItems: 'center' }}>
                     <div style={{ backgroundColor: 'white', padding: '6px', borderRadius: '8px', minWidth: '90px' }}>
                       <img
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(universalUrl)}`}
@@ -104,7 +104,7 @@ export const MultiCamGrid = ({ matchId }) => {
                       
                       <div style={{ marginBottom: '6px' }}>
                         <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: '800', display: 'block' }}>🌐 Universal Hostname (Works Everywhere):</span>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1e293b', padding: '4px 8px', borderRadius: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1D2128', padding: '4px 8px', borderRadius: '4px' }}>
                           <code style={{ fontSize: '0.75rem', color: '#3b82f6', fontFamily: 'monospace' }}>{universalUrl}</code>
                           <button
                             onClick={() => handleCopy(universalUrl, `${s.id}-uni`)}
@@ -119,7 +119,7 @@ export const MultiCamGrid = ({ matchId }) => {
 
                       <div>
                         <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '700', display: 'block' }}>📡 Auto-Detected IP URL:</span>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1e293b', padding: '4px 8px', borderRadius: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1D2128', padding: '4px 8px', borderRadius: '4px' }}>
                           <code style={{ fontSize: '0.75rem', color: '#cbd5e1', fontFamily: 'monospace' }}>{s.rtmp}</code>
                           <button
                             onClick={() => handleCopy(s.rtmp, `${s.id}-ip`)}

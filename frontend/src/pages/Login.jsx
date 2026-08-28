@@ -85,7 +85,7 @@ export const Login = () => {
                 style={{
                   width: '100%',
                   padding: '8px 10px 8px 34px',
-                  backgroundColor: '#0f172a',
+                  backgroundColor: '#1D2128',
                   border: '1px solid #334155',
                   borderRadius: '6px',
                   color: 'white',
@@ -110,7 +110,7 @@ export const Login = () => {
                 style={{
                   width: '100%',
                   padding: '8px 10px 8px 34px',
-                  backgroundColor: '#0f172a',
+                  backgroundColor: '#1D2128',
                   border: '1px solid #334155',
                   borderRadius: '6px',
                   color: 'white',

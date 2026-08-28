@@ -123,7 +123,7 @@ export const Matches = () => {
             onChange={(e) => setFilterStatus(e.target.value)}
             style={{
               padding: '6px 10px',
-              backgroundColor: '#0f172a',
+              backgroundColor: '#1D2128',
               border: '1px solid #334155',
               borderRadius: '6px',
               color: 'white',
@@ -131,10 +131,10 @@ export const Matches = () => {
               fontWeight: '600'
             }}
           >
-            <option value="ALL" style={{ background: '#1e293b' }}>All Statuses</option>
-            <option value="LIVE" style={{ background: '#1e293b' }}>Live Now</option>
-            <option value="SCHEDULED" style={{ background: '#1e293b' }}>Scheduled</option>
-            <option value="ENDED" style={{ background: '#1e293b' }}>Completed</option>
+            <option value="ALL" style={{ background: '#1D2128' }}>All Statuses</option>
+            <option value="LIVE" style={{ background: '#1D2128' }}>Live Now</option>
+            <option value="SCHEDULED" style={{ background: '#1D2128' }}>Scheduled</option>
+            <option value="ENDED" style={{ background: '#1D2128' }}>Completed</option>
           </select>
         </div>
       </div>
@@ -169,10 +169,10 @@ export const Matches = () => {
                 <select
                   value={selectedTournament}
                   onChange={e => setSelectedTournament(e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
                 >
                   {tournaments.map(t => (
-                    <option key={t.id} value={t.id} style={{ background: '#1e293b' }}>{t.name}</option>
+                    <option key={t.id} value={t.id} style={{ background: '#1D2128' }}>{t.name}</option>
                   ))}
                 </select>
               </div>
@@ -185,11 +185,11 @@ export const Matches = () => {
                   required
                   value={homeTeam}
                   onChange={e => setHomeTeam(e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
                 >
                   <option value="">-- Select Home Team --</option>
                   {tournamentTeams.map(t => (
-                    <option key={t.id} value={t.id} style={{ background: '#1e293b' }}>{t.name}</option>
+                    <option key={t.id} value={t.id} style={{ background: '#1D2128' }}>{t.name}</option>
                   ))}
                 </select>
               </div>
@@ -202,11 +202,11 @@ export const Matches = () => {
                   required
                   value={awayTeam}
                   onChange={e => setAwayTeam(e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
                 >
                   <option value="">-- Select Away Team --</option>
                   {tournamentTeams.map(t => (
-                    <option key={t.id} value={t.id} style={{ background: '#1e293b' }}>{t.name}</option>
+                    <option key={t.id} value={t.id} style={{ background: '#1D2128' }}>{t.name}</option>
                   ))}
                 </select>
               </div>
@@ -220,7 +220,7 @@ export const Matches = () => {
                   required
                   value={scheduledDate}
                   onChange={e => setScheduledDate(e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
                 />
               </div>
 
@@ -269,7 +269,7 @@ export const Matches = () => {
                   </div>
 
                   <div style={{
-                    backgroundColor: '#0f172a',
+                    backgroundColor: '#1D2128',
                     padding: '6px 14px',
                     borderRadius: '8px',
                     fontSize: '1.4rem',
