@@ -120,7 +120,7 @@ export const TournamentDetail = () => {
           </div>
 
           {user?.role === 'ADMIN' && (
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="hide-on-mobile" style={{ display: 'flex', gap: '8px' }}>
               <button onClick={() => setShowTeamModal(true)} className="btn-secondary">
                 <Users size={14} /> Add Team
               </button>

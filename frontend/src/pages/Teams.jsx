@@ -85,7 +85,7 @@ export const Teams = () => {
         </div>
 
         {user?.role === 'ADMIN' && (
-          <button onClick={() => setShowTeamModal(true)} className="btn-primary">
+          <button onClick={() => setShowTeamModal(true)} className="btn-primary hide-on-mobile">
             <Plus size={16} /> Add New Team
           </button>
         )}
