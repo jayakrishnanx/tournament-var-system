@@ -261,7 +261,17 @@ export const Matches = () => {
       ) : (
         <div className="responsive-grid-2">
           {filteredMatches.map((m, idx) => (
-            <div key={m.id} className="glass-panel card-hover" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: m.is_next_match ? '2px solid #f59e0b' : '1px solid #334155' }}>
+            <div key={m.id} className="glass-panel card-hover" style={{
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              border: m.status === 'LIVE' || m.status === 'PAUSED'
+                ? '2px solid #ef4444'
+                : m.is_next_match
+                  ? '2px solid #f59e0b'
+                  : '1px solid #334155'
+            }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '6px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
