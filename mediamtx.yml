@@ -1,0 +1,50 @@
+# MediaMTX Configuration for ArenaVAR 3-Camera Ingestion & Recording Stack
+
+logLevel: info
+logDestinations: [stdout]
+writeQueueSize: 2048
+
+# Global Ingestion Protocols
+rtsp: yes
+rtspAddress: :8554
+
+rtmp: yes
+rtmpAddress: :1935
+
+hls: yes
+hlsAddress: :8888
+hlsAllowOrigin: '*'
+hlsAlwaysRemux: yes
+hlsSegmentCount: 7
+hlsSegmentDuration: 2s
+hlsPartDuration: 500ms
+
+webrtc: yes
+webrtcAddress: :8889
+webrtcAllowOrigin: '*'
+webrtcIPsFromInterfaces: yes
+
+srt: yes
+srtAddress: :8890
+
+# Universal Path Rules
+paths:
+  cam1:
+    record: yes
+    recordPath: ./recordings/cam1/%Y-%m-%d_%H-%M-%S
+    recordFormat: fmp4
+
+  cam2:
+    record: yes
+    recordPath: ./recordings/cam2/%Y-%m-%d_%H-%M-%S
+    recordFormat: fmp4
+
+  cam3:
+    record: yes
+    recordPath: ./recordings/cam3/%Y-%m-%d_%H-%M-%S
+    recordFormat: fmp4
+
+  all_others:
+    record: yes
+    recordPath: ./recordings/%path/%Y-%m-%d_%H-%M-%S
+    recordFormat: fmp4

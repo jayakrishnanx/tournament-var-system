@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: var_postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-var_db}
+      POSTGRES_USER: ${DB_USER:-var_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-var_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: var_redis
+    ports:
+      - "6379:6379"
+    restart: always
+
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: var_mediamtx
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml
+      - recordings_data:/recordings
+    ports:
+      - "1935:1935"
+      - "8554:8554"
+      - "8888:8888"
+      - "8889:8889"
+      - "8890:8890/udp"
+    restart: always
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: var_backend
+    command: uvicorn project.asgi:application --host 0.0.0.0 --port 8000
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-django-prod-secret-key-change-me}
+      - DEBUG=False
+      - ALLOWED_HOSTS=*
+      - USE_POSTGRES=True
+      - DB_NAME=${DB_NAME:-var_db}
+      - DB_USER=${DB_USER:-var_user}
+      - DB_PASSWORD=${DB_PASSWORD:-var_password}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - USE_REDIS=True
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: var_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - mediamtx
+    restart: always
+
+volumes:
+  postgres_data:
+  recordings_data:

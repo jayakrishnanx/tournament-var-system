@@ -1,0 +1,336 @@
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from .models import Tournament, Team, Player, Match, MatchEvent, CameraFeed, VarIncident
+from .serializers import (
+    TournamentSerializer, TeamSerializer, PlayerSerializer,
+    MatchSerializer, MatchEventSerializer, CameraFeedSerializer, VarIncidentSerializer
+)
+from .services import update_match_score, add_match_event, toggle_match_timer
+
+class IsAdminOrReadOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return request.user and request.user.is_authenticated and request.user.is_admin()
+
+class IsScorerOrAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return request.user and request.user.is_authenticated and request.user.is_scorer()
+
+class IsVarOperatorOrAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return request.user and request.user.is_authenticated and request.user.is_var_operator()
+
+class TournamentViewSet(viewsets.ModelViewSet):
+    queryset = Tournament.objects.all().order_by('-created_at')
+    serializer_class = TournamentSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+class TeamViewSet(viewsets.ModelViewSet):
+    queryset = Team.objects.all().order_by('name')
+    serializer_class = TeamSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        tournament_id = self.request.query_params.get('tournament')
+        if tournament_id:
+            queryset = queryset.filter(tournament_id=tournament_id)
+        return queryset
+
+class PlayerViewSet(viewsets.ModelViewSet):
+    queryset = Player.objects.all().order_by('jersey_number')
+    serializer_class = PlayerSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        team_id = self.request.query_params.get('team')
+        if team_id:
+            queryset = queryset.filter(team_id=team_id)
+        return queryset
+
+class MatchViewSet(viewsets.ModelViewSet):
+    queryset = Match.objects.all().order_by('-scheduled_time')
+    serializer_class = MatchSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        tournament_id = self.request.query_params.get('tournament')
+        status_param = self.request.query_params.get('status')
+        if tournament_id:
+            queryset = queryset.filter(tournament_id=tournament_id)
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+        return queryset
+
+    @action(detail=True, methods=['post'], permission_classes=[IsScorerOrAdmin])
+    def score(self, request, pk=None):
+        team_id = request.data.get('team_id')
+        delta = request.data.get('delta', 1)
+        if not team_id:
+            return Response({'error': 'team_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            match = update_match_score(
+                match_id=pk,
+                team_id=team_id,
+                delta=int(delta),
+                actor=request.user,
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
+            return Response(MatchSerializer(match).data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsScorerOrAdmin])
+    def event(self, request, pk=None):
+        event_type = request.data.get('event_type')
+        team_id = request.data.get('team_id')
+        player_id = request.data.get('player_id')
+        details = request.data.get('details', {})
+
+        if not event_type:
+            return Response({'error': 'event_type is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            event = add_match_event(
+                match_id=pk,
+                event_type=event_type,
+                team_id=team_id,
+                player_id=player_id,
+                details=details,
+                actor=request.user,
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
+            return Response(MatchEventSerializer(event).data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsScorerOrAdmin])
+    def timer(self, request, pk=None):
+        action_type = request.data.get('action') # START, PAUSE, or RESET
+        if action_type not in ['START', 'PAUSE', 'RESET']:
+            return Response({'error': 'action must be START, PAUSE, or RESET'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            match = toggle_match_timer(
+                match_id=pk,
+                action=action_type,
+                actor=request.user,
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
+            return Response(MatchSerializer(match).data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        from django.db.models import Count
+        tournament_id = request.query_params.get('tournament')
+        
+        events_qs = MatchEvent.objects.all()
+        if tournament_id:
+            events_qs = events_qs.filter(match__tournament_id=tournament_id)
+
+        # Top scorers
+        goal_events = events_qs.filter(event_type=MatchEvent.EventType.GOAL).values(
+            'player__id', 'player__name', 'player__jersey_number', 'team__id', 'team__name', 'team__code'
+        ).annotate(count=Count('id')).order_by('-count')
+        
+        top_scorers = [
+            {
+                "player_id": item['player__id'],
+                "player_name": item['player__name'] or "Unknown Player",
+                "jersey_number": item['player__jersey_number'],
+                "team_id": item['team__id'],
+                "team_name": item['team__name'] or "Unknown Team",
+                "team_code": item['team__code'] or "",
+                "goals": item['count']
+            }
+            for item in goal_events if item['player__name'] or item['team__name']
+        ]
+
+        # Yellow cards
+        yellow_events = events_qs.filter(event_type=MatchEvent.EventType.YELLOW_CARD).values(
+            'player__id', 'player__name', 'player__jersey_number', 'team__id', 'team__name', 'team__code'
+        ).annotate(count=Count('id')).order_by('-count')
+        
+        yellow_cards = [
+            {
+                "player_id": item['player__id'],
+                "player_name": item['player__name'] or "Unknown Player",
+                "jersey_number": item['player__jersey_number'],
+                "team_id": item['team__id'],
+                "team_name": item['team__name'] or "Unknown Team",
+                "team_code": item['team__code'] or "",
+                "yellow_cards": item['count']
+            }
+            for item in yellow_events if item['player__name'] or item['team__name']
+        ]
+
+        # Red cards
+        red_events = events_qs.filter(event_type=MatchEvent.EventType.RED_CARD).values(
+            'player__id', 'player__name', 'player__jersey_number', 'team__id', 'team__name', 'team__code'
+        ).annotate(count=Count('id')).order_by('-count')
+        
+        red_cards = [
+            {
+                "player_id": item['player__id'],
+                "player_name": item['player__name'] or "Unknown Player",
+                "jersey_number": item['player__jersey_number'],
+                "team_id": item['team__id'],
+                "team_name": item['team__name'] or "Unknown Team",
+                "team_code": item['team__code'] or "",
+                "red_cards": item['count']
+            }
+            for item in red_events if item['player__name'] or item['team__name']
+        ]
+
+        return Response({
+            "top_scorers": top_scorers,
+            "yellow_cards": yellow_cards,
+            "red_cards": red_cards
+        })
+
+    @action(detail=False, methods=['get'])
+    def recordings(self, request):
+        import os
+        from django.conf import settings
+        match_id = request.query_params.get('match')
+        recordings_base = os.path.abspath(os.path.join(settings.BASE_DIR, '../recordings'))
+        
+        files_list = []
+        if os.path.exists(recordings_base):
+            match_keywords = []
+            if match_id:
+                match_keywords.append(str(match_id).lower())
+                try:
+                    m_obj = Match.objects.get(id=match_id)
+                    if m_obj.match_number:
+                        match_keywords.append(f"match{m_obj.match_number}")
+                        match_keywords.append(f"match_{m_obj.match_number}")
+                    if m_obj.match_code:
+                        match_keywords.append(m_obj.match_code.lower())
+                except Exception:
+                    pass
+
+            for root, dirs, files in os.walk(recordings_base):
+                for f in sorted(files, reverse=True):
+                    if f.endswith('.mp4'):
+                        rel_path = os.path.relpath(os.path.join(root, f), recordings_base).replace('\\', '/')
+                        if match_keywords:
+                            rel_lower = rel_path.lower()
+                            if any(kw in rel_lower for kw in match_keywords):
+                                files_list.append({
+                                    "name": f,
+                                    "rel_path": rel_path,
+                                    "url": request.build_absolute_uri(f"/recordings/{rel_path}")
+                                })
+                        else:
+                            files_list.append({
+                                "name": f,
+                                "rel_path": rel_path,
+                                "url": request.build_absolute_uri(f"/recordings/{rel_path}")
+                            })
+
+            if match_id and not files_list:
+                for root, dirs, files in os.walk(recordings_base):
+                    for f in sorted(files, reverse=True):
+                        if f.endswith('.mp4'):
+                            rel_path = os.path.relpath(os.path.join(root, f), recordings_base).replace('\\', '/')
+                            files_list.append({
+                                "name": f,
+                                "rel_path": rel_path,
+                                "url": request.build_absolute_uri(f"/recordings/{rel_path}")
+                            })
+
+        return Response({"recordings": files_list})
+
+import os, re
+from django.http import StreamingHttpResponse, Http404
+from django.conf import settings
+
+def stream_video_file(request, path):
+    video_path = os.path.abspath(os.path.join(settings.BASE_DIR, '../recordings', path))
+    if not os.path.exists(video_path):
+        raise Http404("Recording file not found")
+
+    file_size = os.path.getsize(video_path)
+    range_header = request.META.get('HTTP_RANGE', '').strip()
+
+    range_match = re.match(r'bytes=(\d+)-(\d+)?', range_header)
+    if range_match:
+        first_byte, last_byte = range_match.groups()
+        first_byte = int(first_byte)
+        last_byte = int(last_byte) if last_byte else file_size - 1
+        if last_byte >= file_size:
+            last_byte = file_size - 1
+        length = last_byte - first_byte + 1
+
+        def file_iterator(file_name, chunk_size=65536, offset=0, length=None):
+            with open(file_name, 'rb') as f:
+                f.seek(offset)
+                remaining = length
+                while remaining > 0:
+                    read_length = min(chunk_size, remaining)
+                    data = f.read(read_length)
+                    if not data:
+                        break
+                    remaining -= len(data)
+                    yield data
+
+        response = StreamingHttpResponse(
+            file_iterator(video_path, offset=first_byte, length=length),
+            status=206,
+            content_type='video/mp4'
+        )
+        response['Content-Range'] = f'bytes {first_byte}-{last_byte}/{file_size}'
+        response['Accept-Ranges'] = 'bytes'
+        response['Content-Length'] = str(length)
+        return response
+    else:
+        def file_iterator(file_name, chunk_size=65536):
+            with open(file_name, 'rb') as f:
+                while True:
+                    data = f.read(chunk_size)
+                    if not data:
+                        break
+                    yield data
+
+        response = StreamingHttpResponse(
+            file_iterator(video_path),
+            status=200,
+            content_type='video/mp4'
+        )
+        response['Accept-Ranges'] = 'bytes'
+        response['Content-Length'] = str(file_size)
+        return response
+
+class CameraFeedViewSet(viewsets.ModelViewSet):
+    queryset = CameraFeed.objects.all()
+    serializer_class = CameraFeedSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        match_id = self.request.query_params.get('match')
+        if match_id:
+            queryset = queryset.filter(match_id=match_id)
+        return queryset
+
+class VarIncidentViewSet(viewsets.ModelViewSet):
+    queryset = VarIncident.objects.all().order_by('-created_at')
+    serializer_class = VarIncidentSerializer
+    permission_classes = [IsVarOperatorOrAdmin]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        match_id = self.request.query_params.get('match')
+        if match_id:
+            queryset = queryset.filter(match_id=match_id)
+        return queryset
