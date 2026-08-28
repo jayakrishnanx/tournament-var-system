@@ -36,24 +36,45 @@ export const TournamentDetail = () => {
   const [bracketResetting, setBracketResetting] = useState(false);
   const [activeTab, setActiveTab] = useState('SCHEDULE'); // SCHEDULE or BRACKET
 
+  const handleAutoSelect = (count) => {
+    if (!tournament?.teams || tournament.teams.length < count) {
+      alert(`Tournament only has ${tournament?.teams?.length || 0} teams. Need at least ${count} teams.`);
+      return;
+    }
+    const autoIds = tournament.teams.slice(0, count).map(t => t.id);
+    setSelectedTeams(autoIds);
+  };
+
   const handleGenerateBracket = async () => {
-    if (selectedTeams.length !== 4 && selectedTeams.length !== 8) {
-      alert('Please select exactly 4 or 8 teams to generate the bracket.');
+    let teamsToUse = [...selectedTeams];
+
+    if (teamsToUse.length === 0) {
+      if (tournament?.teams?.length >= 8) {
+        teamsToUse = tournament.teams.slice(0, 8).map(t => t.id);
+        setSelectedTeams(teamsToUse);
+      } else if (tournament?.teams?.length >= 4) {
+        teamsToUse = tournament.teams.slice(0, 4).map(t => t.id);
+        setSelectedTeams(teamsToUse);
+      } else {
+        alert(`Tournament needs at least 4 teams to generate a knockout bracket.`);
+        return;
+      }
+    } else if (teamsToUse.length !== 4 && teamsToUse.length !== 8) {
+      alert(`Please select exactly 4 or 8 teams (currently ${teamsToUse.length} selected). Use the Auto-Select buttons for instant selection.`);
       return;
     }
-    if (!window.confirm(`Are you sure you want to generate a new Knockout Bracket with these ${selectedTeams.length} teams? This will clear any existing knockout fixtures!`)) {
-      return;
-    }
+
     setBracketGenerating(true);
     try {
       await api.post(`/tournaments/tournaments/${id}/generate_bracket/`, {
-        team_ids: selectedTeams
+        team_ids: teamsToUse
       });
       alert('🏆 Knockout Bracket generated successfully!');
-      fetchData();
+      await fetchData();
       setSelectedTeams([]);
     } catch (err) {
-      alert('Failed to generate bracket: ' + (err.response?.data?.error || err.message));
+      console.error('Failed to generate bracket:', err);
+      alert('Failed to generate bracket: ' + (err.response?.data?.error || err.response?.data?.detail || err.message));
     } finally {
       setBracketGenerating(false);
     }
@@ -327,10 +348,45 @@ export const TournamentDetail = () => {
             })}
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8' }}>
-              Selected: <strong style={{ color: '#f8fafc' }}>{selectedTeams.length}</strong> / 8 teams
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '800', color: '#94a3b8' }}>
+              Selected: <strong style={{ color: '#10b981', fontSize: '0.9rem' }}>{selectedTeams.length}</strong> / {tournament.teams.length} teams
             </span>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {tournament.teams.length >= 4 && (
+                <button
+                  type="button"
+                  onClick={() => handleAutoSelect(4)}
+                  className="btn-secondary"
+                  style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+                >
+                  ⚡ Auto Top 4
+                </button>
+              )}
+              {tournament.teams.length >= 8 && (
+                <button
+                  type="button"
+                  onClick={() => handleAutoSelect(8)}
+                  className="btn-secondary"
+                  style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+                >
+                  ⚡ Auto Top 8
+                </button>
+              )}
+              {selectedTeams.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedTeams([])}
+                  className="btn-secondary"
+                  style={{ padding: '4px 8px', fontSize: '0.7rem', color: '#ef4444' }}
+                >
+                  ↺ Clear
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {hasBracket && (
                 <button
@@ -346,13 +402,13 @@ export const TournamentDetail = () => {
                     gap: '6px'
                   }}
                 >
-                  <Trash2 size={13} />
+                  <Trash2 size={13} className={bracketResetting ? 'animate-spin' : ''} />
                   {bracketResetting ? 'Clearing...' : 'Reset Knockout Bracket'}
                 </button>
               )}
               <button
                 onClick={handleGenerateBracket}
-                disabled={bracketGenerating || (selectedTeams.length !== 4 && selectedTeams.length !== 8)}
+                disabled={bracketGenerating}
                 className="btn-primary"
                 style={{
                   padding: '8px 16px',
@@ -360,11 +416,11 @@ export const TournamentDetail = () => {
                   fontWeight: '900',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  opacity: (selectedTeams.length === 4 || selectedTeams.length === 8) ? 1 : 0.5
+                  gap: '6px'
                 }}
               >
-                🏆 {bracketGenerating ? 'Generating...' : hasBracket ? 'Regenerate Bracket' : 'Generate Knockout Bracket'}
+                <RotateCcw size={13} className={bracketGenerating ? 'animate-spin' : ''} />
+                {bracketGenerating ? 'Generating Bracket...' : hasBracket ? '🏆 Regenerate Knockout Bracket' : '🏆 Generate Knockout Bracket'}
               </button>
             </div>
           </div>

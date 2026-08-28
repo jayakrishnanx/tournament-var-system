@@ -80,24 +80,51 @@ export const Bracket = () => {
     });
   };
 
+  const handleAutoSelect = (count) => {
+    if (teams.length < count) {
+      alert(`Tournament only has ${teams.length} teams. Need at least ${count} teams.`);
+      return;
+    }
+    const autoIds = teams.slice(0, count).map(t => t.id);
+    setSelectedTeams(autoIds);
+  };
+
   const handleGenerateBracket = async () => {
-    if (selectedTeams.length !== 4 && selectedTeams.length !== 8) {
-      alert('Please select exactly 4 or 8 teams to generate the bracket.');
+    let teamsToUse = [...selectedTeams];
+
+    // If no teams are manually selected, auto-select 8 (if available) or 4
+    if (teamsToUse.length === 0) {
+      if (teams.length >= 8) {
+        teamsToUse = teams.slice(0, 8).map(t => t.id);
+        setSelectedTeams(teamsToUse);
+      } else if (teams.length >= 4) {
+        teamsToUse = teams.slice(0, 4).map(t => t.id);
+        setSelectedTeams(teamsToUse);
+      } else {
+        alert(`Tournament needs at least 4 teams to generate a knockout bracket. Currently has ${teams.length} teams.`);
+        return;
+      }
+    } else if (teamsToUse.length !== 4 && teamsToUse.length !== 8) {
+      alert(`Please select exactly 4 or 8 teams (currently ${teamsToUse.length} selected). Use the Auto-Select buttons below for instant selection.`);
       return;
     }
-    if (!window.confirm(`Are you sure you want to generate a new Knockout Bracket with these ${selectedTeams.length} teams? This will clear any existing knockout fixtures!`)) {
+
+    if (!selectedTournament) {
+      alert('No tournament selected. Please select a tournament first.');
       return;
     }
+
     setBracketGenerating(true);
     try {
       await api.post(`/tournaments/tournaments/${selectedTournament}/generate_bracket/`, {
-        team_ids: selectedTeams
+        team_ids: teamsToUse
       });
       alert('🏆 Knockout Bracket generated successfully!');
-      fetchAll(selectedTournament);
+      await fetchAll(selectedTournament);
       setSelectedTeams([]);
     } catch (err) {
-      alert('Failed to generate bracket: ' + (err.response?.data?.error || err.message));
+      console.error('Failed to generate bracket:', err);
+      alert('Failed to generate bracket: ' + (err.response?.data?.error || err.response?.data?.detail || err.message));
     } finally {
       setBracketGenerating(false);
     }
@@ -414,9 +441,43 @@ export const Bracket = () => {
             )}
           </div>
 
-          <p style={{ color: '#94a3b8', fontSize: '0.78rem', marginBottom: '12px' }}>
-            Select exactly <strong>4 teams</strong> (Semi-Finals) or <strong>8 teams</strong> (Quarter-Finals) to create the tree. Or reset at any time.
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: '800', color: '#94a3b8' }}>
+              Selected: <strong style={{ color: '#10b981', fontSize: '0.9rem' }}>{selectedTeams.length}</strong> / {teams.length} teams
+            </span>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {teams.length >= 4 && (
+                <button
+                  type="button"
+                  onClick={() => handleAutoSelect(4)}
+                  className="btn-secondary"
+                  style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+                >
+                  ⚡ Auto Top 4
+                </button>
+              )}
+              {teams.length >= 8 && (
+                <button
+                  type="button"
+                  onClick={() => handleAutoSelect(8)}
+                  className="btn-secondary"
+                  style={{ padding: '4px 8px', fontSize: '0.7rem' }}
+                >
+                  ⚡ Auto Top 8
+                </button>
+              )}
+              {selectedTeams.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedTeams([])}
+                  className="btn-secondary"
+                  style={{ padding: '4px 8px', fontSize: '0.7rem', color: '#ef4444' }}
+                >
+                  ↺ Clear
+                </button>
+              )}
+            </div>
+          </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '14px' }}>
             {teams.map(t => {
@@ -461,11 +522,7 @@ export const Bracket = () => {
             })}
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8' }}>
-              Selected: <strong style={{ color: '#f8fafc' }}>{selectedTeams.length}</strong> / {teams.length} teams
-            </span>
-
+          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {/* Reset Bracket Button */}
               {hasBracket && (
@@ -474,7 +531,7 @@ export const Bracket = () => {
                   disabled={bracketResetting}
                   className="btn-danger"
                   style={{
-                    padding: '7px 14px',
+                    padding: '8px 14px',
                     fontSize: '0.78rem',
                     fontWeight: '800',
                     display: 'inline-flex',
@@ -482,7 +539,7 @@ export const Bracket = () => {
                     gap: '6px'
                   }}
                 >
-                  <Trash2 size={13} />
+                  <Trash2 size={13} className={bracketResetting ? 'animate-spin' : ''} />
                   {bracketResetting ? 'Clearing...' : 'Reset Knockout Bracket'}
                 </button>
               )}
@@ -490,19 +547,19 @@ export const Bracket = () => {
               {/* Generate / Regenerate Button */}
               <button
                 onClick={handleGenerateBracket}
-                disabled={bracketGenerating || (selectedTeams.length !== 4 && selectedTeams.length !== 8)}
+                disabled={bracketGenerating}
                 className="btn-primary"
                 style={{
-                  padding: '7px 14px',
-                  fontSize: '0.78rem',
+                  padding: '8px 16px',
+                  fontSize: '0.8rem',
                   fontWeight: '900',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  opacity: (selectedTeams.length === 4 || selectedTeams.length === 8) ? 1 : 0.5
+                  gap: '6px'
                 }}
               >
-                🏆 {bracketGenerating ? 'Generating...' : hasBracket ? 'Regenerate Bracket' : 'Generate Bracket'}
+                <RotateCcw size={13} className={bracketGenerating ? 'animate-spin' : ''} />
+                {bracketGenerating ? 'Generating Bracket...' : hasBracket ? '🏆 Regenerate Knockout Bracket' : '🏆 Generate Knockout Bracket'}
               </button>
             </div>
           </div>
