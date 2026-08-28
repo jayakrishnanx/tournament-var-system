@@ -91,7 +91,7 @@ export const Matches = () => {
       }
     } catch (err) {
       console.error('Failed to set next match:', err);
-      alert('Failed to set as next match.');
+      alert('Failed to set as next match: ' + (err.response?.data?.error || err.message));
     }
   };
 
