@@ -173,15 +173,16 @@ export const Dashboard = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', alignItems: 'center' }}>
             {/* Sponsor Logo 1: Quick Mix */}
             <div style={{
-              backgroundColor: '#000000',
+              backgroundColor: '#ffffff',
               borderRadius: '8px',
-              border: '1px solid #334155',
+              border: '1px solid #ffffff',
               padding: '4px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               height: '85px',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.25)'
             }}>
               <img
                 src="/sponsors/sponsor1.png"
@@ -192,15 +193,16 @@ export const Dashboard = () => {
 
             {/* Sponsor Logo 2: NEO */}
             <div style={{
-              backgroundColor: '#000000',
+              backgroundColor: '#ffffff',
               borderRadius: '8px',
-              border: '1px solid #334155',
+              border: '1px solid #ffffff',
               padding: '4px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               height: '85px',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.25)'
             }}>
               <img
                 src="/sponsors/sponsor2.png"
@@ -211,15 +213,16 @@ export const Dashboard = () => {
 
             {/* Sponsor Logo 3: N N STEELS */}
             <div style={{
-              backgroundColor: '#000000',
+              backgroundColor: '#ffffff',
               borderRadius: '8px',
-              border: '1px solid #334155',
+              border: '1px solid #ffffff',
               padding: '4px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               height: '85px',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.25)'
             }}>
               <img
                 src="/sponsors/sponsor3.png"
