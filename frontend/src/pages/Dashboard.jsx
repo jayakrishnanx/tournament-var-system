@@ -325,10 +325,7 @@ export const Dashboard = () => {
                   </div>
                 </div>
 
-                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                    ⏱️ {Math.floor(m.timer_seconds_elapsed / 60)}m {m.timer_seconds_elapsed % 60}s
-                  </span>
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #334155', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                   <Link to={`/matches/${m.id}`} className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem' }}>
                     {user?.role === 'ADMIN' ? 'Open Master Console' : 'Watch Live Scoreboard & Cameras'}
                   </Link>
