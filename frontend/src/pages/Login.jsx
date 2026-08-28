@@ -262,29 +262,6 @@ export const Login = () => {
             <span>{loading ? 'Processing...' : (isRegister ? 'Create Account' : 'Sign In')}</span>
           </button>
         </form>
-
-        {/* 1-Click Quick Access */}
-        {!isRegister && (
-          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #334155' }}>
-            <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '10px', textAlign: 'center', fontWeight: '700' }}>
-              ⚡ 1-CLICK QUICK LOGIN
-            </span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <button
-                onClick={() => handleQuickLogin('admin', 'admin123')}
-                style={{ backgroundColor: '#1e293b', border: '1px solid #3b82f6', color: '#3b82f6', padding: '8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-              >
-                👑 Admin Login
-              </button>
-              <button
-                onClick={() => handleQuickLogin('user', 'user123')}
-                style={{ backgroundColor: '#1e293b', border: '1px solid #10b981', color: '#10b981', padding: '8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-              >
-                👁️ Viewer Mode
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
