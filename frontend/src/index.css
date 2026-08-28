@@ -226,4 +226,8 @@ button:disabled {
     font-size: 0.8rem !important;
     border-radius: 6px !important;
   }
+
+  .hide-on-mobile {
+    display: none !important;
+  }
 }

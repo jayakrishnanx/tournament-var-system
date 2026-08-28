@@ -75,7 +75,7 @@ export const Tournaments = () => {
         </div>
 
         {user?.role === 'ADMIN' && (
-          <button onClick={() => setShowModal(true)} className="btn-primary">
+          <button onClick={() => setShowModal(true)} className="btn-primary hide-on-mobile">
             <Plus size={16} /> Create Tournament
           </button>
         )}
