@@ -21,10 +21,6 @@ export const Dashboard = () => {
 
   const { user } = useAuth();
 
-  if (user?.role === 'ADMIN') {
-    return <Navigate to="/matches" replace />;
-  }
-
   const fetchData = async () => {
     try {
       const url = selectedTournament ? `/tournaments/matches/?tournament=${selectedTournament}` : '/tournaments/matches/';
@@ -103,6 +99,8 @@ export const Dashboard = () => {
 
   const liveMatch = matches.find(m => m.status === 'LIVE' || m.status === 'PAUSED');
   const nextMatch = matches.find(m => m.is_next_match && m.status === 'SCHEDULED') || matches.find(m => m.status === 'SCHEDULED');
+
+  if (user?.role === 'ADMIN') return <Navigate to="/matches" replace />;
 
   return (
     <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>
