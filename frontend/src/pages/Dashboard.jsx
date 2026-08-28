@@ -108,15 +108,9 @@ export const Dashboard = () => {
         borderLeft: '4px solid #3b82f6'
       }}>
         <div>
-          <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            {user?.role === 'ADMIN' ? 'Tournament Operations Control Center' : 'Kallikalam Live Match Hub'}
-          </span>
-          <h1 style={{ fontSize: '1.4rem', fontWeight: '800', marginTop: '2px' }}>
-            {user?.role === 'ADMIN' ? 'Welcome back, Admin!' : 'Live Championship Matches & Real-Time Scoreboard'}
+          <h1 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '0.02em', color: '#f8fafc' }}>
+            {user?.role === 'ADMIN' ? 'Admin Control Center' : 'KALLIKALAM LIVE MATCH HUB'}
           </h1>
-          <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '2px' }}>
-            {user?.role === 'ADMIN' ? 'Real-Time Sync & 3-Camera VAR active.' : 'Follow instant scores, active timers, and live 3-camera match feeds.'}
-          </p>
         </div>
 
         {user?.role === 'ADMIN' && (
