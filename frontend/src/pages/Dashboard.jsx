@@ -175,7 +175,7 @@ export const Dashboard = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', alignItems: 'center' }}>
             {/* Sponsor Logo 1: Quick Mix */}
             <div style={{
-              backgroundColor: '#000000',
+              backgroundColor: '#1D2128',
               borderRadius: '8px',
               border: '1px solid #343a46',
               padding: '4px',
@@ -194,7 +194,7 @@ export const Dashboard = () => {
 
             {/* Sponsor Logo 2: NEO */}
             <div style={{
-              backgroundColor: '#000000',
+              backgroundColor: '#1D2128',
               borderRadius: '8px',
               border: '1px solid #343a46',
               padding: '4px',
@@ -213,7 +213,7 @@ export const Dashboard = () => {
 
             {/* Sponsor Logo 3: N N STEELS */}
             <div style={{
-              backgroundColor: '#000000',
+              backgroundColor: '#1D2128',
               borderRadius: '8px',
               border: '1px solid #343a46',
               padding: '4px',
