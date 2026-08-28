@@ -148,9 +148,8 @@ export const Teams = () => {
                       <span style={{ fontSize: '0.8rem', color: '#64748b' }}>No players added to squad.</span>
                     ) : (
                       team.players?.map(p => (
-                        <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '6px 10px', backgroundColor: '#0f172a', borderRadius: '6px' }}>
-                          <span style={{ fontWeight: '600', color: '#f8fafc' }}>#{p.jersey_number} {p.name}</span>
-                          <span style={{ color: '#94a3b8' }}>{p.position}</span>
+                        <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '6px 10px', backgroundColor: '#0f172a', borderRadius: '6px' }}>
+                          <span style={{ fontWeight: '700', color: '#f8fafc' }}>#{p.jersey_number} {p.name}</span>
                         </div>
                       ))
                     )}
@@ -219,27 +218,15 @@ export const Teams = () => {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px' }}>Jersey #</label>
-                  <input
-                    type="number"
-                    required
-                    value={playerForm.jersey_number}
-                    onChange={e => setPlayerForm({ ...playerForm, jersey_number: parseInt(e.target.value) })}
-                    style={{ width: '100%', padding: '8px 12px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px' }}>Position</label>
-                  <input
-                    type="text"
-                    required
-                    value={playerForm.position}
-                    onChange={e => setPlayerForm({ ...playerForm, position: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white' }}
-                  />
-                </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px' }}>Jersey #</label>
+                <input
+                  type="number"
+                  required
+                  value={playerForm.jersey_number}
+                  onChange={e => setPlayerForm({ ...playerForm, jersey_number: parseInt(e.target.value) })}
+                  style={{ width: '100%', padding: '8px 12px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: 'white' }}
+                />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
