@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
-import { Trophy, Plus, Users, Calendar, ArrowLeft } from 'lucide-react';
+import { Trophy, Plus, Users, Calendar, ArrowLeft, Trash2, RotateCcw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const formatDateDDMMYYYY = (dateStr) => {
@@ -33,6 +33,7 @@ export const TournamentDetail = () => {
 
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [bracketGenerating, setBracketGenerating] = useState(false);
+  const [bracketResetting, setBracketResetting] = useState(false);
   const [activeTab, setActiveTab] = useState('SCHEDULE'); // SCHEDULE or BRACKET
 
   const handleGenerateBracket = async () => {
@@ -55,6 +56,23 @@ export const TournamentDetail = () => {
       alert('Failed to generate bracket: ' + (err.response?.data?.error || err.message));
     } finally {
       setBracketGenerating(false);
+    }
+  };
+
+  const handleResetBracket = async () => {
+    if (!window.confirm('⚠️ Are you sure you want to completely RESET and delete the Knockout Bracket? All knockout fixtures and scores will be permanently removed!')) {
+      return;
+    }
+    setBracketResetting(true);
+    try {
+      await api.post(`/tournaments/tournaments/${id}/reset_bracket/`);
+      alert('Knockout Bracket has been reset successfully!');
+      fetchData();
+      setSelectedTeams([]);
+    } catch (err) {
+      alert('Failed to reset bracket: ' + (err.response?.data?.error || err.message));
+    } finally {
+      setBracketResetting(false);
     }
   };
 
@@ -300,22 +318,42 @@ export const TournamentDetail = () => {
             <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8' }}>
               Selected: <strong style={{ color: '#f8fafc' }}>{selectedTeams.length}</strong> / 8 teams
             </span>
-            <button
-              onClick={handleGenerateBracket}
-              disabled={bracketGenerating || (selectedTeams.length !== 4 && selectedTeams.length !== 8)}
-              className="btn-primary"
-              style={{
-                padding: '8px 16px',
-                fontSize: '0.8rem',
-                fontWeight: '900',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                opacity: (selectedTeams.length === 4 || selectedTeams.length === 8) ? 1 : 0.5
-              }}
-            >
-              🏆 {bracketGenerating ? 'Generating...' : 'Generate Knockout Bracket'}
-            </button>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {hasBracket && (
+                <button
+                  onClick={handleResetBracket}
+                  disabled={bracketResetting}
+                  className="btn-danger"
+                  style={{
+                    padding: '8px 14px',
+                    fontSize: '0.8rem',
+                    fontWeight: '800',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <Trash2 size={13} />
+                  {bracketResetting ? 'Clearing...' : 'Reset Knockout Bracket'}
+                </button>
+              )}
+              <button
+                onClick={handleGenerateBracket}
+                disabled={bracketGenerating || (selectedTeams.length !== 4 && selectedTeams.length !== 8)}
+                className="btn-primary"
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '0.8rem',
+                  fontWeight: '900',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  opacity: (selectedTeams.length === 4 || selectedTeams.length === 8) ? 1 : 0.5
+                }}
+              >
+                🏆 {bracketGenerating ? 'Generating...' : hasBracket ? 'Regenerate Bracket' : 'Generate Knockout Bracket'}
+              </button>
+            </div>
           </div>
         </div>
       )}

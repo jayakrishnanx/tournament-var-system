@@ -143,6 +143,21 @@ class TournamentViewSet(viewsets.ModelViewSet):
         return Response({'success': 'Bracket generated successfully!'}, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def reset_bracket(self, request, pk=None):
+        """
+        Deletes all knockout (bracket) matches for this tournament.
+        """
+        tournament = self.get_object()
+        knockout_matches = Match.objects.filter(tournament=tournament).exclude(stage=Match.Stage.REGULAR)
+        
+        from .models import MatchEvent
+        MatchEvent.objects.filter(match__in=knockout_matches).delete()
+        count = knockout_matches.count()
+        knockout_matches.delete()
+        
+        return Response({'success': f'Knockout bracket reset successfully. ({count} matches cleared)'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def reset_standings(self, request, pk=None):
         """
         Resets all REGULAR (group/league) matches for this tournament:
