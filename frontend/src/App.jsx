@@ -12,6 +12,7 @@ import { Matches } from './pages/Matches';
 import { MatchDetail } from './pages/MatchDetail';
 import { PublicScoreboard } from './pages/PublicScoreboard';
 import { Standings } from './pages/Standings';
+import { Bracket } from './pages/Bracket';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
             <Navbar />
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/bracket" element={<Bracket />} />
               <Route path="/standings" element={<Standings />} />
               <Route path="/tournaments" element={<Tournaments />} />
               <Route path="/tournaments/:id" element={<TournamentDetail />} />

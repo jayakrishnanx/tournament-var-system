@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Trophy, Users, Calendar, Shield, LogOut, Activity } from 'lucide-react';
+import { Trophy, Users, Calendar, Shield, LogOut, Activity, Award } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
@@ -97,23 +97,26 @@ export const Navbar = () => {
             <Link to="/" style={navItemStyle('/')}>
               <Activity size={14} /> Matches & Live Scores
             </Link>
+            <Link to="/bracket" style={navItemStyle('/bracket')}>
+              <Trophy size={14} color="#10b981" /> 🏆 Knockout Bracket
+            </Link>
             <Link to="/standings" style={navItemStyle('/standings')}>
-              <Trophy size={14} color="#10b981" /> 📊 Points Table
+              <Award size={14} color="#10b981" /> 📊 Points Table
             </Link>
           </>
         ) : (
           <>
-            <Link to="/tournaments" className="hide-on-mobile" style={navItemStyle('/tournaments')}>
-              <Trophy size={14} /> Manage Tournaments
+            <Link to="/matches" style={navItemStyle('/matches')}>
+              <Calendar size={14} /> Manage Matches
             </Link>
             <Link to="/teams" style={navItemStyle('/teams')}>
               <Users size={14} /> Manage Teams
             </Link>
-            <Link to="/matches" style={navItemStyle('/matches')}>
-              <Calendar size={14} /> Manage Matches
+            <Link to="/bracket" style={navItemStyle('/bracket')}>
+              <Trophy size={14} color="#10b981" /> 🏆 Knockout Bracket
             </Link>
             <Link to="/standings" style={navItemStyle('/standings')}>
-              <Trophy size={14} color="#10b981" /> Points Table
+              <Award size={14} color="#10b981" /> Points Table
             </Link>
           </>
         )}
