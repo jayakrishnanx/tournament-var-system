@@ -120,32 +120,37 @@ export const MatchDetail = () => {
           </span>
         </div>
 
-        <div className="responsive-grid-3" style={{ alignItems: 'center', textAlign: 'center' }}>
-          {/* Home Team */}
-          <div>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#f8fafc', wordBreak: 'break-word' }}>{match.home_team_details?.name}</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0', gap: '6px', width: '100%' }}>
+          {/* Home Team (Left Side) */}
+          <div style={{ flex: 1, textAlign: 'center', wordBreak: 'break-word' }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: '900', color: '#f8fafc', lineHeight: 1.2 }}>
+              {match.home_team_details?.name}
+            </h2>
           </div>
 
-          {/* Master Score Display & Active Clock */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          {/* Master Score Display & Active Clock (Center) */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
             <div className="digital-score" style={{
               backgroundColor: '#090d16',
-              padding: '8px 20px',
-              borderRadius: '12px',
+              padding: '6px 14px',
+              borderRadius: '10px',
               border: '2px solid #3b82f6',
-              boxShadow: '0 0 20px rgba(59, 130, 246, 0.25)',
-              display: 'inline-block'
+              boxShadow: '0 0 15px rgba(59, 130, 246, 0.25)',
+              fontSize: '1.6rem',
+              fontWeight: '900'
             }}>
               {match.home_score} : {match.away_score}
             </div>
-            <div style={{ marginTop: '6px', fontSize: '1.3rem', fontWeight: '900', fontFamily: 'monospace', color: match.is_timer_running ? '#10b981' : '#f8fafc' }}>
+            <div style={{ marginTop: '4px', fontSize: '1rem', fontWeight: '900', fontFamily: 'monospace', color: match.is_timer_running ? '#10b981' : '#f8fafc' }}>
               {minutes}:{seconds}
             </div>
           </div>
 
-          {/* Away Team */}
-          <div>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#f8fafc', wordBreak: 'break-word' }}>{match.away_team_details?.name}</h2>
+          {/* Away Team (Right Side) */}
+          <div style={{ flex: 1, textAlign: 'center', wordBreak: 'break-word' }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: '900', color: '#f8fafc', lineHeight: 1.2 }}>
+              {match.away_team_details?.name}
+            </h2>
           </div>
         </div>
       </div>
