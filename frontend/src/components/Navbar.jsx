@@ -74,7 +74,7 @@ export const Navbar = () => {
               border: '1px solid currentColor',
               display: 'inline-block'
             }}>
-              👑 ADMIN
+              ADMIN
             </span>
             <button
               onClick={handleLogout}
