@@ -192,6 +192,71 @@ class MatchViewSet(viewsets.ModelViewSet):
         })
 
     @action(detail=False, methods=['get'])
+    def standings(self, request):
+        tournament_id = request.query_params.get('tournament')
+        tournaments = Tournament.objects.all()
+        if tournament_id:
+            tournaments = tournaments.filter(id=tournament_id)
+
+        target_t = tournaments.first()
+        if not target_t:
+            return Response([])
+
+        teams = target_t.teams.all()
+        matches = target_t.matches.all()
+
+        table = []
+        for team in teams:
+            played = 0
+            won = 0
+            drawn = 0
+            lost = 0
+            gf = 0
+            ga = 0
+
+            for m in matches:
+                if m.status in [Match.Status.ENDED, Match.Status.LIVE, Match.Status.PAUSED]:
+                    if m.home_team_id == team.id:
+                        played += 1
+                        gf += m.home_score
+                        ga += m.away_score
+                        if m.home_score > m.away_score:
+                            won += 1
+                        elif m.home_score == m.away_score:
+                            drawn += 1
+                        else:
+                            lost += 1
+                    elif m.away_team_id == team.id:
+                        played += 1
+                        gf += m.away_score
+                        ga += m.home_score
+                        if m.away_score > m.home_score:
+                            won += 1
+                        elif m.away_score == m.home_score:
+                            drawn += 1
+                        else:
+                            lost += 1
+
+            gd = gf - ga
+            pts = (won * 3) + (drawn * 1)
+            table.append({
+                "team_id": str(team.id),
+                "team_name": team.name,
+                "team_code": team.code,
+                "played": played,
+                "won": won,
+                "drawn": drawn,
+                "lost": lost,
+                "goals_for": gf,
+                "goals_against": ga,
+                "goal_difference": gd,
+                "points": pts
+            })
+
+        table.sort(key=lambda x: (x['points'], x['goal_difference'], x['goals_for']), reverse=True)
+        return Response(table)
+
+    @action(detail=False, methods=['get'])
     def recordings(self, request):
         import os
         from django.conf import settings

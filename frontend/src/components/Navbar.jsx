@@ -93,6 +93,9 @@ export const Navbar = () => {
         <Link to="/" style={navItemStyle('/')}>
           <Activity size={14} /> Matches & Live Scores
         </Link>
+        <Link to="/standings" style={navItemStyle('/standings')}>
+          <Trophy size={14} /> Points Table
+        </Link>
         {isAdmin && (
           <>
             <Link to="/tournaments" style={navItemStyle('/tournaments')}>
