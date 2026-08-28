@@ -52,9 +52,9 @@ export const PublicScoreboard = () => {
   if (!match) return <div style={{ padding: '40px', color: '#f43f5e', textAlign: 'center' }}>Match feed not found.</div>;
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1280px', margin: '0 auto' }}>
+    <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>
       {/* Navigation Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#3b82f6', fontWeight: '700' }}>
           <ArrowLeft size={16} /> Main Arena Portal
         </Link>
@@ -66,38 +66,39 @@ export const PublicScoreboard = () => {
 
       {/* Main Public Stadium Board */}
       <div className="glass-panel" style={{
-        padding: '36px',
-        marginBottom: '32px',
+        padding: '20px',
+        marginBottom: '24px',
         background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))',
         border: '1px solid #334155',
         textAlign: 'center'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '16px' }}>
           <StatusBadge status={match.status} />
           <span style={{ backgroundColor: '#0f172a', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '700', color: '#94a3b8', border: '1px solid #334155' }}>
             {match.current_period}
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: '32px' }}>
+        <div className="responsive-grid-3" style={{ alignItems: 'center' }}>
           {/* Home Team */}
           <div>
-            <h2 style={{ fontSize: '2rem', fontWeight: '900', color: '#f8fafc' }}>{match.home_team_details?.name}</h2>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: '900', color: '#f8fafc' }}>{match.home_team_details?.name}</h2>
           </div>
 
           {/* Stadium Score & Timer */}
           <div>
             <div className="digital-score" style={{
               backgroundColor: '#090d16',
-              padding: '20px 48px',
-              borderRadius: '20px',
+              padding: '12px 24px',
+              borderRadius: '16px',
               border: '2px solid #3b82f6',
-              boxShadow: '0 0 30px rgba(59, 130, 246, 0.3)'
+              boxShadow: '0 0 30px rgba(59, 130, 246, 0.3)',
+              display: 'inline-block'
             }}>
               {match.home_score} : {match.away_score}
             </div>
 
-            <div style={{ marginTop: '16px', fontSize: '1.75rem', fontWeight: '900', fontFamily: 'monospace', color: '#10b981' }}>
+            <div style={{ marginTop: '10px', fontSize: '1.5rem', fontWeight: '900', fontFamily: 'monospace', color: '#10b981' }}>
               {Math.floor(match.timer_seconds_elapsed / 60).toString().padStart(2, '0')}:
               {(match.timer_seconds_elapsed % 60).toString().padStart(2, '0')}
             </div>
@@ -105,13 +106,13 @@ export const PublicScoreboard = () => {
 
           {/* Away Team */}
           <div>
-            <h2 style={{ fontSize: '2rem', fontWeight: '900', color: '#f8fafc' }}>{match.away_team_details?.name}</h2>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: '900', color: '#f8fafc' }}>{match.away_team_details?.name}</h2>
           </div>
         </div>
       </div>
 
       {/* Grid: Public Stream Player & Live Ticker */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
+      <div className="responsive-grid-2">
         {/* Stream Player */}
         <div className="glass-panel" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

@@ -146,7 +146,7 @@ export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', fontSize: '0.75rem' }}>
+        <div className="responsive-grid-3" style={{ fontSize: '0.75rem' }}>
           <div style={{ backgroundColor: '#1e293b', padding: '8px 12px', borderRadius: '6px', border: '1px solid #334155' }}>
             <span style={{ color: '#f8fafc', fontWeight: '700', display: 'block' }}>📹 Cam 1 Common URL:</span>
             <code style={{ color: '#10b981', wordBreak: 'break-all', display: 'block', fontWeight: '800' }}>rtmp://{streamHost}:1935/live/cam1</code>
@@ -166,7 +166,7 @@ export const VarOperatorStation = ({ match, incidents = [], onUpdate }) => {
       </div>
 
       {/* 1. Live WebRTC 3-Camera Monitor */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div className="responsive-grid-3" style={{ marginBottom: '24px' }}>
         <HlsPlayer src={`http://${streamHost}:8888/live/cam1/index.m3u8`} fallbackUrl={`http://${streamHost}:8888/${matchCode}/cam1/index.m3u8`} label="CAM 1 (Left Angle)" />
         <HlsPlayer src={`http://${streamHost}:8888/live/cam2/index.m3u8`} fallbackUrl={`http://${streamHost}:8888/${matchCode}/cam2/index.m3u8`} label="CAM 2 (Main Center)" />
         <HlsPlayer src={`http://${streamHost}:8888/live/cam3/index.m3u8`} fallbackUrl={`http://${streamHost}:8888/${matchCode}/cam3/index.m3u8`} label="CAM 3 (Right Angle)" />

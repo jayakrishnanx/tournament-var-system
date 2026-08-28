@@ -103,7 +103,7 @@ export const ScorerConsole = ({ match, onUpdate }) => {
           <Award size={18} color="#10b981" /> Official Scorer Dashboard - Rapid Score Adjust
         </h3>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div className="responsive-grid-2">
           {/* Home Team Score Controls */}
           <div style={{ backgroundColor: '#0f172a', padding: '20px', borderRadius: '12px', border: '1px solid #334155' }}>
             <div style={{ fontWeight: '800', fontSize: '1.1rem', color: '#f8fafc', marginBottom: '4px' }}>
