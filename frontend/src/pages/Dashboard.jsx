@@ -99,37 +99,6 @@ export const Dashboard = () => {
 
   return (
     <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>
-      {/* Header Banner */}
-      <div className="glass-panel mobile-stack" style={{
-        padding: '20px',
-        marginBottom: '20px',
-        background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95))',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderLeft: '4px solid #3b82f6'
-      }}>
-        <div>
-          <h1 style={{ fontSize: '1.4rem', fontWeight: '900', letterSpacing: '0.02em', color: '#f8fafc' }}>
-            {user?.role === 'ADMIN' ? 'Admin Control Center' : 'KALLIKALAM LIVE MATCH HUB'}
-          </h1>
-        </div>
-
-        {user?.role === 'ADMIN' && (
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-            <button
-              onClick={() => setShowModal(true)}
-              className="btn-primary"
-              style={{ padding: '7px 14px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800' }}
-            >
-              <PlusCircle size={16} /> Schedule New Match
-            </button>
-            <Link to="/tournaments" className="btn-secondary" style={{ padding: '7px 14px', fontSize: '0.8rem' }}>
-              Tournaments
-            </Link>
-          </div>
-        )}
-      </div>
 
       {/* Schedule Match Modal for Admin */}
       {showModal && (
