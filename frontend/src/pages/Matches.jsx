@@ -29,21 +29,28 @@ export const Matches = () => {
   });
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1280px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+    <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: '800' }}>Match Schedule & Master Console</h1>
-          <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '4px' }}>
-            Live scoring control, timer state, and VAR incident reviews.
+          <h1 style={{ fontSize: '1.5rem', fontWeight: '800' }}>Matches & Live Scoring</h1>
+          <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '2px' }}>
+            Real-time score updates, VAR multi-cam feed & match control.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#1e293b', padding: '6px 12px', borderRadius: '8px', border: '1px solid #334155' }}>
-          <Filter size={16} color="#94a3b8" />
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <select
             value={filterStatus}
-            onChange={e => setFilterStatus(e.target.value)}
-            style={{ backgroundColor: 'transparent', border: 'none', color: 'white', fontWeight: '600', fontSize: '0.85rem' }}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            style={{
+              padding: '6px 10px',
+              backgroundColor: '#0f172a',
+              border: '1px solid #334155',
+              borderRadius: '6px',
+              color: 'white',
+              fontSize: '0.8rem',
+              fontWeight: '600'
+            }}
           >
             <option value="ALL" style={{ background: '#1e293b' }}>All Statuses</option>
             <option value="LIVE" style={{ background: '#1e293b' }}>Live Now</option>
@@ -54,11 +61,11 @@ export const Matches = () => {
       </div>
 
       {loading ? (
-        <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Loading match schedule...</div>
+        <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>Loading match schedule...</div>
       ) : filteredMatches.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>No matches found matching filter.</div>
+        <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>No matches found matching filter.</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '24px' }}>
+        <div className="responsive-grid-2">
           {filteredMatches.map(m => (
             <div key={m.id} className="glass-panel card-hover" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>

@@ -75,28 +75,28 @@ export const Teams = () => {
   };
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1280px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+    <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: '800' }}>Teams & Roster Manager</h1>
-          <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '4px' }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: '800' }}>Teams & Roster Manager</h1>
+          <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '2px' }}>
             Registered teams across all active tournaments and player rosters.
           </p>
         </div>
 
         {user?.role === 'ADMIN' && (
-          <button onClick={() => setShowTeamModal(true)} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Plus size={18} /> Add New Team
+          <button onClick={() => setShowTeamModal(true)} className="btn-primary">
+            <Plus size={16} /> Add New Team
           </button>
         )}
       </div>
 
       {loading ? (
-        <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Loading teams...</div>
+        <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>Loading teams...</div>
       ) : teams.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>No teams registered yet.</div>
+        <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>No teams registered yet.</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '24px' }}>
+        <div className="responsive-grid-2">
           {teams.map(team => {
             const tournamentObj = tournaments.find(t => t.id === team.tournament);
             return (

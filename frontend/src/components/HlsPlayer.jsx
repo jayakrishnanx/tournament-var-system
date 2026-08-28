@@ -11,10 +11,7 @@ export const HlsPlayer = ({ src, fallbackUrl, label = 'Camera Stream' }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const isVercel = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
-  const streamHost = isVercel ? '100.64.92.46' : (window.location.hostname || 'localhost');
-  const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'https:' : 'http:';
-
+  const streamHost = window.location.hostname || 'localhost';
   let pathName = '';
   try {
     const urlObj = new URL(src);
@@ -78,7 +75,7 @@ export const HlsPlayer = ({ src, fallbackUrl, label = 'Camera Stream' }) => {
         video.addEventListener('loadedmetadata', () => {
           setIsOnline(true);
           setLoading(false);
-          video.play().catch(() => {});
+          video.play().catch(() => { });
         });
       }
     };

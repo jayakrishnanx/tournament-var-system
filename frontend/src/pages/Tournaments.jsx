@@ -65,28 +65,28 @@ export const Tournaments = () => {
   };
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1280px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+    <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: '800' }}>Tournaments</h1>
-          <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '4px' }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: '800' }}>Tournaments</h1>
+          <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '2px' }}>
             Manage upcoming, ongoing, and completed sports championships.
           </p>
         </div>
 
         {user?.role === 'ADMIN' && (
-          <button onClick={() => setShowModal(true)} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Plus size={18} /> Create Tournament
+          <button onClick={() => setShowModal(true)} className="btn-primary">
+            <Plus size={16} /> Create Tournament
           </button>
         )}
       </div>
 
       {loading ? (
-        <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Loading tournaments...</div>
+        <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>Loading tournaments...</div>
       ) : tournaments.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>No tournaments created yet.</div>
+        <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>No tournaments created yet.</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+        <div className="responsive-grid-2">
           {tournaments.map(t => (
             <div key={t.id} className="glass-panel card-hover" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative' }}>
               <div>

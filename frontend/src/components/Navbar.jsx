@@ -16,13 +16,13 @@ export const Navbar = () => {
   const navItemStyle = (path) => ({
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    padding: '8px 16px',
-    borderRadius: '8px',
-    fontSize: '0.9rem',
+    gap: '6px',
+    padding: '5px 10px',
+    borderRadius: '6px',
+    fontSize: '0.8rem',
     fontWeight: '600',
     color: location.pathname === path ? '#3b82f6' : '#94a3b8',
-    backgroundColor: location.pathname === path ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+    backgroundColor: location.pathname === path ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
     transition: 'all 0.2s ease',
   });
 

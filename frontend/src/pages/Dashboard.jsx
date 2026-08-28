@@ -70,11 +70,11 @@ export const Dashboard = () => {
   const redLeader = stats.red_cards[0];
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1280px', margin: '0 auto' }}>
+    <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>
       {/* Header Banner */}
-      <div className="glass-panel" style={{
-        padding: '32px',
-        marginBottom: '32px',
+      <div className="glass-panel mobile-stack" style={{
+        padding: '20px',
+        marginBottom: '20px',
         background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95))',
         display: 'flex',
         justifyContent: 'space-between',
@@ -82,44 +82,44 @@ export const Dashboard = () => {
         borderLeft: '4px solid #3b82f6'
       }}>
         <div>
-          <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             Tournament Operations Control Center
           </span>
-          <h1 style={{ fontSize: '2rem', fontWeight: '800', marginTop: '4px' }}>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: '800', marginTop: '2px' }}>
             Welcome back, {user?.first_name || user?.username}!
           </h1>
-          <p style={{ color: '#94a3b8', fontSize: '0.95rem', marginTop: '4px' }}>
+          <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '2px' }}>
             Role: <strong style={{ color: '#f8fafc' }}>{user?.role}</strong> | Real-Time Sync & 3-Camera VAR active.
           </p>
         </div>
 
         {user?.role === 'ADMIN' && (
-          <Link to="/tournaments" className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <PlusCircle size={18} /> New Tournament
+          <Link to="/tournaments" className="btn-primary" style={{ marginTop: '8px' }}>
+            <PlusCircle size={16} /> New Tournament
           </Link>
         )}
       </div>
 
       {/* Top Metrics Row - Player Statistics & Disciplinary Highlights */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+      <div className="responsive-grid-2" style={{ marginBottom: '24px' }}>
         {/* 1. Top Goal Scorer */}
-        <div className="glass-panel" style={{ padding: '24px', borderTop: '3px solid #10b981' }}>
+        <div className="glass-panel" style={{ padding: '16px', borderTop: '3px solid #10b981' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94a3b8' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>Highest Goal Scorer</span>
-            <Award size={20} color="#10b981" />
+            <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>Highest Goal Scorer</span>
+            <Award size={18} color="#10b981" />
           </div>
-          <div style={{ marginTop: '12px' }}>
+          <div style={{ marginTop: '8px' }}>
             {topScorer ? (
               <>
-                <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#f8fafc' }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#f8fafc' }}>
                   {topScorer.player_name}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#10b981', fontWeight: '700', marginTop: '2px' }}>
+                <div style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: '700', marginTop: '2px' }}>
                   {topScorer.team_name} ({topScorer.goals} {topScorer.goals === 1 ? 'Goal' : 'Goals'})
                 </div>
               </>
             ) : (
-              <div style={{ fontSize: '1rem', fontWeight: '600', color: '#64748b', marginTop: '4px' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#64748b', marginTop: '4px' }}>
                 No goals recorded yet
               </div>
             )}
@@ -127,23 +127,23 @@ export const Dashboard = () => {
         </div>
 
         {/* 2. Yellow Cards Leader */}
-        <div className="glass-panel" style={{ padding: '24px', borderTop: '3px solid #f59e0b' }}>
+        <div className="glass-panel" style={{ padding: '16px', borderTop: '3px solid #f59e0b' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94a3b8' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>Yellow Cards</span>
-            <AlertTriangle size={20} color="#f59e0b" />
+            <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>Yellow Cards</span>
+            <AlertTriangle size={18} color="#f59e0b" />
           </div>
-          <div style={{ marginTop: '12px' }}>
+          <div style={{ marginTop: '8px' }}>
             {yellowLeader ? (
               <>
-                <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#f8fafc' }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#f8fafc' }}>
                   {yellowLeader.player_name}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#f59e0b', fontWeight: '700', marginTop: '2px' }}>
+                <div style={{ fontSize: '0.8rem', color: '#f59e0b', fontWeight: '700', marginTop: '2px' }}>
                   {yellowLeader.team_name} ({yellowLeader.yellow_cards} {yellowLeader.yellow_cards === 1 ? 'Yellow' : 'Yellows'})
                 </div>
               </>
             ) : (
-              <div style={{ fontSize: '1rem', fontWeight: '600', color: '#64748b', marginTop: '4px' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#64748b', marginTop: '4px' }}>
                 No yellow cards issued
               </div>
             )}
@@ -151,23 +151,23 @@ export const Dashboard = () => {
         </div>
 
         {/* 3. Red Cards Leader */}
-        <div className="glass-panel" style={{ padding: '24px', borderTop: '3px solid #ef4444' }}>
+        <div className="glass-panel" style={{ padding: '16px', borderTop: '3px solid #ef4444' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94a3b8' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>Red Cards</span>
-            <ShieldAlert size={20} color="#ef4444" />
+            <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>Red Cards</span>
+            <ShieldAlert size={18} color="#ef4444" />
           </div>
-          <div style={{ marginTop: '12px' }}>
+          <div style={{ marginTop: '8px' }}>
             {redLeader ? (
               <>
-                <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#f8fafc' }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#f8fafc' }}>
                   {redLeader.player_name}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#ef4444', fontWeight: '700', marginTop: '2px' }}>
+                <div style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: '700', marginTop: '2px' }}>
                   {redLeader.team_name} ({redLeader.red_cards} {redLeader.red_cards === 1 ? 'Red' : 'Reds'})
                 </div>
               </>
             ) : (
-              <div style={{ fontSize: '1rem', fontWeight: '600', color: '#64748b', marginTop: '4px' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#64748b', marginTop: '4px' }}>
                 No red cards issued
               </div>
             )}
@@ -175,19 +175,19 @@ export const Dashboard = () => {
         </div>
 
         {/* 4. Live Matches */}
-        <div className="glass-panel" style={{ padding: '24px', borderTop: '3px solid #3b82f6' }}>
+        <div className="glass-panel" style={{ padding: '16px', borderTop: '3px solid #3b82f6' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94a3b8' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>Live Matches</span>
-            <Activity size={20} color="#3b82f6" />
+            <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>Live Matches</span>
+            <Activity size={18} color="#3b82f6" />
           </div>
-          <div style={{ fontSize: '2rem', fontWeight: '800', marginTop: '8px' }}>
+          <div style={{ fontSize: '1.6rem', fontWeight: '800', marginTop: '4px' }}>
             {liveMatches.filter(m => m.status === 'LIVE').length}
           </div>
         </div>
       </div>
 
       {/* Main Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
+      <div className="responsive-grid-2">
         {/* Live & Featured Matches */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
