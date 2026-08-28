@@ -78,6 +78,7 @@ class Match(models.Model):
     timer_seconds_elapsed = models.PositiveIntegerField(default=0)
     is_timer_running = models.BooleanField(default=False)
     timer_last_updated_at = models.DateTimeField(null=True, blank=True)
+    is_next_match = models.BooleanField(default=False)
     
     match_number = models.PositiveIntegerField(null=True, blank=True)
     scheduled_time = models.DateTimeField()

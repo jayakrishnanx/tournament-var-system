@@ -99,6 +99,8 @@ export const Dashboard = () => {
     return (a.match_number || 0) - (b.match_number || 0);
   });
 
+  const nextMatch = matches.find(m => m.is_next_match) || matches.find(m => m.status === 'SCHEDULED');
+
   return (
     <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>
 
@@ -226,7 +228,45 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* 2. MAIN LIVE & SCHEDULED MATCHES (POSITION #2 SECOND) */}
+      {/* 2. UPCOMING NEXT MATCH HIGHLIGHT CARD FOR SPECTATORS */}
+      {nextMatch && (
+        <div className="glass-panel" style={{
+          padding: '16px 20px',
+          marginBottom: '20px',
+          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.95))',
+          border: '1px solid rgba(245, 158, 11, 0.4)',
+          borderLeft: '4px solid #f59e0b'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              📌 UPCOMING NEXT MATCH
+            </span>
+            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#94a3b8' }}>
+              Match #{nextMatch.match_number}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#f8fafc' }}>
+              {nextMatch.home_team_details?.name} <span style={{ color: '#f59e0b', margin: '0 6px' }}>VS</span> {nextMatch.away_team_details?.name}
+            </div>
+
+            <Link to={`/matches/${nextMatch.id}`} style={{
+              backgroundColor: '#f59e0b',
+              color: '#000000',
+              fontWeight: '900',
+              padding: '6px 14px',
+              borderRadius: '6px',
+              fontSize: '0.8rem',
+              whiteSpace: 'nowrap'
+            }}>
+              Watch Next Match
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* 3. MAIN LIVE & SCHEDULED MATCHES */}
       <div style={{ marginBottom: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>

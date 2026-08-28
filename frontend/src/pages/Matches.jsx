@@ -244,7 +244,7 @@ export const Matches = () => {
       ) : (
         <div className="responsive-grid-2">
           {filteredMatches.map((m, idx) => (
-            <div key={m.id} className="glass-panel card-hover" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div key={m.id} className="glass-panel card-hover" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: m.is_next_match ? '2px solid #f59e0b' : '1px solid #334155' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '6px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -252,6 +252,11 @@ export const Matches = () => {
                     <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
                       🏆 {m.tournament_name || 'Kakkikalam'}
                     </span>
+                    {m.is_next_match && (
+                      <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.2)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(245, 158, 11, 0.5)' }}>
+                        📌 NEXT MATCH
+                      </span>
+                    )}
                   </div>
                   <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '700' }}>
                     Match #{m.match_number || (idx + 1)}
@@ -282,12 +287,26 @@ export const Matches = () => {
                 </div>
               </div>
 
-              <div style={{ paddingTop: '14px', borderTop: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                  Period: <strong>{m.current_period}</strong>
-                </span>
+              <div style={{ paddingTop: '14px', borderTop: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                {user?.role === 'ADMIN' && m.status === 'SCHEDULED' && !m.is_next_match && (
+                  <button
+                    onClick={() => handleSetNextMatch(m.id)}
+                    style={{
+                      backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                      color: '#f59e0b',
+                      border: '1px solid rgba(245, 158, 11, 0.4)',
+                      padding: '5px 10px',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
+                      fontWeight: '800',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    📌 Set as Next Match
+                  </button>
+                )}
 
-                <Link to={`/matches/${m.id}`} className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem' }}>
+                <Link to={`/matches/${m.id}`} className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem', marginLeft: 'auto' }}>
                   {user?.role === 'ADMIN' ? 'Open Master Console' : 'Watch Live Scoreboard'}
                 </Link>
               </div>

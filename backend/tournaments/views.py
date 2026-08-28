@@ -122,6 +122,18 @@ class MatchViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['post'], permission_classes=[IsScorerOrAdmin])
+    def set_next(self, request, pk=None):
+        try:
+            match = self.get_object()
+            Match.objects.filter(tournament=match.tournament).update(is_next_match=False)
+            match.is_next_match = True
+            match.save(update_fields=['is_next_match'])
+            broadcast_match_update(match)
+            return Response(MatchSerializer(match).data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=False, methods=['get'])
     def stats(self, request):
         from django.db.models import Count
