@@ -85,8 +85,32 @@ export const MatchDetail = () => {
     }
   };
 
-  if (loading) return <div style={{ padding: '40px', color: '#94a3b8', textAlign: 'center' }}>Loading match details...</div>;
-  if (!match) return <div style={{ padding: '40px', color: '#f43f5e', textAlign: 'center' }}>Match record not found.</div>;
+  if (loading) {
+    return (
+      <div style={{ padding: '60px 16px', textAlign: 'center', maxWidth: '480px', margin: '0 auto' }}>
+        <div className="glass-panel" style={{ padding: '32px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+          <div style={{ width: '40px', height: '40px', border: '3px solid rgba(239,68,68,0.2)', borderTop: '3px solid #ef4444', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#f8fafc', margin: 0 }}>Connecting to Live Match...</h3>
+          <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>Loading live scoreboard, video player, and match events</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!match) {
+    return (
+      <div style={{ padding: '60px 16px', textAlign: 'center', maxWidth: '480px', margin: '0 auto' }}>
+        <div className="glass-panel" style={{ padding: '32px 20px' }}>
+          <Radio size={40} color="#f43f5e" style={{ margin: '0 auto 12px auto' }} />
+          <h3 style={{ fontSize: '1.2rem', fontWeight: '900', color: '#f8fafc', marginBottom: '8px' }}>Match Record Not Found</h3>
+          <p style={{ fontSize: '0.82rem', color: '#94a3b8', marginBottom: '20px' }}>This match ID might have been cleared or updated.</p>
+          <Link to="/" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', fontWeight: '800' }}>
+            <ArrowLeft size={16} /> Return to Main Live Arena
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
   const seconds = (elapsedSeconds % 60).toString().padStart(2, '0');
