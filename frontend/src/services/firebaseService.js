@@ -592,6 +592,58 @@ export const resetMatch = async (matchId) => {
   return updated;
 };
 
+export const resetAllMatches = async (tournamentId = null) => {
+  const cached = getCache('matches', []);
+  const updated = cached.map(m => {
+    if (!tournamentId || String(m.tournament) === String(tournamentId)) {
+      return {
+        ...m,
+        home_score: 0,
+        away_score: 0,
+        status: 'SCHEDULED',
+        current_period: 'NOT_STARTED',
+        is_timer_running: false,
+        timer_seconds_elapsed: 0,
+        timer_base_seconds: 0,
+        timer_started_at: null,
+        computed_elapsed_seconds: 0,
+        is_live_streaming: false,
+        stream_url: '',
+        recent_events: []
+      };
+    }
+    return m;
+  });
+  setCache('matches', updated);
+
+  try {
+    const snap = await getDocs(collection(db, 'matches'));
+    for (const d of snap.docs) {
+      const data = d.data();
+      if (!tournamentId || String(data.tournament) === String(tournamentId)) {
+        await updateDoc(doc(db, 'matches', d.id), {
+          home_score: 0,
+          away_score: 0,
+          status: 'SCHEDULED',
+          current_period: 'NOT_STARTED',
+          is_timer_running: false,
+          timer_seconds_elapsed: 0,
+          timer_base_seconds: 0,
+          timer_started_at: null,
+          computed_elapsed_seconds: 0,
+          is_live_streaming: false,
+          stream_url: '',
+          recent_events: []
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('resetAllMatches firestore error:', e);
+  }
+
+  return true;
+};
+
 export const recordMatchEvent = async (matchId, eventData) => {
   const match = await getMatch(matchId);
   if (!match) return null;

@@ -132,6 +132,17 @@ export const Matches = () => {
     }
   };
 
+  const handleResetAllMatches = async () => {
+    if (!window.confirm('⚠️ WARNING: Are you sure you want to RESET ALL MATCHES? This will reset all scores to 0 - 0, stop all timers, clear all cards/goals, and set statuses to SCHEDULED.')) return;
+    try {
+      await api.post('/tournaments/matches/reset_all', {});
+      fetchMatches();
+      alert('✅ All matches successfully reset to 0 - 0 & SCHEDULED!');
+    } catch (err) {
+      alert('Error resetting all matches: ' + err.message);
+    }
+  };
+
   const handleClearAllMatches = async () => {
     if (!window.confirm('⚠️ WARNING: Are you sure you want to delete ALL match schedules? This will wipe the match schedule clean.')) return;
     try {
@@ -184,25 +195,46 @@ export const Matches = () => {
                 <PlusCircle size={16} /> Schedule New Match
               </button>
               {matches.length > 0 && (
-                <button
-                  onClick={handleClearAllMatches}
-                  style={{
-                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                    color: '#ef4444',
-                    border: '1px solid rgba(239, 68, 68, 0.35)',
-                    padding: '7px 12px',
-                    borderRadius: '6px',
-                    fontSize: '0.8rem',
-                    fontWeight: '800',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    cursor: 'pointer'
-                  }}
-                  title="Wipe all scheduled matches"
-                >
-                  <Trash2 size={15} /> Clear All Matches
-                </button>
+                <>
+                  <button
+                    onClick={handleResetAllMatches}
+                    style={{
+                      backgroundColor: 'rgba(234, 179, 8, 0.15)',
+                      color: '#eab308',
+                      border: '1px solid rgba(234, 179, 8, 0.35)',
+                      padding: '7px 12px',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem',
+                      fontWeight: '800',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer'
+                    }}
+                    title="Reset all match scores to 0 - 0 & statuses to SCHEDULED"
+                  >
+                    <RotateCcw size={15} /> Reset All Matches
+                  </button>
+                  <button
+                    onClick={handleClearAllMatches}
+                    style={{
+                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                      color: '#ef4444',
+                      border: '1px solid rgba(239, 68, 68, 0.35)',
+                      padding: '7px 12px',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem',
+                      fontWeight: '800',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer'
+                    }}
+                    title="Wipe all scheduled matches"
+                  >
+                    <Trash2 size={15} /> Clear All Matches
+                  </button>
+                </>
               )}
             </>
           )}

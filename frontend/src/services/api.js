@@ -182,6 +182,13 @@ const api = {
         return { data: { success: true }, status: 200 };
       }
 
+      // 7b. Reset All Matches to 0 - 0 and Scheduled
+      if (cleanUrl === '/tournaments/matches/reset_all') {
+        const tId = payload.tournament || null;
+        await fb.resetAllMatches(tId);
+        return { data: { success: true }, status: 200 };
+      }
+
       // 8. Clear All Teams
       if (cleanUrl === '/tournaments/teams/clear_all') {
         const tId = payload.tournament || null;

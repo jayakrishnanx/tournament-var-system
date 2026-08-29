@@ -124,7 +124,10 @@ export const Dashboard = () => {
     return (a.match_number || 0) - (b.match_number || 0);
   });
 
-  const liveMatch = matches.find(m => m.status === 'LIVE' || m.status === 'PAUSED' || Boolean(m.is_live_streaming));
+  // LIVE match is strictly the match where the timer is running or active live stream
+  const liveMatch = matches.find(m => Boolean(m.is_timer_running)) ||
+                    matches.find(m => m.status === 'LIVE' && Boolean(m.is_timer_running)) ||
+                    matches.find(m => Boolean(m.is_live_streaming) && (m.status === 'LIVE' || m.status === 'PAUSED'));
   const nextMatch = matches.find(m => m.is_next_match && m.status === 'SCHEDULED') || matches.find(m => m.status === 'SCHEDULED');
 
   if (user?.role === 'ADMIN') return <Navigate to="/matches" replace />;
