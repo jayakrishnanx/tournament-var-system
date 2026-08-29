@@ -4,8 +4,8 @@ import api from '../services/api';
 import { connectMatchWebSocket } from '../services/websocket';
 import { StatusBadge } from '../components/StatusBadge';
 import { ScorerConsole } from '../components/ScorerConsole';
-import { LiveStreamBroadcaster } from '../components/LiveStreamBroadcaster';
-import { LiveStreamViewer } from '../components/LiveStreamViewer';
+import { LiveStreamEmbedPlayer } from '../components/LiveStreamEmbedPlayer';
+import { AdminStreamManager } from '../components/AdminStreamManager';
 import { calculateMatchElapsed } from '../services/firebaseService';
 import { ArrowLeft, Radio, Award } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -106,28 +106,21 @@ export const MatchDetail = () => {
         </div>
       </div>
 
-      {/* 1. ADMIN LIVE STREAM BROADCASTER (CAMERA) */}
+      {/* 1. ADMIN STREAM BROADCAST LINK MANAGER */}
       {isAdmin && (
-        <LiveStreamBroadcaster
-          matchId={id}
-          homeTeam={match.home_team_details?.name}
-          awayTeam={match.away_team_details?.name}
-          score={`${match.home_score} - ${match.away_score}`}
-        />
+        <AdminStreamManager match={match} onUpdate={handleMatchUpdate} />
       )}
 
-      {/* 2. SPECTATOR LIVE STREAM VIEWER (OR ADMIN LIVE MONITOR) */}
-      {!isAdmin && (
-        <LiveStreamViewer
-          matchId={id}
-          homeTeam={match.home_team_details?.name}
-          awayTeam={match.away_team_details?.name}
-          homeScore={match.home_score}
-          awayScore={match.away_score}
-          clockTime={clockFormatted}
-          matchStatus={match.status}
-        />
-      )}
+      {/* 2. LIVE STREAM VIDEO PLAYER (YOUTUBE / TWITCH LIVE) */}
+      <LiveStreamEmbedPlayer
+        streamUrl={match.stream_url}
+        homeTeam={match.home_team_details?.name}
+        awayTeam={match.away_team_details?.name}
+        homeScore={match.home_score}
+        awayScore={match.away_score}
+        clockTime={clockFormatted}
+        matchStatus={match.status}
+      />
 
       {/* 3. Main Scoreboard Header */}
       <div className="glass-panel" style={{

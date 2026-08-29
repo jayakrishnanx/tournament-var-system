@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import { connectMatchWebSocket } from '../services/websocket';
 import { StatusBadge } from '../components/StatusBadge';
-import { LiveStreamViewer } from '../components/LiveStreamViewer';
+import { LiveStreamEmbedPlayer } from '../components/LiveStreamEmbedPlayer';
+import { calculateMatchElapsed } from '../services/firebaseService';
 import { Radio, ArrowLeft, Award } from 'lucide-react';
 
 export const PublicScoreboard = () => {
@@ -11,6 +12,7 @@ export const PublicScoreboard = () => {
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(true);
   const [wsConnected, setWsConnected] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {
     const fetchMatch = async () => {
@@ -39,11 +41,22 @@ export const PublicScoreboard = () => {
     return () => ws.close();
   }, [id]);
 
+  useEffect(() => {
+    const updateTimer = () => {
+      if (match) {
+        setElapsedSeconds(calculateMatchElapsed(match));
+      }
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [match]);
+
   if (loading) return <div style={{ padding: '40px', color: '#94a3b8', textAlign: 'center' }}>Loading live scoreboard...</div>;
   if (!match) return <div style={{ padding: '40px', color: '#f43f5e', textAlign: 'center' }}>Match feed not found.</div>;
 
-  const minutes = Math.floor((match.timer_seconds_elapsed || 0) / 60).toString().padStart(2, '0');
-  const seconds = ((match.timer_seconds_elapsed || 0) % 60).toString().padStart(2, '0');
+  const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
+  const seconds = (elapsedSeconds % 60).toString().padStart(2, '0');
   const clockFormatted = `${minutes}:${seconds}`;
 
   return (
@@ -59,9 +72,9 @@ export const PublicScoreboard = () => {
         </div>
       </div>
 
-      {/* Live In-Browser Video Stream Player */}
-      <LiveStreamViewer
-        matchId={id}
+      {/* Live Stream Video Player (YouTube / Twitch) */}
+      <LiveStreamEmbedPlayer
+        streamUrl={match.stream_url}
         homeTeam={match.home_team_details?.name}
         awayTeam={match.away_team_details?.name}
         homeScore={match.home_score}
