@@ -7,8 +7,33 @@ export const SyncModal = ({ isOpen, onClose }) => {
   const [copied, setCopied] = useState(false);
   const [stats, setStats] = useState({ tournaments: 0, teams: 0, matches: 0 });
   const [importText, setImportText] = useState('');
-  const [activeTab, setActiveTab] = useState('qr'); // 'qr' | 'manual'
-  const [importSuccess, setImportSuccess] = useState('');
+  const [customFirebaseText, setCustomFirebaseText] = useState(() => {
+    return localStorage.getItem('custom_firebase_config') || '';
+  });
+  const [firebaseSaved, setFirebaseSaved] = useState(false);
+
+  const handleSaveFirebaseConfig = () => {
+    try {
+      if (!customFirebaseText.trim()) {
+        localStorage.removeItem('custom_firebase_config');
+        alert('Custom Firebase config cleared.');
+        window.location.reload();
+        return;
+      }
+      const parsed = JSON.parse(customFirebaseText.trim());
+      if (parsed.apiKey && (parsed.projectId || parsed.appId)) {
+        localStorage.setItem('custom_firebase_config', JSON.stringify(parsed));
+        setFirebaseSaved(true);
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        alert('Invalid Firebase configuration object. Must include apiKey and projectId.');
+      }
+    } catch (e) {
+      alert('Invalid JSON: ' + e.message);
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -123,34 +148,48 @@ export const SyncModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Tab buttons */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid #334155', paddingBottom: '8px' }}>
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', borderBottom: '1px solid #334155', paddingBottom: '8px', flexWrap: 'wrap' }}>
           <button
             onClick={() => setActiveTab('qr')}
             style={{
-              padding: '6px 14px',
+              padding: '6px 12px',
               borderRadius: '6px',
-              fontSize: '0.8rem',
+              fontSize: '0.78rem',
               fontWeight: '800',
               backgroundColor: activeTab === 'qr' ? '#2B5748' : 'transparent',
               color: activeTab === 'qr' ? '#fff' : '#94a3b8',
               border: activeTab === 'qr' ? '1px solid #2B5748' : '1px solid #334155'
             }}
           >
-            📱 Scan QR Code on Phone
+            📱 1-Click Scan to Phone
+          </button>
+          <button
+            onClick={() => setActiveTab('firebase')}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '6px',
+              fontSize: '0.78rem',
+              fontWeight: '800',
+              backgroundColor: activeTab === 'firebase' ? '#2B5748' : 'transparent',
+              color: activeTab === 'firebase' ? '#fff' : '#94a3b8',
+              border: activeTab === 'firebase' ? '1px solid #2B5748' : '1px solid #334155'
+            }}
+          >
+            🔥 Firebase Cloud Keys
           </button>
           <button
             onClick={() => setActiveTab('manual')}
             style={{
-              padding: '6px 14px',
+              padding: '6px 12px',
               borderRadius: '6px',
-              fontSize: '0.8rem',
+              fontSize: '0.78rem',
               fontWeight: '800',
               backgroundColor: activeTab === 'manual' ? '#2B5748' : 'transparent',
               color: activeTab === 'manual' ? '#fff' : '#94a3b8',
               border: activeTab === 'manual' ? '1px solid #2B5748' : '1px solid #334155'
             }}
           >
-            📋 Backup / Import JSON
+            📋 Backup JSON
           </button>
         </div>
 
@@ -221,6 +260,41 @@ export const SyncModal = ({ isOpen, onClose }) => {
                 </button>
               </div>
             </div>
+          </div>
+        ) : activeTab === 'firebase' ? (
+          <div>
+            <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '12px' }}>
+              Paste your Firebase Project Web Configuration JSON from Firebase Console to enable 24/7 background cloud syncing across all devices.
+            </p>
+            <textarea
+              rows={6}
+              value={customFirebaseText}
+              onChange={(e) => setCustomFirebaseText(e.target.value)}
+              placeholder={`{\n  "apiKey": "AIzaSy...",\n  "projectId": "your-project-id",\n  "authDomain": "your-project.firebaseapp.com",\n  "storageBucket": "your-project.appspot.com",\n  "appId": "1:..."\n}`}
+              style={{
+                width: '100%',
+                padding: '10px',
+                backgroundColor: '#0f131a',
+                border: '1px solid #334155',
+                borderRadius: '6px',
+                color: '#EAECF0',
+                fontSize: '0.75rem',
+                fontFamily: 'monospace',
+                marginBottom: '10px'
+              }}
+            />
+            {firebaseSaved && (
+              <div style={{ color: '#10b981', fontSize: '0.8rem', fontWeight: '800', marginBottom: '8px' }}>
+                ✅ Firebase configuration saved! Connecting...
+              </div>
+            )}
+            <button
+              onClick={handleSaveFirebaseConfig}
+              className="btn-primary"
+              style={{ width: '100%', padding: '10px', fontWeight: '800' }}
+            >
+              Save Firebase Cloud Config
+            </button>
           </div>
         ) : (
           <div>
