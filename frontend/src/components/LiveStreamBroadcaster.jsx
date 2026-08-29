@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Radio, Play, Square, ExternalLink, RefreshCw, Mic, MicOff, ZoomIn, ZoomOut, Sparkles } from 'lucide-react';
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
@@ -9,7 +9,9 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
   const [rotationAngle, setRotationAngle] = useState(0); // 0, 90, 180, 270
   const [zoomLevel, setZoomLevel] = useState(1.0); // 0.5x to 4.0x
   const [isMicMuted, setIsMicMuted] = useState(false);
-  
+  const [isPinching, setIsPinching] = useState(false);
+
+  const touchStateRef = useRef({ initialDist: null, initialZoom: 1.0 });
   const streamRoomId = `kallikalam_match_${matchId}`;
   
   // Ultra-Low Latency (<100ms), 60 FPS, 0.5x Ultra-Wide to 4.0x Zoom, Mute & Rotation Controls
@@ -77,6 +79,35 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     setIsMicMuted(prev => !prev);
   };
 
+  // Two-Finger Native Touch Pinch-In / Pinch-Out Gesture Handlers
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      touchStateRef.current = { initialDist: dist, initialZoom: zoomLevel };
+      setIsPinching(true);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 2 && touchStateRef.current.initialDist) {
+      const currentDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const ratio = currentDist / touchStateRef.current.initialDist;
+      const targetZoom = Math.min(4.0, Math.max(0.5, touchStateRef.current.initialZoom * ratio));
+      setZoomLevel(parseFloat(targetZoom.toFixed(1)));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStateRef.current = { initialDist: null, initialZoom: zoomLevel };
+    setIsPinching(false);
+  };
+
   return (
     <div className="glass-panel" style={{
       padding: '18px 20px',
@@ -94,11 +125,11 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
             <h3 style={{ fontSize: '1.05rem', fontWeight: '900', color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               {isStreaming ? '🔴 LIVE CAMERA BROADCASTER' : '📹 FIELD CAMERA LIVE BROADCAST'}
               <span style={{ fontSize: '0.65rem', backgroundColor: '#10b981', color: '#000000', padding: '2px 8px', borderRadius: '4px', fontWeight: '900' }}>
-                CAMERA CONTROLS
+                PINCH TO ZOOM
               </span>
             </h3>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-              Hold your phone in landscape mode to film the match. Use controls below to zoom, rotate, or mute!
+              Pinch on the camera preview with 2 fingers to zoom in or zoom out, or use buttons below!
             </span>
           </div>
         </div>
@@ -120,35 +151,64 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         )}
       </div>
 
-      {/* Broadcast Frame / Preview */}
-      <div style={{
-        position: 'relative',
-        width: '100%',
-        height: isStreaming ? '56.25vw' : 'auto',
-        maxHeight: '460px',
-        minHeight: isStreaming ? '260px' : 'auto',
-        backgroundColor: '#000000',
-        borderRadius: '10px',
-        overflow: 'hidden',
-        marginBottom: '14px',
-        border: isStreaming ? '2px solid #ef4444' : '1px dashed #334155',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
+      {/* Broadcast Frame / Preview with Pinch-to-Zoom Touch Gestures */}
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: isStreaming ? '56.25vw' : 'auto',
+          maxHeight: '460px',
+          minHeight: isStreaming ? '260px' : 'auto',
+          backgroundColor: '#000000',
+          borderRadius: '10px',
+          overflow: 'hidden',
+          marginBottom: '14px',
+          border: isStreaming ? '2px solid #ef4444' : '1px dashed #334155',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          touchAction: 'none'
+        }}
+      >
         {isStreaming ? (
-          <iframe
-            key={`broadcast-${rotationAngle}-${isMicMuted}-${zoomLevel}`}
-            src={broadcastUrl}
-            title="Field Camera Broadcast"
-            allow="camera; microphone; display-capture; autoplay"
-            style={{
-              width: '100%',
-              height: '100%',
-              border: 'none',
-              display: 'block'
-            }}
-          />
+          <>
+            <iframe
+              key={`broadcast-${rotationAngle}-${isMicMuted}-${zoomLevel}`}
+              src={broadcastUrl}
+              title="Field Camera Broadcast"
+              allow="camera; microphone; display-capture; autoplay"
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none',
+                display: 'block'
+              }}
+            />
+            {/* Visual HUD when Pinching on Screen */}
+            {isPinching && (
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                color: '#38bdf8',
+                padding: '12px 24px',
+                borderRadius: '12px',
+                border: '2px solid #38bdf8',
+                fontSize: '1.4rem',
+                fontWeight: '900',
+                boxShadow: '0 0 20px rgba(56, 189, 248, 0.5)',
+                pointerEvents: 'none',
+                zIndex: 30
+              }}>
+                🔍 {zoomLevel.toFixed(1)}x {zoomLevel <= 0.6 ? '(Ultra-Wide)' : ''}
+              </div>
+            )}
+          </>
         ) : (
           <div style={{
             backgroundColor: '#090d16',
@@ -181,7 +241,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              🎛️ Camera Lens, Zoom & Audio Controls
+              🎛️ Camera Lens, Pinch Zoom & Audio Controls
             </span>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
               Current Scale: <strong style={{ color: '#38bdf8' }}>{zoomLevel.toFixed(1)}x</strong>
