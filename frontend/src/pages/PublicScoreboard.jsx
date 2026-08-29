@@ -3,29 +3,14 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import { connectMatchWebSocket } from '../services/websocket';
 import { StatusBadge } from '../components/StatusBadge';
-import { HlsPlayer } from '../components/HlsPlayer';
-import { Trophy, Radio, Activity, Volume2, ShieldAlert, ArrowLeft } from 'lucide-react';
-import { getStreamHost } from '../services/streamConfig';
+import { LiveStreamViewer } from '../components/LiveStreamViewer';
+import { Radio, ArrowLeft, Award } from 'lucide-react';
 
 export const PublicScoreboard = () => {
   const { id } = useParams();
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(true);
   const [wsConnected, setWsConnected] = useState(false);
-  const [activeCam, setActiveCam] = useState('cam1');
-  const [streamHost, setStreamHostState] = useState(getStreamHost());
-
-  useEffect(() => {
-    const handleHostChange = () => setStreamHostState(getStreamHost());
-    window.addEventListener('stream_host_changed', handleHostChange);
-    return () => window.removeEventListener('stream_host_changed', handleHostChange);
-  }, []);
-
-  const streams = {
-    cam1: { label: 'CAM 1 (Left Angle)', url: `http://${streamHost}:8888/live/cam1/index.m3u8`, fallback: `http://${streamHost}:8888/cam1/index.m3u8` },
-    cam2: { label: 'CAM 2 (Main Center)', url: `http://${streamHost}:8888/live/cam2/index.m3u8`, fallback: `http://${streamHost}:8888/cam2/index.m3u8` },
-    cam3: { label: 'CAM 3 (Right Angle)', url: `http://${streamHost}:8888/live/cam3/index.m3u8`, fallback: `http://${streamHost}:8888/cam3/index.m3u8` }
-  };
 
   useEffect(() => {
     const fetchMatch = async () => {
@@ -57,18 +42,33 @@ export const PublicScoreboard = () => {
   if (loading) return <div style={{ padding: '40px', color: '#94a3b8', textAlign: 'center' }}>Loading live scoreboard...</div>;
   if (!match) return <div style={{ padding: '40px', color: '#f43f5e', textAlign: 'center' }}>Match feed not found.</div>;
 
+  const minutes = Math.floor((match.timer_seconds_elapsed || 0) / 60).toString().padStart(2, '0');
+  const seconds = ((match.timer_seconds_elapsed || 0) % 60).toString().padStart(2, '0');
+  const clockFormatted = `${minutes}:${seconds}`;
+
   return (
     <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>
       {/* Navigation Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#3b82f6', fontWeight: '700' }}>
+        <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#3b82f6', fontWeight: '800' }}>
           <ArrowLeft size={16} /> Main Arena Portal
         </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: wsConnected ? '#10b981' : '#94a3b8' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: wsConnected ? '#10b981' : '#94a3b8', fontWeight: '700' }}>
           <Radio size={14} className={wsConnected ? 'animate-pulse' : ''} />
-          <span>{wsConnected ? 'LIVE WS BROADCAST' : 'POLLING'}</span>
+          <span>{wsConnected ? 'LIVE SCOREBOARD' : 'CONNECTING...'}</span>
         </div>
       </div>
+
+      {/* Live In-Browser Video Stream Player */}
+      <LiveStreamViewer
+        matchId={id}
+        homeTeam={match.home_team_details?.name}
+        awayTeam={match.away_team_details?.name}
+        homeScore={match.home_score}
+        awayScore={match.away_score}
+        clockTime={clockFormatted}
+        matchStatus={match.status}
+      />
 
       {/* Main Public Stadium Board */}
       <div className="glass-panel" style={{
@@ -88,91 +88,61 @@ export const PublicScoreboard = () => {
         <div className="responsive-grid-3" style={{ alignItems: 'center' }}>
           {/* Home Team */}
           <div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: '900', color: '#f8fafc' }}>{match.home_team_details?.name}</h2>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: '900', color: '#f8fafc' }}>{match.home_team_details?.name}</h2>
           </div>
 
           {/* Stadium Score & Timer */}
           <div>
             <div className="digital-score" style={{
               backgroundColor: '#090d16',
-              padding: '12px 24px',
-              borderRadius: '16px',
+              padding: '10px 22px',
+              borderRadius: '14px',
               border: '2px solid #3b82f6',
-              boxShadow: '0 0 30px rgba(59, 130, 246, 0.3)',
+              boxShadow: '0 0 25px rgba(59, 130, 246, 0.3)',
               display: 'inline-block'
             }}>
               {match.home_score} : {match.away_score}
             </div>
 
-            <div style={{ marginTop: '10px', fontSize: '1.5rem', fontWeight: '900', fontFamily: 'monospace', color: '#10b981' }}>
-              {Math.floor(match.timer_seconds_elapsed / 60).toString().padStart(2, '0')}:
-              {(match.timer_seconds_elapsed % 60).toString().padStart(2, '0')}
+            <div style={{ marginTop: '8px', fontSize: '1.3rem', fontWeight: '900', fontFamily: 'monospace', color: '#10b981' }}>
+              {clockFormatted}
             </div>
           </div>
 
           {/* Away Team */}
           <div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: '900', color: '#f8fafc' }}>{match.away_team_details?.name}</h2>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: '900', color: '#f8fafc' }}>{match.away_team_details?.name}</h2>
           </div>
         </div>
       </div>
 
-      {/* Grid: Public Stream Player & Live Ticker */}
-      <div className="responsive-grid-2">
-        {/* Stream Player */}
-        <div className="glass-panel" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Activity size={18} color="#8b5cf6" /> Live Stream Feed
-            </h3>
+      {/* Live Match Events Ticker */}
+      <div className="glass-panel" style={{ padding: '24px' }}>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6' }}>
+          <Award size={18} /> Match Events Ticker
+        </h3>
 
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {Object.keys(streams).map(camKey => (
-                <button
-                  key={camKey}
-                  onClick={() => setActiveCam(camKey)}
-                  className={activeCam === camKey ? 'btn-primary' : 'btn-secondary'}
-                  style={{ padding: '4px 10px', fontSize: '0.75rem' }}
-                >
-                  {camKey.toUpperCase()}
-                </button>
-              ))}
-            </div>
+        {(!match.recent_events || match.recent_events.length === 0) ? (
+          <div style={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', padding: '20px' }}>
+            No match events logged yet.
           </div>
-
-          <HlsPlayer
-            src={streams[activeCam].url}
-            fallbackUrl={streams[activeCam].fallback}
-            label={streams[activeCam].label}
-          />
-        </div>
-
-        {/* Live Match Events Ticker */}
-        <div className="glass-panel" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '16px' }}>
-            Match Events Ticker
-          </h3>
-
-          {(!match.recent_events || match.recent_events.length === 0) ? (
-            <div style={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', padding: '20px' }}>
-              No match events logged yet.
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '360px', overflowY: 'auto' }}>
-              {match.recent_events.map(ev => (
-                <div key={ev.id} style={{ padding: '10px 14px', backgroundColor: '#1D2128', borderRadius: '8px', border: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <span style={{ color: '#3b82f6', fontWeight: '800', marginRight: '8px' }}>[{ev.match_minute}']</span>
-                    <span style={{ color: 'white', fontWeight: '700' }}>{ev.event_type.replace('_', ' ')}</span>
-                    {ev.player_name && <span style={{ color: '#10b981', marginLeft: '6px' }}>({ev.player_name})</span>}
-                  </div>
-                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{new Date(ev.created_at).toLocaleTimeString()}</span>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '360px', overflowY: 'auto' }}>
+            {match.recent_events.map(ev => (
+              <div key={ev.id} style={{ padding: '10px 14px', backgroundColor: '#1D2128', borderRadius: '8px', border: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ color: '#3b82f6', fontWeight: '800', marginRight: '8px' }}>[{ev.match_minute}']</span>
+                  <span style={{ color: 'white', fontWeight: '700' }}>{ev.event_type.replace('_', ' ')}</span>
+                  {ev.player_name && <span style={{ color: '#10b981', marginLeft: '6px' }}>({ev.player_name})</span>}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{new Date(ev.created_at).toLocaleTimeString()}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 };
+
+export default PublicScoreboard;

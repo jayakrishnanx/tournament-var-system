@@ -4,14 +4,14 @@ import api from '../services/api';
 import { connectMatchWebSocket } from '../services/websocket';
 import { StatusBadge } from '../components/StatusBadge';
 import { ScorerConsole } from '../components/ScorerConsole';
-import { VarOperatorStation } from '../components/VarOperatorStation';
+import { LiveStreamBroadcaster } from '../components/LiveStreamBroadcaster';
+import { LiveStreamViewer } from '../components/LiveStreamViewer';
 import { ArrowLeft, Radio, Award } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const MatchDetail = () => {
   const { id } = useParams();
   const [match, setMatch] = useState(null);
-  const [varIncidents, setVarIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [wsConnected, setWsConnected] = useState(false);
   const { user } = useAuth();
@@ -20,12 +20,8 @@ export const MatchDetail = () => {
 
   const fetchMatchDetails = async () => {
     try {
-      const [mRes, vRes] = await Promise.all([
-        api.get(`/tournaments/matches/${id}/`),
-        api.get(`/tournaments/var-incidents/?match=${id}`)
-      ]);
+      const mRes = await api.get(`/tournaments/matches/${id}/`);
       setMatch(mRes.data);
-      setVarIncidents(vRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -47,16 +43,8 @@ export const MatchDetail = () => {
       (err) => setWsConnected(false)
     );
 
-    // Fallback poll — only fires every 10s as backup when WS may miss updates
-    const pollInterval = setInterval(() => {
-      api.get(`/tournaments/matches/${id}/`).then(mRes => {
-        setMatch(mRes.data);
-      }).catch(() => {});
-    }, 10000);
-
     return () => {
       ws.close();
-      clearInterval(pollInterval);
     };
   }, [id]);
 
@@ -107,22 +95,47 @@ export const MatchDetail = () => {
 
   const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
   const seconds = (elapsedSeconds % 60).toString().padStart(2, '0');
+  const clockFormatted = `${minutes}:${seconds}`;
   const matchEvents = match.recent_events || [];
+  const isAdmin = user?.role === 'ADMIN';
 
   return (
-    <div style={{ padding: '16px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>
       {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-        <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#3b82f6', fontWeight: '700', fontSize: '0.85rem' }}>
-          <ArrowLeft size={14} /> Back to Live Matches
+        <Link to={isAdmin ? "/matches" : "/"} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#3b82f6', fontWeight: '800', fontSize: '0.85rem' }}>
+          <ArrowLeft size={16} /> {isAdmin ? 'Back to Matches' : 'Back to Live Scoreboard'}
         </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: wsConnected ? '#10b981' : '#94a3b8' }}>
-          <Radio size={12} className={wsConnected ? 'animate-pulse' : ''} />
-          <span>{wsConnected ? 'LIVE SCORE SYNC ACTIVE' : 'RECONNECTING...'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: wsConnected ? '#10b981' : '#94a3b8', fontWeight: '700' }}>
+          <Radio size={14} className={wsConnected ? 'animate-pulse' : ''} />
+          <span>{wsConnected ? 'LIVE CLOUD SYNC ACTIVE' : 'CONNECTING...'}</span>
         </div>
       </div>
 
-      {/* Main Scoreboard Header */}
+      {/* 1. ADMIN LIVE STREAM BROADCASTER (CAMERA) */}
+      {isAdmin && (
+        <LiveStreamBroadcaster
+          matchId={id}
+          homeTeam={match.home_team_details?.name}
+          awayTeam={match.away_team_details?.name}
+          score={`${match.home_score} - ${match.away_score}`}
+        />
+      )}
+
+      {/* 2. SPECTATOR LIVE STREAM VIEWER (OR ADMIN LIVE MONITOR) */}
+      {!isAdmin && (
+        <LiveStreamViewer
+          matchId={id}
+          homeTeam={match.home_team_details?.name}
+          awayTeam={match.away_team_details?.name}
+          homeScore={match.home_score}
+          awayScore={match.away_score}
+          clockTime={clockFormatted}
+          matchStatus={match.status}
+        />
+      )}
+
+      {/* 3. Main Scoreboard Header */}
       <div className="glass-panel" style={{
         padding: '16px',
         marginBottom: '20px',
@@ -136,7 +149,7 @@ export const MatchDetail = () => {
               {elapsedSeconds >= 300 ? '2nd Half' : (match.current_period === '1ST_HALF' ? '1st Half' : match.current_period)}
             </span>
           </div>
-          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+          <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '700' }}>
             Match #{match.match_number || match.match_code}
           </span>
         </div>
@@ -144,7 +157,7 @@ export const MatchDetail = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '8px 0', gap: '6px', width: '100%' }}>
           {/* Home Team (Left Side) */}
           <div style={{ flex: 1, textAlign: 'center', wordBreak: 'break-word' }}>
-            <h2 style={{ fontSize: '1.05rem', fontWeight: '900', color: '#f8fafc', lineHeight: 1.2 }}>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: '900', color: '#f8fafc', lineHeight: 1.2 }}>
               {match.home_team_details?.name}
             </h2>
           </div>
@@ -153,31 +166,35 @@ export const MatchDetail = () => {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
             <div className="digital-score" style={{
               backgroundColor: '#090d16',
-              padding: '6px 14px',
+              padding: '6px 16px',
               borderRadius: '10px',
               border: '2px solid #3b82f6',
               boxShadow: '0 0 15px rgba(59, 130, 246, 0.25)',
-              fontSize: '1.6rem',
+              fontSize: '1.8rem',
               fontWeight: '900'
             }}>
               {match.home_score} : {match.away_score}
             </div>
             <div style={{ marginTop: '4px', fontSize: '1rem', fontWeight: '900', fontFamily: 'monospace', color: match.is_timer_running ? '#10b981' : '#f8fafc' }}>
-              {minutes}:{seconds}
+              {clockFormatted}
             </div>
           </div>
 
           {/* Away Team (Right Side) */}
           <div style={{ flex: 1, textAlign: 'center', wordBreak: 'break-word' }}>
-            <h2 style={{ fontSize: '1.05rem', fontWeight: '900', color: '#f8fafc', lineHeight: 1.2 }}>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: '900', color: '#f8fafc', lineHeight: 1.2 }}>
               {match.away_team_details?.name}
             </h2>
           </div>
         </div>
       </div>
 
-      {/* Conditional Rendering: User View (Goal Scorers & Timeline) vs Admin View (Scorer & VAR Station) */}
-      {user?.role !== 'ADMIN' ? (
+      {/* 4. Controls: Admin Scorer Console vs Spectator Timeline */}
+      {isAdmin ? (
+        <div style={{ marginBottom: '24px' }}>
+          <ScorerConsole match={match} onUpdate={handleMatchUpdate} />
+        </div>
+      ) : (
         <div className="glass-panel" style={{ padding: '20px' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6' }}>
             <Award size={18} color="#3b82f6" /> 📋 Live Match Events & Cards Timeline
@@ -223,16 +240,9 @@ export const MatchDetail = () => {
             </div>
           )}
         </div>
-      ) : (
-        <>
-          <div style={{ marginBottom: '24px' }}>
-            <ScorerConsole match={match} onUpdate={handleMatchUpdate} />
-          </div>
-          <div>
-            <VarOperatorStation match={match} incidents={varIncidents} onUpdate={fetchMatchDetails} />
-          </div>
-        </>
       )}
     </div>
   );
 };
+
+export default MatchDetail;

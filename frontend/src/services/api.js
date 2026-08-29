@@ -150,14 +150,17 @@ const api = {
       }
 
       // 9. Login endpoint
-      if (cleanUrl === '/auth/token') {
+      if (cleanUrl === '/auth/token' || cleanUrl === '/auth/login') {
         const token = 'firebase_token_' + Date.now();
+        const userObj = { id: 'admin', username: payload.username || 'admin', role: 'ADMIN' };
         localStorage.setItem('access_token', token);
+        localStorage.setItem('is_admin', 'true');
+        localStorage.setItem('user', JSON.stringify(userObj));
         return {
           data: {
             access: token,
             refresh: token,
-            user: { id: 'admin', username: payload.username || 'admin', role: 'ADMIN' }
+            user: userObj
           },
           status: 200
         };

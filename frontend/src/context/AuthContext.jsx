@@ -4,8 +4,18 @@ import api from '../services/api';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState({ id: 'guest', username: 'Public Spectator', role: 'VIEWER' });
-  const [loading, setLoading] = useState(true);
+  const getInitialUser = () => {
+    try {
+      const isAdmin = localStorage.getItem('is_admin') === 'true';
+      const stored = localStorage.getItem('user');
+      if (isAdmin && stored) return JSON.parse(stored);
+      if (isAdmin) return { id: 'admin', username: 'admin', role: 'ADMIN' };
+    } catch (e) {}
+    return { id: 'guest', username: 'Public Spectator', role: 'VIEWER' };
+  };
+
+  const [user, setUser] = useState(getInitialUser);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchMe = async () => {
@@ -13,24 +23,16 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('access_token');
       if (!token || !isAdmin) {
         setUser({ id: 'guest', username: 'Public Spectator', role: 'VIEWER' });
-        setLoading(false);
         return;
       }
       try {
         const res = await api.get('/auth/me/');
         if (res.data && res.data.role === 'ADMIN') {
           setUser(res.data);
-        } else {
-          setUser({ id: 'guest', username: 'Public Spectator', role: 'VIEWER' });
+          localStorage.setItem('is_admin', 'true');
+          localStorage.setItem('user', JSON.stringify(res.data));
         }
-      } catch (err) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('is_admin');
-        setUser({ id: 'guest', username: 'Public Spectator', role: 'VIEWER' });
-      } finally {
-        setLoading(false);
-      }
+      } catch (err) {}
     };
     fetchMe();
   }, []);
