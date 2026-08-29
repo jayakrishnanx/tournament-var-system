@@ -18,29 +18,27 @@ import { PhoneBroadcaster } from './pages/PhoneBroadcaster';
 function App() {
   return (
     <AuthProvider>
-      <SplashScreen>
-        <Router>
-          <div style={{ minHeight: '100vh', backgroundColor: '#1D2128' }}>
-            <Navbar />
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/bracket" element={<Bracket />} />
-              <Route path="/standings" element={<Standings />} />
-              <Route path="/camera/:camId" element={<PhoneBroadcaster />} />
-              <Route path="/broadcast/:camId" element={<PhoneBroadcaster />} />
-              <Route path="/tournaments" element={<Tournaments />} />
-              <Route path="/tournaments/:id" element={<TournamentDetail />} />
-              <Route path="/teams" element={<Teams />} />
-              <Route path="/matches" element={<Matches />} />
-              <Route path="/matches/:id" element={<MatchDetail />} />
-              <Route path="/public/match/:id" element={<PublicScoreboard />} />
-              <Route path="/admin-login" element={<Login />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </div>
-        </Router>
-      </SplashScreen>
+      <Router>
+        <div style={{ minHeight: '100vh', backgroundColor: '#1D2128' }}>
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/bracket" element={<Bracket />} />
+            <Route path="/standings" element={<Standings />} />
+            <Route path="/camera/:camId" element={<PhoneBroadcaster />} />
+            <Route path="/broadcast/:camId" element={<PhoneBroadcaster />} />
+            <Route path="/tournaments" element={<Tournaments />} />
+            <Route path="/tournaments/:id" element={<TournamentDetail />} />
+            <Route path="/teams" element={<Teams />} />
+            <Route path="/matches" element={<Matches />} />
+            <Route path="/matches/:id" element={<MatchDetail />} />
+            <Route path="/public/match/:id" element={<PublicScoreboard />} />
+            <Route path="/admin-login" element={<Login />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </Router>
     </AuthProvider>
   );
 }
