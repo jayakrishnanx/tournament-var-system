@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Radio, Play, Square, RefreshCw, Mic, MicOff, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
+import { Camera, Radio, Play, Square, RefreshCw, Mic, MicOff, ZoomIn, ZoomOut } from 'lucide-react';
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { cleanData } from '../services/firebaseService';
@@ -34,10 +34,8 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     };
   }, []);
 
-  // Base broadcast URL — stays persistent so iframe NEVER reloads on zoom/touch
-  const rotationParam = rotationAngle > 0 ? `&rotate=${rotationAngle}` : '';
-  const muteParam = isMicMuted ? '&mute=1' : '';
-  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1${rotationParam}${muteParam}&autostart=1&webcam&audiodevice&bitrate=2500&fps=60&zerolatency=1&buffer=0&fast&noerror&cleanoutput=1`;
+  // Persistent Broadcast URL — completely static so iframe NEVER reloads or cuts stream
+  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1&api=1&autostart=1&webcam&audiodevice&bitrate=2500&fps=60&zerolatency=1&buffer=0&fast&noerror&cleanoutput=1`;
 
   // Send hardware optical zoom command to camera stream if supported
   useEffect(() => {
@@ -104,12 +102,19 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     setZoomLevel(lvl);
   };
 
+  // Instant Live Mic Toggle WITHOUT pausing or cutting the stream
   const toggleMic = () => {
-    setIsMicMuted(prev => !prev);
-  };
-
-  const toggleFullscreen = () => {
-    setIsFullscreen(prev => !prev);
+    setIsMicMuted(prev => {
+      const nextMuted = !prev;
+      try {
+        if (iframeRef.current?.contentWindow) {
+          iframeRef.current.contentWindow.postMessage({ mic: !nextMuted }, '*');
+          iframeRef.current.contentWindow.postMessage({ action: 'mute', value: nextMuted }, '*');
+          iframeRef.current.contentWindow.postMessage({ function: 'muteMic', value: nextMuted }, '*');
+        }
+      } catch (e) {}
+      return nextMuted;
+    });
   };
 
   // Two-Finger Native Touch Pinch-In (Zoom Out) & Pinch-Out (Zoom In)
@@ -140,6 +145,8 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     touchStateRef.current = { initialDist: null, initialZoom: zoomLevel };
     setIsPinching(false);
   };
+
+  const transformStyle = `scale(${zoomLevel}) rotate(${rotationAngle}deg)`;
 
   // 100% IMMERSIVE FULLSCREEN CAMERA VIEW (TRIGGERED IN LANDSCAPE OR VIA BUTTON)
   // HIDES ALL BROWSER HEADERS, BANNERS, TEXT, AND SCROLLBARS SO ONLY THE CAMERA IS VISIBLE!
@@ -188,7 +195,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
               height: '100%',
               border: 'none',
               display: 'block',
-              transform: `scale(${zoomLevel})`,
+              transform: transformStyle,
               transformOrigin: 'center center',
               transition: isPinching ? 'none' : 'transform 0.15s ease-out'
             }}
@@ -351,7 +358,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
               </button>
             </div>
 
-            {/* Mic Toggle & Stop Broadcast */}
+            {/* Live Non-Cutting Mic Toggle & Stop Broadcast */}
             <div style={{ display: 'flex', gap: '6px' }}>
               <button
                 onClick={toggleMic}
@@ -475,7 +482,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
                 height: '100%',
                 border: 'none',
                 display: 'block',
-                transform: `scale(${zoomLevel})`,
+                transform: transformStyle,
                 transformOrigin: 'center center',
                 transition: isPinching ? 'none' : 'transform 0.15s ease-out'
               }}
@@ -684,49 +691,26 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
             <Play size={18} /> ▶️ Start Live Camera Stream (Go Live)
           </button>
         ) : (
-          <>
-            <button
-              onClick={toggleFullscreen}
-              style={{
-                flex: 1,
-                minWidth: '220px',
-                backgroundColor: '#2563eb',
-                color: '#ffffff',
-                fontWeight: '900',
-                padding: '12px 18px',
-                borderRadius: '8px',
-                fontSize: '0.9rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                border: 'none',
-                cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.45)'
-              }}
-            >
-              <Maximize2 size={18} /> ⛶ Fullscreen Camera Studio
-            </button>
-            <button
-              onClick={stopBroadcast}
-              style={{
-                backgroundColor: '#334155',
-                color: '#f8fafc',
-                fontWeight: '900',
-                padding: '12px 18px',
-                borderRadius: '8px',
-                fontSize: '0.88rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                border: '1px solid #475569',
-                cursor: 'pointer'
-              }}
-            >
-              <Square size={16} /> ⏹️ End Stream
-            </button>
-          </>
+          <button
+            onClick={stopBroadcast}
+            style={{
+              flex: 1,
+              backgroundColor: '#334155',
+              color: '#f8fafc',
+              fontWeight: '900',
+              padding: '12px 18px',
+              borderRadius: '8px',
+              fontSize: '0.88rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              border: '1px solid #475569',
+              cursor: 'pointer'
+            }}
+          >
+            <Square size={16} /> ⏹️ End Stream
+          </button>
         )}
       </div>
     </div>
