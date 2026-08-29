@@ -478,6 +478,96 @@ export const clearAllMatches = async (tournamentId = null) => {
   return true;
 };
 
+export const updateMatchScore = async (matchId, teamId, delta) => {
+  const match = await getMatch(matchId);
+  if (!match) return null;
+
+  const isHome = String(match.home_team) === String(teamId);
+  const homeScore = isHome ? Math.max(0, (match.home_score || 0) + delta) : (match.home_score || 0);
+  const awayScore = !isHome ? Math.max(0, (match.away_score || 0) + delta) : (match.away_score || 0);
+
+  const updated = await updateMatch(matchId, {
+    home_score: homeScore,
+    away_score: awayScore,
+    status: match.status === 'SCHEDULED' ? 'LIVE' : match.status
+  });
+  return updated;
+};
+
+export const toggleMatchTimer = async (matchId, action) => {
+  const match = await getMatch(matchId);
+  if (!match) return null;
+
+  let updates = {};
+  if (action === 'START') {
+    updates = {
+      is_timer_running: true,
+      status: 'LIVE',
+      current_period: match.current_period === 'NOT_STARTED' || !match.current_period ? '1ST_HALF' : match.current_period
+    };
+  } else if (action === 'PAUSE') {
+    updates = {
+      is_timer_running: false,
+      status: match.status === 'ENDED' ? 'ENDED' : 'PAUSED'
+    };
+  } else if (action === 'RESET') {
+    updates = {
+      is_timer_running: false,
+      timer_seconds_elapsed: 0,
+      computed_elapsed_seconds: 0,
+      home_score: 0,
+      away_score: 0,
+      status: 'SCHEDULED',
+      recent_events: []
+    };
+  }
+
+  const updated = await updateMatch(matchId, updates);
+  return updated;
+};
+
+export const recordMatchEvent = async (matchId, eventData) => {
+  const match = await getMatch(matchId);
+  if (!match) return null;
+
+  const newEvent = {
+    id: generateId(),
+    match: matchId,
+    event_type: eventData.event_type || 'GOAL',
+    team: eventData.team_id,
+    player: eventData.player_id,
+    player_name: eventData.player_name || 'Player',
+    team_name: eventData.team_name || (String(match.home_team) === String(eventData.team_id) ? match.home_team_details?.name : match.away_team_details?.name) || 'Team',
+    match_minute: Math.floor((match.timer_seconds_elapsed || 0) / 60) + 1,
+    created_at: new Date().toISOString()
+  };
+
+  const existingEvents = match.recent_events || [];
+  const updatedEvents = [newEvent, ...existingEvents];
+
+  let scoreUpdates = {};
+  if (eventData.event_type === 'GOAL') {
+    const isHome = String(match.home_team) === String(eventData.team_id);
+    scoreUpdates = {
+      home_score: isHome ? (match.home_score || 0) + 1 : (match.home_score || 0),
+      away_score: !isHome ? (match.away_score || 0) + 1 : (match.away_score || 0)
+    };
+  }
+
+  const updated = await updateMatch(matchId, {
+    recent_events: updatedEvents,
+    ...scoreUpdates
+  });
+  return updated;
+};
+
+export const finishMatch = async (matchId) => {
+  return await updateMatch(matchId, {
+    status: 'ENDED',
+    is_timer_running: false
+  });
+};
+
 export const setNextMatch = async (matchId) => {
   const cached = getCache('matches', []);
   const target = cached.find(m => String(m.id) === String(matchId));

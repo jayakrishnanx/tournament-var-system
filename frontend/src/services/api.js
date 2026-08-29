@@ -135,6 +135,38 @@ const api = {
         return { data, status: 200 };
       }
 
+      // 6b. Match Score Update
+      const scoreMatch = cleanUrl.match(/^\/tournaments\/matches\/([^/]+)\/score$/);
+      if (scoreMatch) {
+        const mId = scoreMatch[1];
+        const data = await fb.updateMatchScore(mId, payload.team_id, payload.delta);
+        return { data, status: 200 };
+      }
+
+      // 6c. Match Timer Toggle
+      const timerMatch = cleanUrl.match(/^\/tournaments\/matches\/([^/]+)\/timer$/);
+      if (timerMatch) {
+        const mId = timerMatch[1];
+        const data = await fb.toggleMatchTimer(mId, payload.action);
+        return { data, status: 200 };
+      }
+
+      // 6d. Match Event Record
+      const eventMatch = cleanUrl.match(/^\/tournaments\/matches\/([^/]+)\/event$/);
+      if (eventMatch) {
+        const mId = eventMatch[1];
+        const data = await fb.recordMatchEvent(mId, payload);
+        return { data, status: 200 };
+      }
+
+      // 6e. Match Finish
+      const finishMatch = cleanUrl.match(/^\/tournaments\/matches\/([^/]+)\/(finish|finish_match)$/);
+      if (finishMatch) {
+        const mId = finishMatch[1];
+        const data = await fb.finishMatch(mId);
+        return { data, status: 200 };
+      }
+
       // 7. Clear All Matches
       if (cleanUrl === '/tournaments/matches/clear_all') {
         const tId = payload.tournament || null;
