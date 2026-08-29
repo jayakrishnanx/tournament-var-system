@@ -34,15 +34,17 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     };
   }, []);
 
-  // Persistent Broadcast URL — completely static so iframe NEVER reloads or cuts stream
-  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1&zoom&meter=1&autostart=1&webcam&audiodevice&bitrate=2500&fps=60&zerolatency=1&buffer=0&fast&noerror`;
+  // Persistent Broadcast URL with native camera sensor zoom
+  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1&zoom=1&zoom&meter=1&autostart=1&webcam&audiodevice&bitrate=2500&fps=60&zerolatency=1&buffer=0&fast&noerror`;
 
-  // Send hardware optical zoom command to camera stream if supported
+  // Send hardware camera video frame zoom command to WebRTC track
   useEffect(() => {
     try {
-      const msg = { action: 'zoom', value: zoomLevel };
       if (iframeRef.current?.contentWindow) {
-        iframeRef.current.contentWindow.postMessage(msg, '*');
+        iframeRef.current.contentWindow.postMessage({ action: 'zoom', value: zoomLevel }, '*');
+        iframeRef.current.contentWindow.postMessage({ function: 'zoom', value: zoomLevel }, '*');
+        iframeRef.current.contentWindow.postMessage({ zoom: zoomLevel }, '*');
+        iframeRef.current.contentWindow.postMessage({ target: 'camera', zoom: zoomLevel }, '*');
       }
     } catch (e) {}
   }, [zoomLevel]);
@@ -162,7 +164,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     setIsPinching(false);
   };
 
-  const transformStyle = `scale(${zoomLevel}) rotate(${rotationAngle}deg)`;
+  const transformStyle = rotationAngle > 0 ? `rotate(${rotationAngle}deg)` : 'none';
 
   // 100% IMMERSIVE FULLSCREEN CAMERA VIEW (TRIGGERED IN LANDSCAPE)
   const shouldRenderFullscreen = isStreaming && (isDeviceLandscape || isFullscreen);
