@@ -93,6 +93,17 @@ export const Teams = () => {
     }
   };
 
+  const handleClearAllTeams = async () => {
+    if (!window.confirm('⚠️ WARNING: Are you sure you want to delete ALL teams and their rosters? This will wipe all teams clean.')) return;
+    try {
+      await api.post('/tournaments/teams/clear_all', {});
+      fetchTeams();
+      alert('✅ All teams and rosters cleared successfully!');
+    } catch (err) {
+      alert('Error clearing teams: ' + err.message);
+    }
+  };
+
   // ─── Multi-player add handlers ────────────────────────────────────────────
   const openAddPlayersModal = (team) => {
     setSelectedTeam(team);
@@ -287,9 +298,32 @@ export const Teams = () => {
           </p>
         </div>
         {user?.role === 'ADMIN' && (
-          <button onClick={() => setShowTeamModal(true)} className="btn-primary" style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Plus size={16} /> Add New Team
-          </button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button onClick={() => setShowTeamModal(true)} className="btn-primary" style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Plus size={16} /> Add New Team
+            </button>
+            {teams.length > 0 && (
+              <button
+                onClick={handleClearAllTeams}
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                  color: '#ef4444',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  fontSize: '0.8rem',
+                  fontWeight: '800',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer'
+                }}
+                title="Wipe all registered teams and rosters"
+              >
+                <Trash2 size={15} /> Clear All Teams
+              </button>
+            )}
+          </div>
         )}
       </div>
 

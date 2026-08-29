@@ -142,7 +142,14 @@ const api = {
         return { data: { success: true }, status: 200 };
       }
 
-      // 8. Login endpoint
+      // 8. Clear All Teams
+      if (cleanUrl === '/tournaments/teams/clear_all') {
+        const tId = payload.tournament || null;
+        await fb.clearAllTeams(tId);
+        return { data: { success: true }, status: 200 };
+      }
+
+      // 9. Login endpoint
       if (cleanUrl === '/auth/token') {
         const token = 'firebase_token_' + Date.now();
         localStorage.setItem('access_token', token);

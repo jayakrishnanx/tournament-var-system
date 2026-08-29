@@ -259,6 +259,25 @@ export const deleteTeam = async (teamId) => {
   return true;
 };
 
+export const clearAllTeams = async (tournamentId = null) => {
+  const cached = getCache('teams', []);
+  const remaining = tournamentId ? cached.filter(t => String(t.tournament) !== String(tournamentId)) : [];
+  setCache('teams', remaining);
+
+  try {
+    const snap = await getDocs(collection(db, 'teams'));
+    for (const d of snap.docs) {
+      const data = d.data();
+      if (!tournamentId || String(data.tournament) === String(tournamentId)) {
+        await deleteDoc(doc(db, 'teams', d.id));
+      }
+    }
+  } catch (e) {
+    console.warn('Clear teams error:', e);
+  }
+  return true;
+};
+
 export const addPlayer = async (data) => {
   const newId = generateId();
   const newPlayer = { id: newId, ...data };
