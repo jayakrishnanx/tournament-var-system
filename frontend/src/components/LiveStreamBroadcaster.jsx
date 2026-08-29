@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Radio, Play, Square, RefreshCw, Mic, MicOff, ZoomIn, ZoomOut } from 'lucide-react';
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
-import { cleanData } from '../services/firebaseService';
+import { cleanData, updateMatch } from '../services/firebaseService';
 
 export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) => {
   const [isStreaming, setIsStreaming] = useState(false);
@@ -56,6 +56,15 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
       }
     } catch (e) {}
 
+    // Immediately mark this exact match schedule as LIVE
+    try {
+      await updateMatch(matchId, {
+        status: 'LIVE',
+        is_live_streaming: true,
+        current_period: '1ST_HALF'
+      });
+    } catch (e) {}
+
     try {
       await setDoc(doc(db, 'live_streams', String(matchId)), cleanData({
         matchId: String(matchId),
@@ -64,11 +73,6 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         started_at: serverTimestamp(),
         updated_at: serverTimestamp()
       }), { merge: true });
-
-      await updateDoc(doc(db, 'matches', String(matchId)), {
-        status: 'LIVE',
-        is_live_streaming: true
-      });
     } catch (e) {
       console.warn('Firebase live stream update notice:', e);
     }
@@ -77,6 +81,12 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
   const stopBroadcast = async () => {
     setIsStreaming(false);
     setIsFullscreen(false);
+
+    try {
+      await updateMatch(matchId, {
+        is_live_streaming: false
+      });
+    } catch (e) {}
 
     try {
       await updateDoc(doc(db, 'live_streams', String(matchId)), {

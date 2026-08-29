@@ -124,7 +124,7 @@ export const Dashboard = () => {
     return (a.match_number || 0) - (b.match_number || 0);
   });
 
-  const liveMatch = matches.find(m => m.status === 'LIVE' || m.status === 'PAUSED');
+  const liveMatch = matches.find(m => m.status === 'LIVE' || m.status === 'PAUSED' || Boolean(m.is_live_streaming));
   const nextMatch = matches.find(m => m.is_next_match && m.status === 'SCHEDULED') || matches.find(m => m.status === 'SCHEDULED');
 
   if (user?.role === 'ADMIN') return <Navigate to="/matches" replace />;
