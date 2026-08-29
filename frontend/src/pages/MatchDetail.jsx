@@ -26,9 +26,18 @@ export const MatchDetail = () => {
       const mRes = await api.get(`/tournaments/matches/${id}/`);
       if (mRes.data) {
         setMatch(mRes.data);
+      } else {
+        const allRes = await api.get('/tournaments/matches/');
+        const active = allRes.data?.find(m => m.status === 'LIVE' || m.status === 'PAUSED') || allRes.data?.[0];
+        if (active) setMatch(active);
       }
     } catch (err) {
       console.error(err);
+      try {
+        const allRes = await api.get('/tournaments/matches/');
+        const active = allRes.data?.find(m => m.status === 'LIVE' || m.status === 'PAUSED') || allRes.data?.[0];
+        if (active) setMatch(active);
+      } catch (e) {}
     } finally {
       setLoading(false);
     }

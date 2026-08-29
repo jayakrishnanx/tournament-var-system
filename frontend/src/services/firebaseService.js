@@ -396,9 +396,17 @@ export const subscribeMatch = (matchId, callback) => {
       if (docSnap.exists()) {
         const data = { id: docSnap.id, ...docSnap.data() };
         callback(data);
+      } else {
+        const allCached = getCache('matches', []);
+        const fallback = allCached.find(m => m.status === 'LIVE') || allCached[0] || null;
+        callback(fallback);
       }
+    }, (err) => {
+      console.warn('subscribeMatch snapshot warning:', err);
+      callback(item || null);
     });
   } catch (e) {
+    callback(item || null);
     return () => {};
   }
 };
