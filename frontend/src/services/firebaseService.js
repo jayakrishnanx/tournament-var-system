@@ -99,32 +99,26 @@ if (typeof window !== 'undefined') {
 export const getTournaments = async () => {
   try {
     const snap = await getDocs(collection(db, 'tournaments'));
-    if (snap && !snap.empty) {
-      const remote = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      remote.sort((a, b) => (b.created_at?.seconds || 0) - (a.created_at?.seconds || 0));
-      setCache('tournaments', remote);
-      return remote;
-    }
+    const remote = snap ? snap.docs.map(d => ({ id: d.id, ...d.data() })) : [];
+    remote.sort((a, b) => (b.created_at?.seconds || 0) - (a.created_at?.seconds || 0));
+    setCache('tournaments', remote);
+    return remote;
   } catch (e) {
     console.warn('Firestore getTournaments read error:', e);
+    return getCache('tournaments', []);
   }
-  return getCache('tournaments', []);
 };
 
 export const subscribeTournaments = (callback) => {
-  const cached = getCache('tournaments', []);
-  callback(cached);
-
   try {
     return onSnapshot(collection(db, 'tournaments'), (snapshot) => {
-      if (snapshot && !snapshot.empty) {
-        const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        data.sort((a, b) => (b.created_at?.seconds || 0) - (a.created_at?.seconds || 0));
-        setCache('tournaments', data);
-        callback(data);
-      }
-    }, () => callback(cached));
+      const data = snapshot ? snapshot.docs.map(d => ({ id: d.id, ...d.data() })) : [];
+      data.sort((a, b) => (b.created_at?.seconds || 0) - (a.created_at?.seconds || 0));
+      setCache('tournaments', data);
+      callback(data);
+    }, () => callback(getCache('tournaments', [])));
   } catch (e) {
+    callback(getCache('tournaments', []));
     return () => {};
   }
 };
@@ -192,33 +186,30 @@ export const deleteTournament = async (id) => {
 export const getTeams = async (tournamentId = null) => {
   try {
     const snap = await getDocs(collection(db, 'teams'));
-    if (snap && !snap.empty) {
-      const teams = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setCache('teams', teams);
-      return tournamentId ? teams.filter(t => String(t.tournament) === String(tournamentId)) : teams;
-    }
+    const teams = snap ? snap.docs.map(d => ({ id: d.id, ...d.data() })) : [];
+    setCache('teams', teams);
+    return tournamentId ? teams.filter(t => String(t.tournament) === String(tournamentId)) : teams;
   } catch (e) {
     console.warn('Firestore getTeams read error:', e);
+    const cached = getCache('teams', []);
+    return tournamentId ? cached.filter(t => String(t.tournament) === String(tournamentId)) : cached;
   }
-  const cached = getCache('teams', []);
-  return tournamentId ? cached.filter(t => String(t.tournament) === String(tournamentId)) : cached;
 };
 
 export const subscribeTeams = (tournamentId, callback) => {
-  const cached = getCache('teams', []);
-  const filtered = tournamentId ? cached.filter(t => String(t.tournament) === String(tournamentId)) : cached;
-  callback(filtered);
-
   try {
     return onSnapshot(collection(db, 'teams'), (snapshot) => {
-      if (snapshot && !snapshot.empty) {
-        const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        setCache('teams', data);
-        const res = tournamentId ? data.filter(t => String(t.tournament) === String(tournamentId)) : data;
-        callback(res);
-      }
-    }, () => callback(filtered));
+      const data = snapshot ? snapshot.docs.map(d => ({ id: d.id, ...d.data() })) : [];
+      setCache('teams', data);
+      const res = tournamentId ? data.filter(t => String(t.tournament) === String(tournamentId)) : data;
+      callback(res);
+    }, () => {
+      const cached = getCache('teams', []);
+      callback(tournamentId ? cached.filter(t => String(t.tournament) === String(tournamentId)) : cached);
+    });
   } catch (e) {
+    const cached = getCache('teams', []);
+    callback(tournamentId ? cached.filter(t => String(t.tournament) === String(tournamentId)) : cached);
     return () => {};
   }
 };
@@ -326,38 +317,37 @@ export const deletePlayer = async (id) => {
 export const getMatches = async (tournamentId = null, stage = null) => {
   try {
     const snap = await getDocs(collection(db, 'matches'));
-    if (snap && !snap.empty) {
-      let matches = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setCache('matches', matches);
-      if (tournamentId) matches = matches.filter(m => String(m.tournament) === String(tournamentId));
-      if (stage) matches = matches.filter(m => m.stage === stage);
-      return matches;
-    }
+    const remote = snap ? snap.docs.map(d => ({ id: d.id, ...d.data() })) : [];
+    setCache('matches', remote);
+    let matches = remote;
+    if (tournamentId) matches = matches.filter(m => String(m.tournament) === String(tournamentId));
+    if (stage) matches = matches.filter(m => m.stage === stage);
+    return matches;
   } catch (e) {
     console.warn('Firestore getMatches read error:', e);
+    let cached = getCache('matches', []);
+    if (tournamentId) cached = cached.filter(m => String(m.tournament) === String(tournamentId));
+    if (stage) cached = cached.filter(m => m.stage === stage);
+    return cached;
   }
-
-  let cached = getCache('matches', []);
-  if (tournamentId) cached = cached.filter(m => String(m.tournament) === String(tournamentId));
-  if (stage) cached = cached.filter(m => m.stage === stage);
-  return cached;
 };
 
 export const subscribeMatches = (tournamentId, callback) => {
-  const cached = getCache('matches', []);
-  const filtered = tournamentId ? cached.filter(m => String(m.tournament) === String(tournamentId)) : cached;
-  callback(filtered);
-
   try {
     return onSnapshot(collection(db, 'matches'), (snapshot) => {
-      if (snapshot && !snapshot.empty) {
-        const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        setCache('matches', data);
-        const res = tournamentId ? data.filter(m => String(m.tournament) === String(tournamentId)) : data;
-        callback(res);
-      }
-    }, () => callback(filtered));
+      const data = snapshot ? snapshot.docs.map(d => ({ id: d.id, ...d.data() })) : [];
+      setCache('matches', data);
+      const res = tournamentId ? data.filter(m => String(m.tournament) === String(tournamentId)) : data;
+      callback(res);
+    }, () => {
+      let cached = getCache('matches', []);
+      if (tournamentId) cached = cached.filter(m => String(m.tournament) === String(tournamentId));
+      callback(cached);
+    });
   } catch (e) {
+    let cached = getCache('matches', []);
+    if (tournamentId) cached = cached.filter(m => String(m.tournament) === String(tournamentId));
+    callback(cached);
     return () => {};
   }
 };
