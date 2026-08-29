@@ -4,9 +4,6 @@ import * as fb from './firebaseService';
 const getBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
-    if (host.includes('vercel.app') || host.includes('onrender.com')) {
-      return 'https://tournament-var-system.onrender.com/api';
-    }
     return `http://${host}:8000/api`;
   }
   return import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
