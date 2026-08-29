@@ -24,7 +24,7 @@ def seed_data(apps, schema_editor):
     team_data = [
         ('SRFC', 'SRFC'),
         ('MALAYIL FC', 'MAL'),
-        ('EFC ALUVA', 'EFC'),
+        ('EFC POOKATTUPADI', 'EFC'),
         ('ELMERA FC', 'ELM'),
         ('HEAVENS FC (A)', 'HEA'),
         ('SNFC EROOR', 'SNFC'),
@@ -37,7 +37,7 @@ def seed_data(apps, schema_editor):
         ('BRITISH EMPIRE FC', 'BRI'),
         ('CLASSIC POLO', 'CLA'),
         ('FC PORTO', 'FC '),
-        ('SHAJAN FC', 'SHA')
+        ('YOUTH FC', 'SHA')
     ]
 
     teams = {}
@@ -58,12 +58,12 @@ def seed_data(apps, schema_editor):
         )
 
     matches_data = [
-        ('K.T', 'MAL', 1),
+        ('CLA', 'MAL', 1),
         ('EFC', 'ELM', 2),
         ('HEA', 'SNFC', 3),
         ('SEV', 'EXP', 4),
         ('YAS', 'BRI', 5),
-        ('CLA', 'FC ', 6),
+        ('K.T', 'FC ', 6),
         ('SHA', 'SRFC', 7),
         ('HEB', 'UFC', 8),
     ]
