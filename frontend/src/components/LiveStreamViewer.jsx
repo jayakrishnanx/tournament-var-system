@@ -6,7 +6,8 @@ import { db } from '../services/firebase';
 export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayScore, clockTime, matchStatus }) => {
   const [isLive, setIsLive] = useState(false);
   const streamRoomId = `kallikalam_match_${matchId}`;
-  const viewerUrl = `https://vdo.ninja/?view=${streamRoomId}&autoplay=1&cleanoutput=1&transparent=1&aspect=16:9&scale=100&landscape=1`;
+  // &cover=1 forces video to stretch and fill the entire 16:9 container with zero side black bars
+  const viewerUrl = `https://vdo.ninja/?view=${streamRoomId}&autoplay=1&cleanoutput=1&transparent=1&cover=1&scale=100`;
 
   useEffect(() => {
     // Listen to Firestore live stream document
