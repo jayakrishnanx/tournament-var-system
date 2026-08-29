@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
-import { Calendar, Filter, PlusCircle, X, Pencil } from 'lucide-react';
+import { Calendar, Filter, PlusCircle, X, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const Matches = () => {
@@ -110,22 +110,25 @@ export const Matches = () => {
     setShowEditModal(true);
   };
 
-  const handleUpdateMatch = async (e) => {
-    e.preventDefault();
-    if (editForm.home_team === editForm.away_team) {
-      alert('Home and Away teams must be different!');
-      return;
-    }
+  const handleDeleteMatch = async (matchId) => {
+    if (!window.confirm('Are you sure you want to delete this match schedule?')) return;
     try {
-      await api.patch(`/tournaments/matches/${editForm.id}/`, {
-        home_team: editForm.home_team,
-        away_team: editForm.away_team,
-        scheduled_time: new Date(editForm.scheduled_date).toISOString()
-      });
-      setShowEditModal(false);
+      await api.delete(`/tournaments/matches/${matchId}/`);
       fetchMatches();
+      alert('Match deleted successfully.');
     } catch (err) {
-      alert('Error updating match: ' + (err.response?.data?.detail || err.message));
+      alert('Error deleting match: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleClearAllMatches = async () => {
+    if (!window.confirm('⚠️ WARNING: Are you sure you want to delete ALL match schedules? This will wipe the match schedule clean.')) return;
+    try {
+      await api.post('/tournaments/matches/clear_all', {});
+      fetchMatches();
+      alert('✅ All match schedules cleared successfully!');
+    } catch (err) {
+      alert('Error clearing matches: ' + err.message);
     }
   };
 
@@ -161,13 +164,36 @@ export const Matches = () => {
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           {user?.role === 'ADMIN' && (
-            <button
-              onClick={() => setShowModal(true)}
-              className="btn-primary"
-              style={{ padding: '7px 14px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800' }}
-            >
-              <PlusCircle size={16} /> Schedule New Match
-            </button>
+            <>
+              <button
+                onClick={() => setShowModal(true)}
+                className="btn-primary"
+                style={{ padding: '7px 14px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '800' }}
+              >
+                <PlusCircle size={16} /> Schedule New Match
+              </button>
+              {matches.length > 0 && (
+                <button
+                  onClick={handleClearAllMatches}
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    color: '#ef4444',
+                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                    padding: '7px 12px',
+                    borderRadius: '6px',
+                    fontSize: '0.8rem',
+                    fontWeight: '800',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer'
+                  }}
+                  title="Wipe all scheduled matches"
+                >
+                  <Trash2 size={15} /> Clear All Matches
+                </button>
+              )}
+            </>
           )}
 
           <Link to="/bracket" className="btn-primary" style={{ padding: '7px 14px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '800', backgroundColor: '#10b981', borderColor: '#10b981' }}>
@@ -394,13 +420,32 @@ export const Matches = () => {
                         </button>
                       )}
                       {user?.role === 'ADMIN' && (
-                        <button
-                          onClick={() => handleOpenEdit(m)}
-                          className="btn-secondary"
-                          style={{ padding: '5px 10px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: '800' }}
-                        >
-                          <Pencil size={12} /> Edit
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleOpenEdit(m)}
+                            className="btn-secondary"
+                            style={{ padding: '5px 10px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: '800' }}
+                          >
+                            <Pencil size={12} /> Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMatch(m.id)}
+                            title="Delete Match"
+                            style={{
+                              backgroundColor: 'rgba(244, 63, 94, 0.15)',
+                              color: '#f43f5e',
+                              border: '1px solid rgba(244, 63, 94, 0.3)',
+                              borderRadius: '6px',
+                              padding: '5px 8px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              fontSize: '0.75rem'
+                            }}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </>
                       )}
                     </div>
 

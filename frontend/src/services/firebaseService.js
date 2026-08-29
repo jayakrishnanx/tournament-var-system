@@ -448,6 +448,25 @@ export const deleteMatch = async (id) => {
   return true;
 };
 
+export const clearAllMatches = async (tournamentId = null) => {
+  const cached = getCache('matches', []);
+  const remaining = tournamentId ? cached.filter(m => String(m.tournament) !== String(tournamentId)) : [];
+  setCache('matches', remaining);
+
+  try {
+    const snap = await getDocs(collection(db, 'matches'));
+    for (const d of snap.docs) {
+      const data = d.data();
+      if (!tournamentId || String(data.tournament) === String(tournamentId)) {
+        await deleteDoc(doc(db, 'matches', d.id));
+      }
+    }
+  } catch (e) {
+    console.warn('Clear matches error:', e);
+  }
+  return true;
+};
+
 export const setNextMatch = async (matchId) => {
   const cached = getCache('matches', []);
   const target = cached.find(m => String(m.id) === String(matchId));
