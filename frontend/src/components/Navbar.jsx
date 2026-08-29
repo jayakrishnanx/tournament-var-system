@@ -91,7 +91,7 @@ export const Navbar = () => {
         )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+      <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
         {!isAdmin ? (
           <>
             <Link to="/" style={navItemStyle('/')}>
