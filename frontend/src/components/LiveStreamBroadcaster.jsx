@@ -34,8 +34,8 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     };
   }, []);
 
-  // Persistent Broadcast URL — completely static so iframe NEVER reloads or cuts stream
-  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1&api=1&autostart=1&webcam&audiodevice&bitrate=2500&fps=60&zerolatency=1&buffer=0&fast&noerror&cleanoutput=1`;
+  // Native on-camera mic toggle & pinch-zoom controls directly inside viewfinder
+  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1&zoom&meter=1&autostart=1&webcam&audiodevice&bitrate=2500&fps=60&zerolatency=1&buffer=0&fast&noerror`;
 
   // Send hardware optical zoom command to camera stream if supported
   useEffect(() => {
