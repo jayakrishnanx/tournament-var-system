@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Radio, Volume2, Maximize2, ExternalLink } from 'lucide-react';
+import { Radio, Volume2, Maximize2, ExternalLink, RefreshCw } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
 export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayScore, clockTime, matchStatus }) => {
   const [isLive, setIsLive] = useState(false);
+  const [rotationAngle, setRotationAngle] = useState(0); // 0, 90, 180, 270
+  
   const streamRoomId = `kallikalam_match_${matchId}`;
+  const rotationParam = rotationAngle > 0 ? `&rotate=${rotationAngle}` : '';
   // Ultra-Low Latency (<100ms), Instant Connect & Clean Widescreen Stream
-  const viewerUrl = `https://vdo.ninja/?view=${streamRoomId}&autoplay=1&cleanoutput=1&transparent=1&aspect=16:9&scale=100&zerolatency=1&buffer=0&fast&noerror`;
+  const viewerUrl = `https://vdo.ninja/?view=${streamRoomId}&autoplay=1&cleanoutput=1&transparent=1&aspect=16:9&scale=100&zerolatency=1&buffer=0&fast&noerror${rotationParam}`;
 
   useEffect(() => {
     // Listen to Firestore live stream document
@@ -24,6 +27,10 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
 
     return () => unsub();
   }, [matchId]);
+
+  const cycleRotation = () => {
+    setRotationAngle(prev => (prev + 90) % 360);
+  };
 
   return (
     <div className="glass-panel" style={{
@@ -67,10 +74,33 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {isLive && (
+            <button
+              onClick={cycleRotation}
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                color: '#f8fafc',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '6px',
+                padding: '4px 8px',
+                fontSize: '0.72rem',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="Click if video is sideways"
+            >
+              <RefreshCw size={12} /> Rotate ({rotationAngle}°)
+            </button>
+          )}
+
           <div style={{ fontSize: '0.9rem', fontWeight: '900', fontFamily: 'monospace', color: '#10b981' }}>
             ⏱️ {clockTime || '00:00'}
           </div>
+
           {isLive && (
             <a
               href={viewerUrl}
@@ -107,6 +137,7 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
       }}>
         {isLive ? (
           <iframe
+            key={`viewer-${rotationAngle}`}
             src={viewerUrl}
             title="Live Match Stream"
             allow="autoplay; fullscreen; picture-in-picture"
