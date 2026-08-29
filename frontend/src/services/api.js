@@ -79,7 +79,10 @@ const api = {
         return { data, status: 200 };
       }
 
-      // 4. Matches list or detail
+      // 4. Matches list, stats, or detail
+      if (cleanUrl === '/tournaments/matches/stats') {
+        return { data: { top_scorers: [], yellow_cards: [], red_cards: [] }, status: 200 };
+      }
       if (cleanUrl === '/tournaments/matches') {
         const tourId = params.get('tournament');
         const data = await fb.getMatches(tourId);
