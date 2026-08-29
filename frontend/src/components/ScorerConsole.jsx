@@ -66,14 +66,15 @@ export const ScorerConsole = ({ match, onUpdate }) => {
   };
 
   const handleResetTimer = async () => {
+    if (!window.confirm('⚠️ Are you sure you want to RESET this match? This will reset the score to 0 - 0, timer to 00:00, clear all cards/goals, and set status to SCHEDULED.')) return;
     setLoading(true);
     try {
-      const res = await api.post(`/tournaments/matches/${match.id}/timer/`, { action: 'RESET' });
+      const res = await api.post(`/tournaments/matches/${match.id}/reset/`, {});
       setElapsedSeconds(0);
       if (onUpdate) onUpdate(res.data);
-      alert('🔄 Match timer and score reset to 0.');
+      alert('✅ Match successfully reset to Scheduled (0 - 0)!');
     } catch (err) {
-      alert('Error resetting timer: ' + (err.response?.data?.error || err.message));
+      alert('Error resetting match: ' + (err.response?.data?.error || err.message));
     } finally {
       setLoading(false);
     }

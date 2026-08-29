@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
-import { Calendar, Filter, PlusCircle, X, Pencil, Trash2 } from 'lucide-react';
+import { Calendar, Filter, PlusCircle, X, Pencil, Trash2, RotateCcw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const Matches = () => {
@@ -108,6 +108,17 @@ export const Matches = () => {
       tournament: m.tournament
     });
     setShowEditModal(true);
+  };
+
+  const handleResetMatch = async (matchId) => {
+    if (!window.confirm('Are you sure you want to RESET this match? This will reset the score to 0 - 0, timer to 00:00, events, and status to SCHEDULED.')) return;
+    try {
+      await api.post(`/tournaments/matches/${matchId}/reset/`, {});
+      fetchMatches();
+      alert('✅ Match successfully reset to Scheduled (0 - 0)!');
+    } catch (err) {
+      alert('Error resetting match: ' + (err.response?.data?.error || err.message));
+    }
   };
 
   const handleDeleteMatch = async (matchId) => {
@@ -421,6 +432,25 @@ export const Matches = () => {
                       )}
                       {user?.role === 'ADMIN' && (
                         <>
+                          <button
+                            onClick={() => handleResetMatch(m.id)}
+                            title="Reset Match to 0 - 0 & Scheduled"
+                            style={{
+                              backgroundColor: 'rgba(234, 179, 8, 0.15)',
+                              color: '#eab308',
+                              border: '1px solid rgba(234, 179, 8, 0.3)',
+                              borderRadius: '6px',
+                              padding: '5px 10px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontSize: '0.75rem',
+                              fontWeight: '800'
+                            }}
+                          >
+                            <RotateCcw size={12} /> Reset
+                          </button>
                           <button
                             onClick={() => handleOpenEdit(m)}
                             className="btn-secondary"

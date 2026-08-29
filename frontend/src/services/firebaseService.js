@@ -561,6 +561,37 @@ export const toggleMatchTimer = async (matchId, action) => {
   return updated;
 };
 
+export const resetMatch = async (matchId) => {
+  const match = await getMatch(matchId);
+  if (!match) return null;
+
+  const resetData = {
+    home_score: 0,
+    away_score: 0,
+    status: 'SCHEDULED',
+    current_period: 'NOT_STARTED',
+    is_timer_running: false,
+    timer_seconds_elapsed: 0,
+    timer_base_seconds: 0,
+    timer_started_at: null,
+    computed_elapsed_seconds: 0,
+    is_live_streaming: false,
+    stream_url: '',
+    recent_events: []
+  };
+
+  const updated = await updateMatch(matchId, resetData);
+
+  try {
+    await updateDoc(doc(db, 'live_streams', String(matchId)), {
+      is_active: false,
+      ended_at: serverTimestamp()
+    });
+  } catch (e) {}
+
+  return updated;
+};
+
 export const recordMatchEvent = async (matchId, eventData) => {
   const match = await getMatch(matchId);
   if (!match) return null;

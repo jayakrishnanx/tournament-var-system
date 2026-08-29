@@ -167,6 +167,14 @@ const api = {
         return { data, status: 200 };
       }
 
+      // 6f. Match Reset to Scheduled (0 - 0)
+      const resetMatchReq = cleanUrl.match(/^\/tournaments\/matches\/([^/]+)\/reset$/);
+      if (resetMatchReq) {
+        const mId = resetMatchReq[1];
+        const data = await fb.resetMatch(mId);
+        return { data, status: 200 };
+      }
+
       // 7. Clear All Matches
       if (cleanUrl === '/tournaments/matches/clear_all') {
         const tId = payload.tournament || null;
