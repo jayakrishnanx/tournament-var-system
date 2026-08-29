@@ -17,7 +17,7 @@ export const generateId = () => {
 };
 
 // ==========================================
-// Instant In-Memory & Local Storage Cache (0ms)
+// Instant In-Memory & Local Storage Cache
 // ==========================================
 const getCache = (key, defaultVal = []) => {
   try {
@@ -34,26 +34,79 @@ const setCache = (key, data) => {
   } catch (e) {}
 };
 
+// Auto-sync existing local data to Firestore if cloud is new/empty
+let isSyncedToCloud = false;
+const syncLocalToCloud = async () => {
+  if (isSyncedToCloud) return;
+  isSyncedToCloud = true;
+
+  try {
+    const localTourns = getCache('tournaments', []);
+    const localTeams = getCache('teams', []);
+    const localMatches = getCache('matches', []);
+
+    // Sync Tournaments
+    if (localTourns.length > 0) {
+      for (const t of localTourns) {
+        if (t.id) {
+          await setDoc(doc(db, 'tournaments', String(t.id)), {
+            ...t,
+            updated_at: serverTimestamp()
+          }, { merge: true });
+        }
+      }
+    }
+
+    // Sync Teams
+    if (localTeams.length > 0) {
+      for (const tm of localTeams) {
+        if (tm.id) {
+          await setDoc(doc(db, 'teams', String(tm.id)), {
+            ...tm,
+            updated_at: serverTimestamp()
+          }, { merge: true });
+        }
+      }
+    }
+
+    // Sync Matches
+    if (localMatches.length > 0) {
+      for (const m of localMatches) {
+        if (m.id) {
+          await setDoc(doc(db, 'matches', String(m.id)), {
+            ...m,
+            updated_at: serverTimestamp()
+          }, { merge: true });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Auto cloud sync notice:', err);
+  }
+};
+
+// Kick off background cloud sync
+if (typeof window !== 'undefined') {
+  setTimeout(syncLocalToCloud, 500);
+}
+
 // ==========================================
-// 1. TOURNAMENTS (0ms instant return)
+// 1. TOURNAMENTS
 // ==========================================
 
 export const getTournaments = async () => {
-  const cached = getCache('tournaments', []);
-  
-  // Non-blocking background sync with Firestore if online
-  (async () => {
-    try {
-      const snap = await getDocs(collection(db, 'tournaments'));
-      if (snap && snap.docs.length > 0) {
-        const remote = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        remote.sort((a, b) => (b.created_at?.seconds || 0) - (a.created_at?.seconds || 0));
-        setCache('tournaments', remote);
-      }
-    } catch (e) {}
-  })();
-
-  return cached;
+  try {
+    const snap = await getDocs(collection(db, 'tournaments'));
+    if (snap && !snap.empty) {
+      const remote = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      remote.sort((a, b) => (b.created_at?.seconds || 0) - (a.created_at?.seconds || 0));
+      setCache('tournaments', remote);
+      return remote;
+    }
+  } catch (e) {
+    console.warn('Firestore getTournaments read error:', e);
+  }
+  return getCache('tournaments', []);
 };
 
 export const subscribeTournaments = (callback) => {
@@ -62,7 +115,7 @@ export const subscribeTournaments = (callback) => {
 
   try {
     return onSnapshot(collection(db, 'tournaments'), (snapshot) => {
-      if (snapshot && snapshot.docs.length > 0) {
+      if (snapshot && !snapshot.empty) {
         const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         data.sort((a, b) => (b.created_at?.seconds || 0) - (a.created_at?.seconds || 0));
         setCache('tournaments', data);
@@ -75,9 +128,15 @@ export const subscribeTournaments = (callback) => {
 };
 
 export const getTournament = async (id) => {
+  try {
+    const docRef = doc(db, 'tournaments', String(id));
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      return { id: snap.id, ...snap.data() };
+    }
+  } catch (e) {}
   const cached = getCache('tournaments', []);
-  const item = cached.find(t => t.id === id);
-  return item || null;
+  return cached.find(t => String(t.id) === String(id)) || null;
 };
 
 export const createTournament = async (data) => {
@@ -89,74 +148,71 @@ export const createTournament = async (data) => {
   };
 
   const cached = getCache('tournaments', []);
-  const updated = [newTourn, ...cached];
-  setCache('tournaments', updated);
+  setCache('tournaments', [newTourn, ...cached]);
 
-  // Background sync
   try {
-    setDoc(doc(db, 'tournaments', newId), {
+    await setDoc(doc(db, 'tournaments', newId), {
       ...data,
       created_at: serverTimestamp()
-    }).catch(() => {});
-  } catch (e) {}
+    });
+  } catch (e) {
+    console.error('Create tournament firestore error:', e);
+  }
 
   return newTourn;
 };
 
 export const updateTournament = async (id, data) => {
   const cached = getCache('tournaments', []);
-  const updated = cached.map(t => t.id === id ? { ...t, ...data } : t);
+  const updated = cached.map(t => String(t.id) === String(id) ? { ...t, ...data } : t);
   setCache('tournaments', updated);
 
   try {
-    updateDoc(doc(db, 'tournaments', id), data).catch(() => {});
+    await updateDoc(doc(db, 'tournaments', String(id)), data);
   } catch (e) {}
   return { id, ...data };
 };
 
 export const deleteTournament = async (id) => {
   const cached = getCache('tournaments', []);
-  setCache('tournaments', cached.filter(t => t.id !== id));
+  setCache('tournaments', cached.filter(t => String(t.id) !== String(id)));
 
   try {
-    deleteDoc(doc(db, 'tournaments', id)).catch(() => {});
+    await deleteDoc(doc(db, 'tournaments', String(id)));
   } catch (e) {}
   return true;
 };
 
 // ==========================================
-// 2. TEAMS & PLAYERS (0ms instant return)
+// 2. TEAMS & PLAYERS
 // ==========================================
 
 export const getTeams = async (tournamentId = null) => {
+  try {
+    const snap = await getDocs(collection(db, 'teams'));
+    if (snap && !snap.empty) {
+      const teams = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setCache('teams', teams);
+      return tournamentId ? teams.filter(t => String(t.tournament) === String(tournamentId)) : teams;
+    }
+  } catch (e) {
+    console.warn('Firestore getTeams read error:', e);
+  }
   const cached = getCache('teams', []);
-  const filtered = tournamentId ? cached.filter(t => t.tournament === tournamentId) : cached;
-
-  // Background sync
-  (async () => {
-    try {
-      const snap = await getDocs(collection(db, 'teams'));
-      if (snap && snap.docs.length > 0) {
-        const teams = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setCache('teams', teams);
-      }
-    } catch (e) {}
-  })();
-
-  return filtered;
+  return tournamentId ? cached.filter(t => String(t.tournament) === String(tournamentId)) : cached;
 };
 
 export const subscribeTeams = (tournamentId, callback) => {
   const cached = getCache('teams', []);
-  const filtered = tournamentId ? cached.filter(t => t.tournament === tournamentId) : cached;
+  const filtered = tournamentId ? cached.filter(t => String(t.tournament) === String(tournamentId)) : cached;
   callback(filtered);
 
   try {
     return onSnapshot(collection(db, 'teams'), (snapshot) => {
-      if (snapshot && snapshot.docs.length > 0) {
+      if (snapshot && !snapshot.empty) {
         const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         setCache('teams', data);
-        const res = tournamentId ? data.filter(t => t.tournament === tournamentId) : data;
+        const res = tournamentId ? data.filter(t => String(t.tournament) === String(tournamentId)) : data;
         callback(res);
       }
     }, () => callback(filtered));
@@ -178,32 +234,34 @@ export const createTeam = async (data) => {
   setCache('teams', [...cached, newTeam]);
 
   try {
-    setDoc(doc(db, 'teams', newId), {
+    await setDoc(doc(db, 'teams', newId), {
       ...data,
       created_at: serverTimestamp()
-    }).catch(() => {});
-  } catch (e) {}
+    });
+  } catch (e) {
+    console.error('Create team firestore error:', e);
+  }
 
   return newTeam;
 };
 
 export const updateTeam = async (id, data) => {
   const cached = getCache('teams', []);
-  const updated = cached.map(t => t.id === id ? { ...t, ...data } : t);
+  const updated = cached.map(t => String(t.id) === String(id) ? { ...t, ...data } : t);
   setCache('teams', updated);
 
   try {
-    updateDoc(doc(db, 'teams', id), data).catch(() => {});
+    await updateDoc(doc(db, 'teams', String(id)), data);
   } catch (e) {}
   return { id, ...data };
 };
 
 export const deleteTeam = async (teamId) => {
   const cached = getCache('teams', []);
-  setCache('teams', cached.filter(t => t.id !== teamId));
+  setCache('teams', cached.filter(t => String(t.id) !== String(teamId)));
 
   try {
-    deleteDoc(doc(db, 'teams', teamId)).catch(() => {});
+    await deleteDoc(doc(db, 'teams', String(teamId)));
   } catch (e) {}
   return true;
 };
@@ -214,7 +272,7 @@ export const addPlayer = async (data) => {
 
   const cached = getCache('teams', []);
   const updated = cached.map(t => {
-    if (t.id === data.team) {
+    if (String(t.id) === String(data.team)) {
       return { ...t, players: [...(t.players || []), newPlayer] };
     }
     return t;
@@ -222,10 +280,10 @@ export const addPlayer = async (data) => {
   setCache('teams', updated);
 
   try {
-    setDoc(doc(db, 'players', newId), {
+    await setDoc(doc(db, 'players', newId), {
       ...data,
       created_at: serverTimestamp()
-    }).catch(() => {});
+    });
   } catch (e) {}
 
   return newPlayer;
@@ -235,12 +293,12 @@ export const updatePlayer = async (id, data) => {
   const cached = getCache('teams', []);
   const updated = cached.map(t => ({
     ...t,
-    players: (t.players || []).map(p => p.id === id ? { ...p, ...data } : p)
+    players: (t.players || []).map(p => String(p.id) === String(id) ? { ...p, ...data } : p)
   }));
   setCache('teams', updated);
 
   try {
-    updateDoc(doc(db, 'players', id), data).catch(() => {});
+    await updateDoc(doc(db, 'players', String(id)), data);
   } catch (e) {}
   return { id, ...data };
 };
@@ -249,69 +307,51 @@ export const deletePlayer = async (id) => {
   const cached = getCache('teams', []);
   const updated = cached.map(t => ({
     ...t,
-    players: (t.players || []).filter(p => p.id !== id)
+    players: (t.players || []).filter(p => String(p.id) !== String(id))
   }));
   setCache('teams', updated);
 
   try {
-    deleteDoc(doc(db, 'players', id)).catch(() => {});
+    await deleteDoc(doc(db, 'players', String(id)));
   } catch (e) {}
   return true;
 };
 
 // ==========================================
-// 3. MATCHES & EVENTS (0ms instant return)
+// 3. MATCHES
 // ==========================================
 
-export const getMatches = async (tournamentId = null) => {
-  const cached = getCache('matches', []);
-  const filtered = tournamentId ? cached.filter(m => m.tournament === tournamentId) : cached;
+export const getMatches = async (tournamentId = null, stage = null) => {
+  try {
+    const snap = await getDocs(collection(db, 'matches'));
+    if (snap && !snap.empty) {
+      let matches = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setCache('matches', matches);
+      if (tournamentId) matches = matches.filter(m => String(m.tournament) === String(tournamentId));
+      if (stage) matches = matches.filter(m => m.stage === stage);
+      return matches;
+    }
+  } catch (e) {
+    console.warn('Firestore getMatches read error:', e);
+  }
 
-  // Background sync
-  (async () => {
-    try {
-      const snap = await getDocs(collection(db, 'matches'));
-      if (snap && snap.docs.length > 0) {
-        const teamsCached = getCache('teams', []);
-        const teamMap = {};
-        teamsCached.forEach(t => { teamMap[t.id] = t; });
-
-        const matches = snap.docs.map(d => {
-          const m = { id: d.id, ...d.data() };
-          if (m.home_team && teamMap[m.home_team]) m.home_team_details = teamMap[m.home_team];
-          if (m.away_team && teamMap[m.away_team]) m.away_team_details = teamMap[m.away_team];
-          return m;
-        });
-        matches.sort((a, b) => (a.match_number || 0) - (b.match_number || 0));
-        setCache('matches', matches);
-      }
-    } catch (e) {}
-  })();
-
-  return filtered;
+  let cached = getCache('matches', []);
+  if (tournamentId) cached = cached.filter(m => String(m.tournament) === String(tournamentId));
+  if (stage) cached = cached.filter(m => m.stage === stage);
+  return cached;
 };
 
 export const subscribeMatches = (tournamentId, callback) => {
   const cached = getCache('matches', []);
-  const filtered = tournamentId ? cached.filter(m => m.tournament === tournamentId) : cached;
+  const filtered = tournamentId ? cached.filter(m => String(m.tournament) === String(tournamentId)) : cached;
   callback(filtered);
 
   try {
     return onSnapshot(collection(db, 'matches'), (snapshot) => {
-      if (snapshot && snapshot.docs.length > 0) {
-        const teamsCached = getCache('teams', []);
-        const teamMap = {};
-        teamsCached.forEach(t => { teamMap[t.id] = t; });
-
-        const matches = snapshot.docs.map(d => {
-          const m = { id: d.id, ...d.data() };
-          if (m.home_team && teamMap[m.home_team]) m.home_team_details = teamMap[m.home_team];
-          if (m.away_team && teamMap[m.away_team]) m.away_team_details = teamMap[m.away_team];
-          return m;
-        });
-        matches.sort((a, b) => (a.match_number || 0) - (b.match_number || 0));
-        setCache('matches', matches);
-        const res = tournamentId ? matches.filter(m => m.tournament === tournamentId) : matches;
+      if (snapshot && !snapshot.empty) {
+        const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setCache('matches', data);
+        const res = tournamentId ? data.filter(m => String(m.tournament) === String(tournamentId)) : data;
         callback(res);
       }
     }, () => callback(filtered));
@@ -321,26 +361,30 @@ export const subscribeMatches = (tournamentId, callback) => {
 };
 
 export const getMatch = async (id) => {
+  try {
+    const docRef = doc(db, 'matches', String(id));
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      return { id: snap.id, ...snap.data() };
+    }
+  } catch (e) {}
+
   const cached = getCache('matches', []);
-  const match = cached.find(m => m.id === id);
-  return match || null;
+  return cached.find(m => String(m.id) === String(id)) || null;
 };
 
-export const subscribeMatch = (id, callback) => {
+export const subscribeMatch = (matchId, callback) => {
   const cached = getCache('matches', []);
-  const match = cached.find(m => m.id === id);
-  if (match) callback(match);
+  const item = cached.find(m => String(m.id) === String(matchId));
+  if (item) callback(item);
 
   try {
-    return onSnapshot(doc(db, 'matches', id), (snap) => {
-      if (snap.exists()) {
-        const mData = { id: snap.id, ...snap.data() };
-        const teamsCached = getCache('teams', []);
-        mData.home_team_details = teamsCached.find(t => t.id === mData.home_team) || null;
-        mData.away_team_details = teamsCached.find(t => t.id === mData.away_team) || null;
-        callback(mData);
+    return onSnapshot(doc(db, 'matches', String(matchId)), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = { id: docSnap.id, ...docSnap.data() };
+        callback(data);
       }
-    }, () => callback(match || null));
+    });
   } catch (e) {
     return () => {};
   }
@@ -348,19 +392,21 @@ export const subscribeMatch = (id, callback) => {
 
 export const createMatch = async (data) => {
   const newId = generateId();
-  const teamsCached = getCache('teams', []);
+  const teams = getCache('teams', []);
+  const homeTeamObj = teams.find(t => String(t.id) === String(data.home_team));
+  const awayTeamObj = teams.find(t => String(t.id) === String(data.away_team));
+
   const newMatch = {
     id: newId,
+    status: 'SCHEDULED',
     home_score: 0,
     away_score: 0,
-    status: 'SCHEDULED',
-    current_period: 'NOT_STARTED',
-    timer_seconds_elapsed: 0,
-    is_timer_running: false,
+    current_time: '00:00',
+    current_period: 1,
     stage: 'REGULAR',
     ...data,
-    home_team_details: teamsCached.find(t => t.id === data.home_team) || null,
-    away_team_details: teamsCached.find(t => t.id === data.away_team) || null,
+    home_team_details: homeTeamObj || { name: 'Home Team' },
+    away_team_details: awayTeamObj || { name: 'Away Team' },
     created_at: new Date().toISOString()
   };
 
@@ -368,74 +414,72 @@ export const createMatch = async (data) => {
   setCache('matches', [...cached, newMatch]);
 
   try {
-    setDoc(doc(db, 'matches', newId), {
-      home_score: 0,
-      away_score: 0,
-      status: 'SCHEDULED',
-      current_period: 'NOT_STARTED',
-      timer_seconds_elapsed: 0,
-      is_timer_running: false,
-      stage: 'REGULAR',
-      ...data,
+    await setDoc(doc(db, 'matches', newId), {
+      ...newMatch,
       created_at: serverTimestamp()
-    }).catch(() => {});
-  } catch (e) {}
+    });
+  } catch (e) {
+    console.error('Create match firestore error:', e);
+  }
 
   return newMatch;
 };
 
 export const updateMatch = async (id, data) => {
   const cached = getCache('matches', []);
-  const updated = cached.map(m => m.id === id ? { ...m, ...data } : m);
+  const updated = cached.map(m => String(m.id) === String(id) ? { ...m, ...data } : m);
   setCache('matches', updated);
 
   try {
-    updateDoc(doc(db, 'matches', id), data).catch(() => {});
+    await updateDoc(doc(db, 'matches', String(id)), data);
   } catch (e) {}
   return { id, ...data };
 };
 
 export const deleteMatch = async (id) => {
   const cached = getCache('matches', []);
-  setCache('matches', cached.filter(m => m.id !== id));
+  setCache('matches', cached.filter(m => String(m.id) !== String(id)));
 
   try {
-    deleteDoc(doc(db, 'matches', id)).catch(() => {});
+    await deleteDoc(doc(db, 'matches', String(id)));
   } catch (e) {}
   return true;
 };
 
 export const setNextMatch = async (matchId) => {
   const cached = getCache('matches', []);
-  const match = cached.find(m => m.id === matchId);
-  const newIsNext = !match?.is_next_match;
+  const target = cached.find(m => String(m.id) === String(matchId));
+  if (!target) return null;
 
-  const updated = cached.map(m => {
-    if (m.id === matchId) return { ...m, is_next_match: newIsNext };
-    if (newIsNext && m.tournament === match?.tournament) return { ...m, is_next_match: false };
-    return m;
-  });
+  const updated = cached.map(m => ({
+    ...m,
+    is_next_match: String(m.id) === String(matchId)
+  }));
   setCache('matches', updated);
 
   try {
-    updateDoc(doc(db, 'matches', matchId), { is_next_match: newIsNext }).catch(() => {});
+    for (const m of updated) {
+      updateDoc(doc(db, 'matches', String(m.id)), { is_next_match: m.is_next_match }).catch(() => {});
+    }
   } catch (e) {}
 
-  return { is_next_match: newIsNext };
+  return target;
 };
 
 // ==========================================
-// 4. STANDINGS (POINTS TABLE CALCULATION)
+// 4. STANDINGS CALCULATION
 // ==========================================
 
 export const calculateStandings = async (tournamentId) => {
   const teams = await getTeams(tournamentId);
   const matches = await getMatches(tournamentId);
 
-  const table = {};
-  for (const t of teams) {
-    table[t.id] = {
-      team: { id: t.id, name: t.name, code: t.code },
+  const standingsMap = {};
+
+  teams.forEach(team => {
+    standingsMap[team.id] = {
+      team: team.id,
+      team_name: team.name,
       played: 0,
       won: 0,
       drawn: 0,
@@ -445,147 +489,108 @@ export const calculateStandings = async (tournamentId) => {
       goal_difference: 0,
       points: 0
     };
-  }
+  });
 
-  for (const m of matches) {
-    if (m.stage && m.stage !== 'REGULAR') continue;
-    if (!m.home_team || !m.away_team) continue;
-    if (!table[m.home_team] || !table[m.away_team]) continue;
+  matches.filter(m => m.status === 'ENDED').forEach(m => {
+    const home = standingsMap[m.home_team];
+    const away = standingsMap[m.away_team];
 
-    if (m.status === 'IN_PROGRESS' || m.status === 'COMPLETED' || m.status === 'FINISHED') {
-      const hScore = Number(m.home_score) || 0;
-      const aScore = Number(m.away_score) || 0;
+    if (home && away) {
+      home.played += 1;
+      away.played += 1;
+      home.goals_for += Number(m.home_score || 0);
+      home.goals_against += Number(m.away_score || 0);
+      away.goals_for += Number(m.away_score || 0);
+      away.goals_against += Number(m.home_score || 0);
 
-      table[m.home_team].played += 1;
-      table[m.away_team].played += 1;
-
-      table[m.home_team].goals_for += hScore;
-      table[m.home_team].goals_against += aScore;
-      table[m.away_team].goals_for += aScore;
-      table[m.away_team].goals_against += hScore;
-
-      table[m.home_team].goal_difference = table[m.home_team].goals_for - table[m.home_team].goals_against;
-      table[m.away_team].goal_difference = table[m.away_team].goals_for - table[m.away_team].goals_against;
-
-      if (hScore > aScore) {
-        table[m.home_team].won += 1;
-        table[m.home_team].points += 3;
-        table[m.away_team].lost += 1;
-      } else if (aScore > hScore) {
-        table[m.away_team].won += 1;
-        table[m.away_team].points += 3;
-        table[m.home_team].lost += 1;
+      if (m.home_score > m.away_score) {
+        home.won += 1;
+        home.points += 3;
+        away.lost += 1;
+      } else if (m.home_score < m.away_score) {
+        away.won += 1;
+        away.points += 3;
+        home.lost += 1;
       } else {
-        table[m.home_team].drawn += 1;
-        table[m.home_team].points += 1;
-        table[m.away_team].drawn += 1;
-        table[m.away_team].points += 1;
+        home.drawn += 1;
+        away.drawn += 1;
+        home.points += 1;
+        away.points += 1;
       }
     }
-  }
+  });
 
-  return Object.values(table).sort((a, b) => {
+  const list = Object.values(standingsMap).map(s => ({
+    ...s,
+    goal_difference: s.goals_for - s.goals_against
+  }));
+
+  list.sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
     if (b.goal_difference !== a.goal_difference) return b.goal_difference - a.goal_difference;
-    if (b.goals_for !== a.goals_for) return b.goals_for - a.goals_for;
-    return a.team.name.localeCompare(b.team.name);
+    return b.goals_for - a.goals_for;
   });
+
+  return list;
 };
 
 // ==========================================
-// 5. BRACKET GENERATION & ADVANCEMENT
+// 5. KNOCKOUT BRACKET GENERATION
 // ==========================================
 
-export const generateBracket = async (tournamentId, teamIds) => {
-  if (![4, 8].includes(teamIds.length)) {
-    throw new Error('Please select exactly 4 or 8 teams for the bracket.');
+export const generateKnockoutBracket = async (tournamentId, teamIds) => {
+  const teams = await getTeams(tournamentId);
+  const selectedTeams = teams.filter(t => teamIds.includes(t.id));
+
+  if (selectedTeams.length !== 4 && selectedTeams.length !== 8) {
+    throw new Error('Must select 4 or 8 teams for knockout bracket');
   }
 
-  const cached = getCache('matches', []);
-  const nonBracket = cached.filter(m => m.tournament !== tournamentId || (!m.stage || m.stage === 'REGULAR'));
-  
-  const now = new Date();
-  const newBracketMatches = [];
+  const createdMatches = [];
+  const count = selectedTeams.length;
 
-  const addMatch = (home, away, stage, code, hoursOffset) => {
-    const mId = generateId();
-    newBracketMatches.push({
-      id: mId,
+  if (count === 4) {
+    // 2 Semi-Finals
+    const sf1 = await createMatch({
       tournament: tournamentId,
-      home_team: home,
-      away_team: away,
-      stage,
-      bracket_code: code,
-      home_score: 0,
-      away_score: 0,
-      status: 'SCHEDULED',
-      current_period: 'NOT_STARTED',
-      scheduled_time: new Date(now.getTime() + hoursOffset * 3600000).toISOString(),
-      created_at: new Date().toISOString()
+      home_team: selectedTeams[0].id,
+      away_team: selectedTeams[1].id,
+      stage: 'SEMI_FINAL',
+      match_number: 1,
+      bracket_position: 'SF1'
     });
-  };
-
-  if (teamIds.length === 8) {
-    addMatch(teamIds[0], teamIds[1], 'QUARTER_FINAL', 'QF1', 2);
-    addMatch(teamIds[2], teamIds[3], 'QUARTER_FINAL', 'QF2', 4);
-    addMatch(teamIds[4], teamIds[5], 'QUARTER_FINAL', 'QF3', 6);
-    addMatch(teamIds[6], teamIds[7], 'QUARTER_FINAL', 'QF4', 8);
-    addMatch(null, null, 'SEMI_FINAL', 'SF1', 24);
-    addMatch(null, null, 'SEMI_FINAL', 'SF2', 26);
-    addMatch(null, null, 'FINAL', 'FINAL', 30);
-  } else if (teamIds.length === 4) {
-    addMatch(teamIds[0], teamIds[1], 'SEMI_FINAL', 'SF1', 2);
-    addMatch(teamIds[2], teamIds[3], 'SEMI_FINAL', 'SF2', 4);
-    addMatch(null, null, 'FINAL', 'FINAL', 8);
-  }
-
-  setCache('matches', [...nonBracket, ...newBracketMatches]);
-
-  try {
-    for (const m of newBracketMatches) {
-      setDoc(doc(db, 'matches', m.id), {
-        ...m,
-        created_at: serverTimestamp()
-      }).catch(() => {});
-    }
-  } catch (e) {}
-
-  return true;
-};
-
-// ==========================================
-// 6. MATCH EVENTS (GOALS, CARDS, VAR)
-// ==========================================
-
-export const addMatchEvent = async (payload) => {
-  const newId = generateId();
-  const newEvent = { id: newId, ...payload, created_at: new Date().toISOString() };
-
-  if (payload.event_type === 'GOAL' && payload.match && payload.team) {
-    const cachedMatches = getCache('matches', []);
-    const match = cachedMatches.find(m => m.id === payload.match);
-    if (match) {
-      if (payload.team === match.home_team) {
-        await updateMatch(payload.match, { home_score: (Number(match.home_score) || 0) + 1 });
-      } else if (payload.team === match.away_team) {
-        await updateMatch(payload.match, { away_score: (Number(match.away_score) || 0) + 1 });
-      }
+    const sf2 = await createMatch({
+      tournament: tournamentId,
+      home_team: selectedTeams[2].id,
+      away_team: selectedTeams[3].id,
+      stage: 'SEMI_FINAL',
+      match_number: 2,
+      bracket_position: 'SF2'
+    });
+    // 1 Final
+    const fn = await createMatch({
+      tournament: tournamentId,
+      home_team: selectedTeams[0].id,
+      away_team: selectedTeams[2].id,
+      stage: 'FINAL',
+      match_number: 3,
+      bracket_position: 'F'
+    });
+    createdMatches.push(sf1, sf2, fn);
+  } else if (count === 8) {
+    // 4 Quarter-Finals
+    for (let i = 0; i < 4; i++) {
+      const qf = await createMatch({
+        tournament: tournamentId,
+        home_team: selectedTeams[i * 2].id,
+        away_team: selectedTeams[i * 2 + 1].id,
+        stage: 'QUARTER_FINAL',
+        match_number: i + 1,
+        bracket_position: `QF${i + 1}`
+      });
+      createdMatches.push(qf);
     }
   }
 
-  try {
-    setDoc(doc(db, 'match_events', newId), {
-      ...payload,
-      created_at: serverTimestamp()
-    }).catch(() => {});
-  } catch (e) {}
-
-  return newEvent;
-};
-
-export const deleteMatchEvent = async (eventId) => {
-  try {
-    deleteDoc(doc(db, 'match_events', eventId)).catch(() => {});
-  } catch (e) {}
-  return true;
+  return createdMatches;
 };

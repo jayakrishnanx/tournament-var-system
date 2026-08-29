@@ -2,26 +2,16 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
-const getFirebaseConfig = () => {
-  if (typeof window !== 'undefined') {
-    try {
-      const stored = localStorage.getItem('custom_firebase_config');
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (e) {}
-  }
-  return {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDummyKeyForInitialSetup1234567",
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "tournament-var-system.firebaseapp.com",
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "tournament-var-system",
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "tournament-var-system.appspot.com",
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123456789012",
-    appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789012:web:abcdef1234567890"
-  };
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCL0-eN-qX8aDT51UQzm4ilpOac-zukGXg",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "tournament-mangement.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "tournament-mangement",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "tournament-mangement.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "792807095641",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:792807095641:web:6d56f1d19e032c7ebee048",
+  measurementId: "G-3HCLS2LXXD"
 };
 
-const firebaseConfig = getFirebaseConfig();
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -31,7 +21,7 @@ if (typeof window !== 'undefined') {
   try {
     enableIndexedDbPersistence(db).catch((err) => {
       if (err.code === 'failed-precondition') {
-        console.warn('Firebase persistence failed: multiple tabs open');
+        console.warn('Firebase persistence warning: multiple tabs open');
       } else if (err.code === 'unimplemented') {
         console.warn('Firebase persistence not supported by browser');
       }
