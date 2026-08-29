@@ -159,8 +159,24 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
 
   const toggleMute = () => {
     if (videoRef.current) {
-      videoRef.current.muted = !videoRef.current.muted;
-      setIsMuted(videoRef.current.muted);
+      const nextMuted = !videoRef.current.muted;
+      videoRef.current.muted = nextMuted;
+      videoRef.current.volume = 1.0;
+      setIsMuted(nextMuted);
+      if (!nextMuted) {
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) playPromise.catch(() => {});
+      }
+    }
+  };
+
+  const handleUnmute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = false;
+      videoRef.current.volume = 1.0;
+      setIsMuted(false);
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) playPromise.catch(() => {});
     }
   };
 
@@ -294,6 +310,34 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
           </div>
         </div>
 
+        {/* Prominent Tap to Unmute Overlay when audio is muted */}
+        {hasRemoteVideo && isMuted && (
+          <button
+            onClick={handleUnmute}
+            style={{
+              position: 'absolute',
+              bottom: '12px',
+              left: '12px',
+              backgroundColor: '#ef4444',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '8px 14px',
+              fontSize: '0.8rem',
+              fontWeight: '900',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              zIndex: 25,
+              boxShadow: '0 4px 14px rgba(239, 68, 68, 0.5)',
+              animation: 'pulseLiveBorder 2s infinite'
+            }}
+          >
+            <Volume2 size={16} /> 🔊 Tap to Unmute Audio
+          </button>
+        )}
+
         {/* Bottom Controls Overlay */}
         {hasRemoteVideo && (
           <div style={{
@@ -320,7 +364,7 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
                 fontWeight: '700'
               }}
             >
-              {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />} {isMuted ? 'Unmute' : 'Mute'}
+              {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />} {isMuted ? 'Muted' : 'Sound On'}
             </button>
             <button
               onClick={toggleFullscreen}

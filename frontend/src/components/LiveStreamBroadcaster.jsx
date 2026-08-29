@@ -37,7 +37,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     }
 
     try {
-      // 1. Get user media with fallback
+      // 1. Get user media with robust audio constraints
       let stream = null;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -46,7 +46,11 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
             width: { ideal: 1280, max: 1920 },
             height: { ideal: 720, max: 1080 }
           },
-          audio: true
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
         });
       } catch (err1) {
         console.warn('Tier 1 camera access failed, trying standard video+audio...', err1);
@@ -59,7 +63,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
           console.warn('Tier 2 camera access failed, trying basic video...', err2);
           stream = await navigator.mediaDevices.getUserMedia({
             video: true,
-            audio: false
+            audio: true
           });
         }
       }
@@ -67,6 +71,11 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
       if (!stream) {
         throw new Error('Could not initialize video stream from device camera.');
       }
+
+      // Explicitly enable all audio tracks
+      stream.getAudioTracks().forEach(track => {
+        track.enabled = true;
+      });
 
       streamRef.current = stream;
       setIsStreaming(true);
