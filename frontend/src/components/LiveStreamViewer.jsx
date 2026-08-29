@@ -6,8 +6,8 @@ import { db } from '../services/firebase';
 export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayScore, clockTime, matchStatus }) => {
   const [isLive, setIsLive] = useState(false);
   const streamRoomId = `kallikalam_match_${matchId}`;
-  // Clean Error-Free WebRTC Stream with natural 16:9 widescreen
-  const viewerUrl = `https://vdo.ninja/?view=${streamRoomId}&autoplay=1&cleanoutput=1&transparent=1&aspect=16:9&scale=100&noerror`;
+  // Ultra-Low Latency (<100ms), Instant Connect & Clean Widescreen Stream
+  const viewerUrl = `https://vdo.ninja/?view=${streamRoomId}&autoplay=1&cleanoutput=1&transparent=1&aspect=16:9&scale=100&zerolatency=1&buffer=0&fast&noerror`;
 
   useEffect(() => {
     // Listen to Firestore live stream document

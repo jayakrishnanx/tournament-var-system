@@ -448,13 +448,20 @@ export const createMatch = async (data) => {
 
 export const updateMatch = async (id, data) => {
   const cached = getCache('matches', []);
-  const updated = cached.map(m => String(m.id) === String(id) ? { ...m, ...data } : m);
+  const current = cached.find(m => String(m.id) === String(id)) || {};
+  const merged = { ...current, ...data, id };
+  const updated = cached.map(m => String(m.id) === String(id) ? merged : m);
+  if (!cached.some(m => String(m.id) === String(id))) {
+    updated.push(merged);
+  }
   setCache('matches', updated);
 
+  // Background non-blocking cloud update for zero-latency UI
   try {
-    await updateDoc(doc(db, 'matches', String(id)), cleanData(data));
+    updateDoc(doc(db, 'matches', String(id)), cleanData(data)).catch(() => {});
   } catch (e) {}
-  return { id, ...data };
+
+  return merged;
 };
 
 export const deleteMatch = async (id) => {
