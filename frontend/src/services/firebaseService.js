@@ -15,9 +15,35 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 
-// Helper to generate IDs
+// Helper to generate unique IDs
 export const generateId = () => {
-  return doc(collection(db, '_temp')).id;
+  return 'id_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+};
+
+// ==========================================
+// High-Speed Local Storage Cache Helpers (0ms Latency)
+// ==========================================
+const getCache = (key, defaultVal = []) => {
+  try {
+    const raw = localStorage.getItem(`var_cache_${key}`);
+    return raw ? JSON.parse(raw) : defaultVal;
+  } catch (e) {
+    return defaultVal;
+  }
+};
+
+const setCache = (key, data) => {
+  try {
+    localStorage.setItem(`var_cache_${key}`, JSON.stringify(data));
+  } catch (e) {}
+};
+
+// Safe Firestore query with fast timeout fallback
+const withTimeout = (promise, ms = 2000, fallbackVal = null) => {
+  return Promise.race([
+    promise,
+    new Promise((resolve) => setTimeout(() => resolve(fallbackVal), ms))
+  ]);
 };
 
 // ==========================================
@@ -25,58 +51,133 @@ export const generateId = () => {
 // ==========================================
 
 export const getTournaments = async () => {
-  try {
-    const q = query(collection(db, 'tournaments'), orderBy('created_at', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  } catch (err) {
-    // If index is missing or query fails, try unordered
-    const snapshot = await getDocs(collection(db, 'tournaments'));
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const cached = getCache('tournaments', []);
+  
+  // Background fetch to keep cache synced
+  const fetchPromise = (async () => {
+    try {
+      const q = query(collection(db, 'tournaments'), orderBy('created_at', 'desc'));
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      if (data.length > 0) {
+        setCache('tournaments', data);
+        return data;
+      }
+    } catch (err) {
+      try {
+        const snapshot = await getDocs(collection(db, 'tournaments'));
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (data.length > 0) {
+          setCache('tournaments', data);
+          return data;
+        }
+      } catch (e) {}
+    }
+    return cached;
+  })();
+
+  // If we have cache, return immediately (0ms), otherwise wait max 1.5s
+  if (cached.length > 0) {
+    fetchPromise.catch(() => {});
+    return cached;
   }
+  const result = await withTimeout(fetchPromise, 1500, cached);
+  return result || cached;
 };
 
 export const subscribeTournaments = (callback) => {
-  return onSnapshot(collection(db, 'tournaments'), (snapshot) => {
-    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    // Sort in memory by created_at desc
-    data.sort((a, b) => (b.created_at?.seconds || 0) - (a.created_at?.seconds || 0));
-    callback(data);
-  });
+  const cached = getCache('tournaments', []);
+  if (cached.length > 0) callback(cached);
+
+  try {
+    return onSnapshot(collection(db, 'tournaments'), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      data.sort((a, b) => (b.created_at?.seconds || 0) - (a.created_at?.seconds || 0));
+      if (data.length > 0) setCache('tournaments', data);
+      callback(data.length > 0 ? data : cached);
+    }, () => {
+      callback(cached);
+    });
+  } catch (e) {
+    return () => {};
+  }
 };
 
 export const getTournament = async (id) => {
-  const docRef = doc(db, 'tournaments', id);
-  const snap = await getDoc(docRef);
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() };
+  const cachedTourns = getCache('tournaments', []);
+  const fromCache = cachedTourns.find(t => t.id === id);
+
+  const fetchPromise = (async () => {
+    try {
+      const docRef = doc(db, 'tournaments', id);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = { id: snap.id, ...snap.data() };
+        return data;
+      }
+    } catch (e) {}
+    return fromCache || null;
+  })();
+
+  if (fromCache) {
+    fetchPromise.catch(() => {});
+    return fromCache;
+  }
+  return await withTimeout(fetchPromise, 1500, fromCache);
 };
 
 export const createTournament = async (data) => {
-  const docRef = await addDoc(collection(db, 'tournaments'), {
+  const newId = generateId();
+  const newTourn = {
+    id: newId,
     ...data,
-    created_at: serverTimestamp()
-  });
-  return { id: docRef.id, ...data };
+    created_at: new Date().toISOString()
+  };
+
+  // Update cache immediately (0ms)
+  const cached = getCache('tournaments', []);
+  setCache('tournaments', [newTourn, ...cached]);
+
+  // Sync to Firestore in background
+  try {
+    await setDoc(doc(db, 'tournaments', newId), {
+      ...data,
+      created_at: serverTimestamp()
+    });
+  } catch (e) {
+    console.warn('Firestore createTournament error:', e);
+  }
+
+  return newTourn;
 };
 
 export const updateTournament = async (id, data) => {
-  const docRef = doc(db, 'tournaments', id);
-  await updateDoc(docRef, data);
+  const cached = getCache('tournaments', []);
+  const updated = cached.map(t => t.id === id ? { ...t, ...data } : t);
+  setCache('tournaments', updated);
+
+  try {
+    const docRef = doc(db, 'tournaments', id);
+    await updateDoc(docRef, data);
+  } catch (e) {}
   return { id, ...data };
 };
 
 export const deleteTournament = async (id) => {
-  // Also delete associated teams, players, matches, events
-  const teamsSnap = await getDocs(query(collection(db, 'teams'), where('tournament', '==', id)));
-  for (const tDoc of teamsSnap.docs) {
-    await deleteTeam(tDoc.id);
-  }
-  const matchesSnap = await getDocs(query(collection(db, 'matches'), where('tournament', '==', id)));
-  for (const mDoc of matchesSnap.docs) {
-    await deleteDoc(mDoc.ref);
-  }
-  await deleteDoc(doc(db, 'tournaments', id));
+  const cached = getCache('tournaments', []);
+  setCache('tournaments', cached.filter(t => t.id !== id));
+
+  try {
+    const teamsSnap = await getDocs(query(collection(db, 'teams'), where('tournament', '==', id)));
+    for (const tDoc of teamsSnap.docs) {
+      await deleteTeam(tDoc.id);
+    }
+    const matchesSnap = await getDocs(query(collection(db, 'matches'), where('tournament', '==', id)));
+    for (const mDoc of matchesSnap.docs) {
+      await deleteDoc(mDoc.ref);
+    }
+    await deleteDoc(doc(db, 'tournaments', id));
+  } catch (e) {}
   return true;
 };
 
@@ -85,81 +186,182 @@ export const deleteTournament = async (id) => {
 // ==========================================
 
 export const getTeams = async (tournamentId = null) => {
-  let q;
-  if (tournamentId) {
-    q = query(collection(db, 'teams'), where('tournament', '==', tournamentId));
-  } else {
-    q = collection(db, 'teams');
+  const cached = getCache('teams', []);
+  const filteredCached = tournamentId ? cached.filter(t => t.tournament === tournamentId) : cached;
+
+  const fetchPromise = (async () => {
+    try {
+      let q = collection(db, 'teams');
+      if (tournamentId) {
+        q = query(collection(db, 'teams'), where('tournament', '==', tournamentId));
+      }
+      const snap = await getDocs(q);
+      const teams = [];
+      for (const d of snap.docs) {
+        const tData = { id: d.id, ...d.data() };
+        try {
+          const playersSnap = await getDocs(query(collection(db, 'players'), where('team', '==', d.id)));
+          tData.players = playersSnap.docs.map(p => ({ id: p.id, ...p.data() }));
+        } catch (pe) {
+          tData.players = tData.players || [];
+        }
+        teams.push(tData);
+      }
+      if (teams.length > 0) {
+        if (tournamentId) {
+          const others = cached.filter(t => t.tournament !== tournamentId);
+          setCache('teams', [...others, ...teams]);
+        } else {
+          setCache('teams', teams);
+        }
+        return teams;
+      }
+    } catch (err) {}
+    return filteredCached;
+  })();
+
+  if (filteredCached.length > 0) {
+    fetchPromise.catch(() => {});
+    return filteredCached;
   }
-  const snap = await getDocs(q);
-  const teams = [];
-  for (const d of snap.docs) {
-    const tData = { id: d.id, ...d.data() };
-    // Fetch players for each team
-    const playersSnap = await getDocs(query(collection(db, 'players'), where('team', '==', d.id)));
-    tData.players = playersSnap.docs.map(p => ({ id: p.id, ...p.data() }));
-    teams.push(tData);
-  }
-  return teams;
+  const res = await withTimeout(fetchPromise, 1500, filteredCached);
+  return res || filteredCached;
 };
 
 export const subscribeTeams = (tournamentId, callback) => {
-  let q = collection(db, 'teams');
-  if (tournamentId) {
-    q = query(collection(db, 'teams'), where('tournament', '==', tournamentId));
-  }
-  return onSnapshot(q, async (snapshot) => {
-    const teams = [];
-    for (const d of snapshot.docs) {
-      const tData = { id: d.id, ...d.data() };
-      const playersSnap = await getDocs(query(collection(db, 'players'), where('team', '==', d.id)));
-      tData.players = playersSnap.docs.map(p => ({ id: p.id, ...p.data() }));
-      teams.push(tData);
+  const cached = getCache('teams', []);
+  const filtered = tournamentId ? cached.filter(t => t.tournament === tournamentId) : cached;
+  if (filtered.length > 0) callback(filtered);
+
+  try {
+    let q = collection(db, 'teams');
+    if (tournamentId) {
+      q = query(collection(db, 'teams'), where('tournament', '==', tournamentId));
     }
-    callback(teams);
-  });
+    return onSnapshot(q, async (snapshot) => {
+      const teams = [];
+      for (const d of snapshot.docs) {
+        const tData = { id: d.id, ...d.data() };
+        try {
+          const playersSnap = await getDocs(query(collection(db, 'players'), where('team', '==', d.id)));
+          tData.players = playersSnap.docs.map(p => ({ id: p.id, ...p.data() }));
+        } catch (pe) {
+          tData.players = [];
+        }
+        teams.push(tData);
+      }
+      if (teams.length > 0) {
+        if (tournamentId) {
+          const others = cached.filter(t => t.tournament !== tournamentId);
+          setCache('teams', [...others, ...teams]);
+        } else {
+          setCache('teams', teams);
+        }
+      }
+      callback(teams.length > 0 ? teams : filtered);
+    }, () => callback(filtered));
+  } catch (e) {
+    return () => {};
+  }
 };
 
 export const createTeam = async (data) => {
-  const docRef = await addDoc(collection(db, 'teams'), {
+  const newId = generateId();
+  const newTeam = {
+    id: newId,
     ...data,
-    created_at: serverTimestamp()
-  });
-  return { id: docRef.id, ...data, players: [] };
+    players: [],
+    created_at: new Date().toISOString()
+  };
+
+  const cached = getCache('teams', []);
+  setCache('teams', [...cached, newTeam]);
+
+  try {
+    await setDoc(doc(db, 'teams', newId), {
+      ...data,
+      created_at: serverTimestamp()
+    });
+  } catch (e) {}
+
+  return newTeam;
 };
 
 export const updateTeam = async (id, data) => {
-  const docRef = doc(db, 'teams', id);
-  await updateDoc(docRef, data);
+  const cached = getCache('teams', []);
+  setCache('teams', cached.map(t => t.id === id ? { ...t, ...data } : t));
+
+  try {
+    const docRef = doc(db, 'teams', id);
+    await updateDoc(docRef, data);
+  } catch (e) {}
   return { id, ...data };
 };
 
 export const deleteTeam = async (teamId) => {
-  // Delete all players for this team
-  const playersSnap = await getDocs(query(collection(db, 'players'), where('team', '==', teamId)));
-  for (const pDoc of playersSnap.docs) {
-    await deleteDoc(pDoc.ref);
-  }
-  await deleteDoc(doc(db, 'teams', teamId));
+  const cached = getCache('teams', []);
+  setCache('teams', cached.filter(t => t.id !== teamId));
+
+  try {
+    const playersSnap = await getDocs(query(collection(db, 'players'), where('team', '==', teamId)));
+    for (const pDoc of playersSnap.docs) {
+      await deleteDoc(pDoc.ref);
+    }
+    await deleteDoc(doc(db, 'teams', teamId));
+  } catch (e) {}
   return true;
 };
 
 export const addPlayer = async (data) => {
-  const docRef = await addDoc(collection(db, 'players'), {
-    ...data,
-    created_at: serverTimestamp()
+  const newId = generateId();
+  const newPlayer = { id: newId, ...data };
+
+  // Update player inside team cache
+  const cached = getCache('teams', []);
+  const updated = cached.map(t => {
+    if (t.id === data.team) {
+      return { ...t, players: [...(t.players || []), newPlayer] };
+    }
+    return t;
   });
-  return { id: docRef.id, ...data };
+  setCache('teams', updated);
+
+  try {
+    await setDoc(doc(db, 'players', newId), {
+      ...data,
+      created_at: serverTimestamp()
+    });
+  } catch (e) {}
+
+  return newPlayer;
 };
 
 export const updatePlayer = async (id, data) => {
-  const docRef = doc(db, 'players', id);
-  await updateDoc(docRef, data);
+  const cached = getCache('teams', []);
+  const updated = cached.map(t => ({
+    ...t,
+    players: (t.players || []).map(p => p.id === id ? { ...p, ...data } : p)
+  }));
+  setCache('teams', updated);
+
+  try {
+    const docRef = doc(db, 'players', id);
+    await updateDoc(docRef, data);
+  } catch (e) {}
   return { id, ...data };
 };
 
 export const deletePlayer = async (id) => {
-  await deleteDoc(doc(db, 'players', id));
+  const cached = getCache('teams', []);
+  const updated = cached.map(t => ({
+    ...t,
+    players: (t.players || []).filter(p => p.id !== id)
+  }));
+  setCache('teams', updated);
+
+  try {
+    await deleteDoc(doc(db, 'players', id));
+  } catch (e) {}
   return true;
 };
 
@@ -168,115 +370,148 @@ export const deletePlayer = async (id) => {
 // ==========================================
 
 export const getMatches = async (tournamentId = null) => {
-  let q;
-  if (tournamentId) {
-    q = query(collection(db, 'matches'), where('tournament', '==', tournamentId));
-  } else {
-    q = collection(db, 'matches');
+  const cached = getCache('matches', []);
+  const filteredCached = tournamentId ? cached.filter(m => m.tournament === tournamentId) : cached;
+
+  const fetchPromise = (async () => {
+    try {
+      let q = collection(db, 'matches');
+      if (tournamentId) {
+        q = query(collection(db, 'matches'), where('tournament', '==', tournamentId));
+      }
+      const snap = await getDocs(q);
+      const teamsCached = getCache('teams', []);
+      const teamMap = {};
+      teamsCached.forEach(t => { teamMap[t.id] = t; });
+
+      const matches = [];
+      for (const d of snap.docs) {
+        const mData = { id: d.id, ...d.data() };
+        if (mData.home_team && teamMap[mData.home_team]) {
+          mData.home_team_details = teamMap[mData.home_team];
+        }
+        if (mData.away_team && teamMap[mData.away_team]) {
+          mData.away_team_details = teamMap[mData.away_team];
+        }
+        matches.push(mData);
+      }
+      matches.sort((a, b) => (a.match_number || 0) - (b.match_number || 0));
+      if (matches.length > 0) {
+        if (tournamentId) {
+          const others = cached.filter(m => m.tournament !== tournamentId);
+          setCache('matches', [...others, ...matches]);
+        } else {
+          setCache('matches', matches);
+        }
+        return matches;
+      }
+    } catch (err) {}
+    return filteredCached;
+  })();
+
+  if (filteredCached.length > 0) {
+    fetchPromise.catch(() => {});
+    return filteredCached;
   }
-  const snap = await getDocs(q);
-  const matches = [];
-  for (const d of snap.docs) {
-    const mData = { id: d.id, ...d.data() };
-    // Attach team details
-    if (mData.home_team) {
-      const htDoc = await getDoc(doc(db, 'teams', mData.home_team));
-      if (htDoc.exists()) mData.home_team_details = { id: htDoc.id, ...htDoc.data() };
-    }
-    if (mData.away_team) {
-      const atDoc = await getDoc(doc(db, 'teams', mData.away_team));
-      if (atDoc.exists()) mData.away_team_details = { id: atDoc.id, ...atDoc.data() };
-    }
-    matches.push(mData);
-  }
-  return matches;
+  const res = await withTimeout(fetchPromise, 1500, filteredCached);
+  return res || filteredCached;
 };
 
 export const subscribeMatches = (tournamentId, callback) => {
-  let q = collection(db, 'matches');
-  if (tournamentId) {
-    q = query(collection(db, 'matches'), where('tournament', '==', tournamentId));
-  }
-  return onSnapshot(q, async (snapshot) => {
-    const matches = [];
-    for (const d of snapshot.docs) {
-      const mData = { id: d.id, ...d.data() };
-      if (mData.home_team) {
-        const htDoc = await getDoc(doc(db, 'teams', mData.home_team));
-        if (htDoc.exists()) mData.home_team_details = { id: htDoc.id, ...htDoc.data() };
-      }
-      if (mData.away_team) {
-        const atDoc = await getDoc(doc(db, 'teams', mData.away_team));
-        if (atDoc.exists()) mData.away_team_details = { id: atDoc.id, ...atDoc.data() };
-      }
-      matches.push(mData);
+  const cached = getCache('matches', []);
+  const filtered = tournamentId ? cached.filter(m => m.tournament === tournamentId) : cached;
+  if (filtered.length > 0) callback(filtered);
+
+  try {
+    let q = collection(db, 'matches');
+    if (tournamentId) {
+      q = query(collection(db, 'matches'), where('tournament', '==', tournamentId));
     }
-    matches.sort((a, b) => (a.match_number || 0) - (b.match_number || 0));
-    callback(matches);
-  });
+    return onSnapshot(q, async (snapshot) => {
+      const teamsCached = getCache('teams', []);
+      const teamMap = {};
+      teamsCached.forEach(t => { teamMap[t.id] = t; });
+
+      const matches = [];
+      for (const d of snapshot.docs) {
+        const mData = { id: d.id, ...d.data() };
+        if (mData.home_team && teamMap[mData.home_team]) {
+          mData.home_team_details = teamMap[mData.home_team];
+        }
+        if (mData.away_team && teamMap[mData.away_team]) {
+          mData.away_team_details = teamMap[mData.away_team];
+        }
+        matches.push(mData);
+      }
+      matches.sort((a, b) => (a.match_number || 0) - (b.match_number || 0));
+      if (matches.length > 0) {
+        if (tournamentId) {
+          const others = cached.filter(m => m.tournament !== tournamentId);
+          setCache('matches', [...others, ...matches]);
+        } else {
+          setCache('matches', matches);
+        }
+      }
+      callback(matches.length > 0 ? matches : filtered);
+    }, () => callback(filtered));
+  } catch (e) {
+    return () => {};
+  }
 };
 
 export const getMatch = async (id) => {
-  const docRef = doc(db, 'matches', id);
-  const snap = await getDoc(docRef);
-  if (!snap.exists()) return null;
-  const mData = { id: snap.id, ...snap.data() };
-  if (mData.home_team) {
-    const htDoc = await getDoc(doc(db, 'teams', mData.home_team));
-    if (htDoc.exists()) {
-      const t = { id: htDoc.id, ...htDoc.data() };
-      const playersSnap = await getDocs(query(collection(db, 'players'), where('team', '==', htDoc.id)));
-      t.players = playersSnap.docs.map(p => ({ id: p.id, ...p.data() }));
-      mData.home_team_details = t;
-    }
+  const cached = getCache('matches', []);
+  const fromCache = cached.find(m => m.id === id);
+
+  const fetchPromise = (async () => {
+    try {
+      const docRef = doc(db, 'matches', id);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const mData = { id: snap.id, ...snap.data() };
+        const teamsCached = getCache('teams', []);
+        mData.home_team_details = teamsCached.find(t => t.id === mData.home_team) || null;
+        mData.away_team_details = teamsCached.find(t => t.id === mData.away_team) || null;
+        return mData;
+      }
+    } catch (e) {}
+    return fromCache || null;
+  })();
+
+  if (fromCache) {
+    fetchPromise.catch(() => {});
+    return fromCache;
   }
-  if (mData.away_team) {
-    const atDoc = await getDoc(doc(db, 'teams', mData.away_team));
-    if (atDoc.exists()) {
-      const t = { id: atDoc.id, ...atDoc.data() };
-      const playersSnap = await getDocs(query(collection(db, 'players'), where('team', '==', atDoc.id)));
-      t.players = playersSnap.docs.map(p => ({ id: p.id, ...p.data() }));
-      mData.away_team_details = t;
-    }
-  }
-  const eventsSnap = await getDocs(query(collection(db, 'match_events'), where('match', '==', id)));
-  mData.events = eventsSnap.docs.map(e => ({ id: e.id, ...e.data() }));
-  return mData;
+  return await withTimeout(fetchPromise, 1500, fromCache);
 };
 
 export const subscribeMatch = (id, callback) => {
-  return onSnapshot(doc(db, 'matches', id), async (snap) => {
-    if (!snap.exists()) {
-      callback(null);
-      return;
-    }
-    const mData = { id: snap.id, ...snap.data() };
-    if (mData.home_team) {
-      const htDoc = await getDoc(doc(db, 'teams', mData.home_team));
-      if (htDoc.exists()) {
-        const t = { id: htDoc.id, ...htDoc.data() };
-        const playersSnap = await getDocs(query(collection(db, 'players'), where('team', '==', htDoc.id)));
-        t.players = playersSnap.docs.map(p => ({ id: p.id, ...p.data() }));
-        mData.home_team_details = t;
+  const cached = getCache('matches', []);
+  const fromCache = cached.find(m => m.id === id);
+  if (fromCache) callback(fromCache);
+
+  try {
+    return onSnapshot(doc(db, 'matches', id), async (snap) => {
+      if (!snap.exists()) {
+        callback(fromCache || null);
+        return;
       }
-    }
-    if (mData.away_team) {
-      const atDoc = await getDoc(doc(db, 'teams', mData.away_team));
-      if (atDoc.exists()) {
-        const t = { id: atDoc.id, ...atDoc.data() };
-        const playersSnap = await getDocs(query(collection(db, 'players'), where('team', '==', atDoc.id)));
-        t.players = playersSnap.docs.map(p => ({ id: p.id, ...p.data() }));
-        mData.away_team_details = t;
-      }
-    }
-    const eventsSnap = await getDocs(query(collection(db, 'match_events'), where('match', '==', id)));
-    mData.events = eventsSnap.docs.map(e => ({ id: e.id, ...e.data() }));
-    callback(mData);
-  });
+      const mData = { id: snap.id, ...snap.data() };
+      const teamsCached = getCache('teams', []);
+      mData.home_team_details = teamsCached.find(t => t.id === mData.home_team) || null;
+      mData.away_team_details = teamsCached.find(t => t.id === mData.away_team) || null;
+      callback(mData);
+    }, () => callback(fromCache || null));
+  } catch (e) {
+    return () => {};
+  }
 };
 
 export const createMatch = async (data) => {
-  const docRef = await addDoc(collection(db, 'matches'), {
+  const newId = generateId();
+  const teamsCached = getCache('teams', []);
+  const newMatch = {
+    id: newId,
     home_score: 0,
     away_score: 0,
     status: 'SCHEDULED',
@@ -285,44 +520,72 @@ export const createMatch = async (data) => {
     is_timer_running: false,
     stage: 'REGULAR',
     ...data,
-    created_at: serverTimestamp()
-  });
-  return { id: docRef.id, ...data };
+    home_team_details: teamsCached.find(t => t.id === data.home_team) || null,
+    away_team_details: teamsCached.find(t => t.id === data.away_team) || null,
+    created_at: new Date().toISOString()
+  };
+
+  const cached = getCache('matches', []);
+  setCache('matches', [...cached, newMatch]);
+
+  try {
+    await setDoc(doc(db, 'matches', newId), {
+      home_score: 0,
+      away_score: 0,
+      status: 'SCHEDULED',
+      current_period: 'NOT_STARTED',
+      timer_seconds_elapsed: 0,
+      is_timer_running: false,
+      stage: 'REGULAR',
+      ...data,
+      created_at: serverTimestamp()
+    });
+  } catch (e) {}
+
+  return newMatch;
 };
 
 export const updateMatch = async (id, data) => {
-  const docRef = doc(db, 'matches', id);
-  await updateDoc(docRef, data);
+  const cached = getCache('matches', []);
+  setCache('matches', cached.map(m => m.id === id ? { ...m, ...data } : m));
+
+  try {
+    const docRef = doc(db, 'matches', id);
+    await updateDoc(docRef, data);
+  } catch (e) {}
   return { id, ...data };
 };
 
 export const deleteMatch = async (id) => {
-  const eventsSnap = await getDocs(query(collection(db, 'match_events'), where('match', '==', id)));
-  for (const eDoc of eventsSnap.docs) {
-    await deleteDoc(eDoc.ref);
-  }
-  await deleteDoc(doc(db, 'matches', id));
+  const cached = getCache('matches', []);
+  setCache('matches', cached.filter(m => m.id !== id));
+
+  try {
+    const eventsSnap = await getDocs(query(collection(db, 'match_events'), where('match', '==', id)));
+    for (const eDoc of eventsSnap.docs) {
+      await deleteDoc(eDoc.ref);
+    }
+    await deleteDoc(doc(db, 'matches', id));
+  } catch (e) {}
   return true;
 };
 
 export const setNextMatch = async (matchId) => {
-  const matchDoc = await getDoc(doc(db, 'matches', matchId));
-  if (!matchDoc.exists()) return false;
-  const currentIsNext = matchDoc.data().is_next_match || false;
-  const newIsNext = !currentIsNext;
+  const cached = getCache('matches', []);
+  const match = cached.find(m => m.id === matchId);
+  const newIsNext = !match?.is_next_match;
 
-  if (newIsNext) {
-    // Clear is_next_match on all other matches in same tournament
-    const tourId = matchDoc.data().tournament;
-    const snap = await getDocs(query(collection(db, 'matches'), where('tournament', '==', tourId)));
-    for (const d of snap.docs) {
-      if (d.id !== matchId && d.data().is_next_match) {
-        await updateDoc(d.ref, { is_next_match: false });
-      }
-    }
-  }
+  const updated = cached.map(m => {
+    if (m.id === matchId) return { ...m, is_next_match: newIsNext };
+    if (newIsNext && m.tournament === match?.tournament) return { ...m, is_next_match: false };
+    return m;
+  });
+  setCache('matches', updated);
 
-  await updateDoc(doc(db, 'matches', matchId), { is_next_match: newIsNext });
+  try {
+    await updateDoc(doc(db, 'matches', matchId), { is_next_match: newIsNext });
+  } catch (e) {}
+
   return { is_next_match: newIsNext };
 };
 
@@ -331,13 +594,9 @@ export const setNextMatch = async (matchId) => {
 // ==========================================
 
 export const calculateStandings = async (tournamentId) => {
-  const teamsSnap = await getDocs(query(collection(db, 'teams'), where('tournament', '==', tournamentId)));
-  const teams = teamsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const teams = await getTeams(tournamentId);
+  const matches = await getMatches(tournamentId);
 
-  const matchesSnap = await getDocs(query(collection(db, 'matches'), where('tournament', '==', tournamentId)));
-  const matches = matchesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-  // Initialize table for all teams
   const table = {};
   for (const t of teams) {
     table[t.id] = {
@@ -353,9 +612,8 @@ export const calculateStandings = async (tournamentId) => {
     };
   }
 
-  // Calculate from completed/in-progress regular matches
   for (const m of matches) {
-    if (m.stage && m.stage !== 'REGULAR') continue; // Bracket matches don't affect regular points table
+    if (m.stage && m.stage !== 'REGULAR') continue;
     if (!m.home_team || !m.away_team) continue;
     if (!table[m.home_team] || !table[m.away_team]) continue;
 
@@ -391,15 +649,12 @@ export const calculateStandings = async (tournamentId) => {
     }
   }
 
-  // Sort by PTS desc, GD desc, GF desc, Name asc
-  const result = Object.values(table).sort((a, b) => {
+  return Object.values(table).sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
     if (b.goal_difference !== a.goal_difference) return b.goal_difference - a.goal_difference;
     if (b.goals_for !== a.goals_for) return b.goals_for - a.goals_for;
     return a.team.name.localeCompare(b.team.name);
   });
-
-  return result;
 };
 
 // ==========================================
@@ -411,157 +666,56 @@ export const generateBracket = async (tournamentId, teamIds) => {
     throw new Error('Please select exactly 4 or 8 teams for the bracket.');
   }
 
-  // Delete existing bracket matches
-  const snap = await getDocs(query(collection(db, 'matches'), where('tournament', '==', tournamentId)));
-  for (const d of snap.docs) {
-    if (d.data().stage && d.data().stage !== 'REGULAR') {
-      await deleteDoc(d.ref);
-    }
-  }
-
+  // Remove existing bracket matches
+  const cached = getCache('matches', []);
+  const nonBracket = cached.filter(m => m.tournament !== tournamentId || (!m.stage || m.stage === 'REGULAR'));
+  
   const now = new Date();
+  const newBracketMatches = [];
+
+  const addMatch = (home, away, stage, code, hoursOffset) => {
+    const mId = generateId();
+    newBracketMatches.push({
+      id: mId,
+      tournament: tournamentId,
+      home_team: home,
+      away_team: away,
+      stage,
+      bracket_code: code,
+      home_score: 0,
+      away_score: 0,
+      status: 'SCHEDULED',
+      current_period: 'NOT_STARTED',
+      scheduled_time: new Date(now.getTime() + hoursOffset * 3600000).toISOString(),
+      created_at: new Date().toISOString()
+    });
+  };
 
   if (teamIds.length === 8) {
-    // Quarter Finals
-    await addDoc(collection(db, 'matches'), {
-      tournament: tournamentId,
-      home_team: teamIds[0],
-      away_team: teamIds[1],
-      stage: 'QUARTER_FINAL',
-      bracket_code: 'QF1',
-      home_score: 0,
-      away_score: 0,
-      status: 'SCHEDULED',
-      current_period: 'NOT_STARTED',
-      scheduled_time: new Date(now.getTime() + 2 * 3600000).toISOString(),
-      created_at: serverTimestamp()
-    });
-    await addDoc(collection(db, 'matches'), {
-      tournament: tournamentId,
-      home_team: teamIds[2],
-      away_team: teamIds[3],
-      stage: 'QUARTER_FINAL',
-      bracket_code: 'QF2',
-      home_score: 0,
-      away_score: 0,
-      status: 'SCHEDULED',
-      current_period: 'NOT_STARTED',
-      scheduled_time: new Date(now.getTime() + 4 * 3600000).toISOString(),
-      created_at: serverTimestamp()
-    });
-    await addDoc(collection(db, 'matches'), {
-      tournament: tournamentId,
-      home_team: teamIds[4],
-      away_team: teamIds[5],
-      stage: 'QUARTER_FINAL',
-      bracket_code: 'QF3',
-      home_score: 0,
-      away_score: 0,
-      status: 'SCHEDULED',
-      current_period: 'NOT_STARTED',
-      scheduled_time: new Date(now.getTime() + 6 * 3600000).toISOString(),
-      created_at: serverTimestamp()
-    });
-    await addDoc(collection(db, 'matches'), {
-      tournament: tournamentId,
-      home_team: teamIds[6],
-      away_team: teamIds[7],
-      stage: 'QUARTER_FINAL',
-      bracket_code: 'QF4',
-      home_score: 0,
-      away_score: 0,
-      status: 'SCHEDULED',
-      current_period: 'NOT_STARTED',
-      scheduled_time: new Date(now.getTime() + 8 * 3600000).toISOString(),
-      created_at: serverTimestamp()
-    });
-
-    // Semi Finals Placeholders
-    await addDoc(collection(db, 'matches'), {
-      tournament: tournamentId,
-      home_team: null,
-      away_team: null,
-      stage: 'SEMI_FINAL',
-      bracket_code: 'SF1',
-      home_score: 0,
-      away_score: 0,
-      status: 'SCHEDULED',
-      current_period: 'NOT_STARTED',
-      scheduled_time: new Date(now.getTime() + 24 * 3600000).toISOString(),
-      created_at: serverTimestamp()
-    });
-    await addDoc(collection(db, 'matches'), {
-      tournament: tournamentId,
-      home_team: null,
-      away_team: null,
-      stage: 'SEMI_FINAL',
-      bracket_code: 'SF2',
-      home_score: 0,
-      away_score: 0,
-      status: 'SCHEDULED',
-      current_period: 'NOT_STARTED',
-      scheduled_time: new Date(now.getTime() + 26 * 3600000).toISOString(),
-      created_at: serverTimestamp()
-    });
-
-    // Final Placeholder
-    await addDoc(collection(db, 'matches'), {
-      tournament: tournamentId,
-      home_team: null,
-      away_team: null,
-      stage: 'FINAL',
-      bracket_code: 'FINAL',
-      home_score: 0,
-      away_score: 0,
-      status: 'SCHEDULED',
-      current_period: 'NOT_STARTED',
-      scheduled_time: new Date(now.getTime() + 30 * 3600000).toISOString(),
-      created_at: serverTimestamp()
-    });
+    addMatch(teamIds[0], teamIds[1], 'QUARTER_FINAL', 'QF1', 2);
+    addMatch(teamIds[2], teamIds[3], 'QUARTER_FINAL', 'QF2', 4);
+    addMatch(teamIds[4], teamIds[5], 'QUARTER_FINAL', 'QF3', 6);
+    addMatch(teamIds[6], teamIds[7], 'QUARTER_FINAL', 'QF4', 8);
+    addMatch(null, null, 'SEMI_FINAL', 'SF1', 24);
+    addMatch(null, null, 'SEMI_FINAL', 'SF2', 26);
+    addMatch(null, null, 'FINAL', 'FINAL', 30);
   } else if (teamIds.length === 4) {
-    // Semi Finals
-    await addDoc(collection(db, 'matches'), {
-      tournament: tournamentId,
-      home_team: teamIds[0],
-      away_team: teamIds[1],
-      stage: 'SEMI_FINAL',
-      bracket_code: 'SF1',
-      home_score: 0,
-      away_score: 0,
-      status: 'SCHEDULED',
-      current_period: 'NOT_STARTED',
-      scheduled_time: new Date(now.getTime() + 2 * 3600000).toISOString(),
-      created_at: serverTimestamp()
-    });
-    await addDoc(collection(db, 'matches'), {
-      tournament: tournamentId,
-      home_team: teamIds[2],
-      away_team: teamIds[3],
-      stage: 'SEMI_FINAL',
-      bracket_code: 'SF2',
-      home_score: 0,
-      away_score: 0,
-      status: 'SCHEDULED',
-      current_period: 'NOT_STARTED',
-      scheduled_time: new Date(now.getTime() + 4 * 3600000).toISOString(),
-      created_at: serverTimestamp()
-    });
-
-    // Final Placeholder
-    await addDoc(collection(db, 'matches'), {
-      tournament: tournamentId,
-      home_team: null,
-      away_team: null,
-      stage: 'FINAL',
-      bracket_code: 'FINAL',
-      home_score: 0,
-      away_score: 0,
-      status: 'SCHEDULED',
-      current_period: 'NOT_STARTED',
-      scheduled_time: new Date(now.getTime() + 8 * 3600000).toISOString(),
-      created_at: serverTimestamp()
-    });
+    addMatch(teamIds[0], teamIds[1], 'SEMI_FINAL', 'SF1', 2);
+    addMatch(teamIds[2], teamIds[3], 'SEMI_FINAL', 'SF2', 4);
+    addMatch(null, null, 'FINAL', 'FINAL', 8);
   }
+
+  setCache('matches', [...nonBracket, ...newBracketMatches]);
+
+  // Sync to Firestore
+  try {
+    for (const m of newBracketMatches) {
+      await setDoc(doc(db, 'matches', m.id), {
+        ...m,
+        created_at: serverTimestamp()
+      });
+    }
+  } catch (e) {}
 
   return true;
 };
@@ -571,42 +725,34 @@ export const generateBracket = async (tournamentId, teamIds) => {
 // ==========================================
 
 export const addMatchEvent = async (payload) => {
-  const docRef = await addDoc(collection(db, 'match_events'), {
-    ...payload,
-    created_at: serverTimestamp()
-  });
+  const newId = generateId();
+  const newEvent = { id: newId, ...payload, created_at: new Date().toISOString() };
 
   if (payload.event_type === 'GOAL' && payload.match && payload.team) {
-    const matchData = await getMatch(payload.match);
-    if (matchData) {
-      if (payload.team === matchData.home_team) {
-        await updateMatch(payload.match, { home_score: (Number(matchData.home_score) || 0) + 1 });
-      } else if (payload.team === matchData.away_team) {
-        await updateMatch(payload.match, { away_score: (Number(matchData.away_score) || 0) + 1 });
+    const cachedMatches = getCache('matches', []);
+    const match = cachedMatches.find(m => m.id === payload.match);
+    if (match) {
+      if (payload.team === match.home_team) {
+        await updateMatch(payload.match, { home_score: (Number(match.home_score) || 0) + 1 });
+      } else if (payload.team === match.away_team) {
+        await updateMatch(payload.match, { away_score: (Number(match.away_score) || 0) + 1 });
       }
     }
   }
 
-  return { id: docRef.id, ...payload };
+  try {
+    await setDoc(doc(db, 'match_events', newId), {
+      ...payload,
+      created_at: serverTimestamp()
+    });
+  } catch (e) {}
+
+  return newEvent;
 };
 
 export const deleteMatchEvent = async (eventId) => {
-  const docRef = doc(db, 'match_events', eventId);
-  const snap = await getDoc(docRef);
-  if (snap.exists()) {
-    const eventData = snap.data();
-    await deleteDoc(docRef);
-    if (eventData.event_type === 'GOAL' && eventData.match && eventData.team) {
-      const matchData = await getMatch(eventData.match);
-      if (matchData) {
-        if (eventData.team === matchData.home_team) {
-          await updateMatch(eventData.match, { home_score: Math.max(0, (Number(matchData.home_score) || 0) - 1) });
-        } else if (eventData.team === matchData.away_team) {
-          await updateMatch(eventData.match, { away_score: Math.max(0, (Number(matchData.away_score) || 0) - 1) });
-        }
-      }
-    }
-  }
+  try {
+    await deleteDoc(doc(db, 'match_events', eventId));
+  } catch (e) {}
   return true;
 };
-

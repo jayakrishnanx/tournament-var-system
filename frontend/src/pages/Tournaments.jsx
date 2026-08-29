@@ -74,19 +74,53 @@ export const Tournaments = () => {
           </p>
         </div>
 
-        {user?.role === 'ADMIN' && (
-          <div className="hide-on-mobile">
-            <button onClick={() => setShowModal(true)} className="btn-primary" style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Plus size={16} /> Create Tournament
-            </button>
-          </div>
-        )}
+        <div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="btn-primary"
+            style={{
+              padding: '10px 16px',
+              fontSize: '0.85rem',
+              fontWeight: '800',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(43, 87, 72, 0.4)'
+            }}
+          >
+            <Plus size={18} /> Create Tournament
+          </button>
+        </div>
       </div>
 
       {loading ? (
         <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>Loading tournaments...</div>
       ) : tournaments.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>No tournaments created yet.</div>
+        <div className="glass-panel" style={{ padding: '48px 24px', textAlign: 'center', color: '#94a3b8' }}>
+          <div style={{ display: 'inline-flex', padding: '16px', borderRadius: '50%', backgroundColor: 'rgba(59, 130, 246, 0.1)', marginBottom: '16px' }}>
+            <Trophy size={40} color="#3b82f6" />
+          </div>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#f8fafc', marginBottom: '8px' }}>No Tournaments Found</h3>
+          <p style={{ fontSize: '0.85rem', color: '#94a3b8', maxWidth: '400px', margin: '0 auto 20px auto' }}>
+            Get started by creating your first tournament to manage teams, match schedules, points table, and VAR review.
+          </p>
+          <button
+            onClick={() => setShowModal(true)}
+            className="btn-primary"
+            style={{
+              padding: '12px 24px',
+              fontSize: '0.9rem',
+              fontWeight: '800',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              borderRadius: '8px'
+            }}
+          >
+            <Plus size={18} /> Create First Tournament
+          </button>
+        </div>
       ) : (
         <div className="responsive-grid-2">
           {tournaments.map(t => (

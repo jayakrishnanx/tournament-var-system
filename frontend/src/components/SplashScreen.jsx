@@ -5,15 +5,14 @@ export const SplashScreen = ({ children }) => {
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    // 2.2 seconds display time before fade
+    // Ultra-fast 400ms display before smooth fade
     const fadeTimer = setTimeout(() => {
       setFadeOut(true);
-    }, 2200);
+    }, 400);
 
-    // Completely remove splash screen after fade completes
     const removeTimer = setTimeout(() => {
       setShowSplash(false);
-    }, 2600);
+    }, 700);
 
     return () => {
       clearTimeout(fadeTimer);
