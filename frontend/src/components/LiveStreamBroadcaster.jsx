@@ -7,7 +7,8 @@ import { cleanData } from '../services/firebaseService';
 export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) => {
   const [isStreaming, setIsStreaming] = useState(false);
   const streamRoomId = `kallikalam_match_${matchId}`;
-  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&cleanoutput=1&autostart=1&webcam&audiodevice`;
+  // Forces Phone Back (Rear) Camera in Landscape 16:9 Widescreen Mode
+  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&cleanoutput=1&autostart=1&webcam&audiodevice&quality=0&bitrate=4000`;
 
   const startBroadcast = async () => {
     setIsStreaming(true);
