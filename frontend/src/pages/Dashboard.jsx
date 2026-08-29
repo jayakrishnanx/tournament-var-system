@@ -313,7 +313,7 @@ export const Dashboard = () => {
           borderLeft: '4px solid #2B5748'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#2B5748', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#FFCB56', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
               📌 UPCOMING NEXT MATCH
             </span>
             <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#9aa4b2' }}>

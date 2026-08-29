@@ -324,7 +324,7 @@ export const Matches = () => {
                       </span>
                     )}
                     {m.is_next_match && (
-                      <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.2)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(245, 158, 11, 0.5)' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#FFCB56', backgroundColor: 'rgba(255, 203, 86, 0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(255, 203, 86, 0.5)' }}>
                         📌 NEXT MATCH
                       </span>
                     )}
