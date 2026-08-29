@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Peer from 'peerjs';
-import { Camera, VideoOff, RefreshCw, Mic, MicOff, Radio, Users, Play, Square, AlertCircle } from 'lucide-react';
+import { Camera, RefreshCw, Mic, MicOff, Radio, Users, Play, Square, AlertCircle } from 'lucide-react';
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { cleanData } from '../services/firebaseService';
@@ -18,6 +18,17 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
   const peerRef = useRef(null);
   const activeCallsRef = useRef(new Set());
 
+  // Attach stream to video whenever streaming state or video ref changes
+  useEffect(() => {
+    if (isStreaming && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.setAttribute('playsinline', 'true');
+      videoRef.current.setAttribute('webkit-playsinline', 'true');
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(err => console.warn('Video play warning:', err));
+    }
+  }, [isStreaming]);
+
   // Clean up on unmount
   useEffect(() => {
     return () => {
@@ -27,17 +38,17 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
 
   const startStreaming = async () => {
     setErrorMessage('');
-    setStatusMessage('Requesting camera access...');
+    setStatusMessage('Accessing phone camera...');
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      const err = 'Camera API is not supported or accessible on this browser. Please ensure you are on HTTPS.';
+      const err = 'Camera API is not supported on this browser. Please ensure you are on HTTPS.';
       setErrorMessage(err);
       alert(err);
       return;
     }
 
     try {
-      // 1. Get user media with multi-tier fallback (ideal for iOS Safari and Android Chrome)
+      // 1. Get user media with multi-tier fallback for iOS Safari and Android Chrome
       let stream = null;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -66,7 +77,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
 
       streamRef.current = stream;
 
-      // Attach to preview video element immediately
+      // Attach stream to video preview immediately
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.setAttribute('playsinline', 'true');
@@ -145,7 +156,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
       peer.on('error', (err) => {
         console.warn('Broadcaster peer warning:', err);
         if (err.type === 'unavailable-id') {
-          setStatusMessage('🔴 Live Broadcast Active!');
+          setStatusMessage('🔴 Live Stream Active!');
         }
       });
 
@@ -275,36 +286,37 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         )}
       </div>
 
-      {/* Video Container */}
+      {/* Video Container (Always renders video tag so ref is never null) */}
       <div style={{
         position: 'relative',
         width: '100%',
-        maxHeight: '400px',
-        height: isStreaming ? '56vw' : 'auto',
+        maxHeight: '420px',
+        height: isStreaming ? '56.25vw' : 'auto',
         minHeight: isStreaming ? '220px' : 'auto',
         backgroundColor: '#000000',
         borderRadius: '10px',
         overflow: 'hidden',
         marginBottom: '14px',
-        border: isStreaming ? '1px solid #ef4444' : '1px dashed #334155',
+        border: isStreaming ? '2px solid #ef4444' : '1px dashed #334155',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
       }}>
-        {isStreaming ? (
-          <>
-            <video
-              ref={videoRef}
-              playsInline={true}
-              autoPlay={true}
-              muted={true}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover'
-              }}
-            />
+        <video
+          ref={videoRef}
+          playsInline={true}
+          autoPlay={true}
+          muted={true}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: isStreaming ? 'block' : 'none'
+          }}
+        />
 
+        {isStreaming && (
+          <>
             {/* HUD Score Overlay on Camera */}
             <div style={{
               position: 'absolute',
@@ -314,14 +326,15 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              backgroundColor: 'rgba(15, 23, 42, 0.85)',
+              backgroundColor: 'rgba(15, 23, 42, 0.88)',
               backdropFilter: 'blur(6px)',
               padding: '6px 14px',
               borderRadius: '8px',
               border: '1px solid rgba(255,255,255,0.15)',
               color: 'white',
               fontSize: '0.85rem',
-              fontWeight: '900'
+              fontWeight: '900',
+              zIndex: 10
             }}>
               <span>{homeTeam || 'Home'}</span>
               <span style={{ backgroundColor: '#ef4444', padding: '2px 8px', borderRadius: '4px' }}>
@@ -342,11 +355,11 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
               <button
                 onClick={toggleCameraFacing}
                 style={{
-                  backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                  backgroundColor: 'rgba(15, 23, 42, 0.88)',
                   color: 'white',
                   border: '1px solid rgba(255,255,255,0.2)',
                   borderRadius: '8px',
-                  padding: '8px',
+                  padding: '8px 12px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -361,11 +374,11 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
               <button
                 onClick={toggleAudio}
                 style={{
-                  backgroundColor: isMuted ? '#ef4444' : 'rgba(15, 23, 42, 0.85)',
+                  backgroundColor: isMuted ? '#ef4444' : 'rgba(15, 23, 42, 0.88)',
                   color: 'white',
                   border: '1px solid rgba(255,255,255,0.2)',
                   borderRadius: '8px',
-                  padding: '8px',
+                  padding: '8px 12px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -379,7 +392,9 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
               </button>
             </div>
           </>
-        ) : (
+        )}
+
+        {!isStreaming && (
           <div style={{
             backgroundColor: '#090d16',
             padding: '24px 16px',

@@ -494,26 +494,46 @@ export const updateMatchScore = async (matchId, teamId, delta) => {
   return updated;
 };
 
+export const calculateMatchElapsed = (match) => {
+  if (!match) return 0;
+  const base = match.timer_base_seconds !== undefined ? match.timer_base_seconds : (match.timer_seconds_elapsed || 0);
+  if (!match.is_timer_running || !match.timer_started_at) {
+    return base;
+  }
+  const now = Date.now();
+  const diffSec = Math.max(0, Math.floor((now - match.timer_started_at) / 1000));
+  return base + diffSec;
+};
+
 export const toggleMatchTimer = async (matchId, action) => {
   const match = await getMatch(matchId);
   if (!match) return null;
 
   let updates = {};
   if (action === 'START') {
+    const currentBase = match.timer_base_seconds !== undefined ? match.timer_base_seconds : (match.timer_seconds_elapsed || 0);
     updates = {
       is_timer_running: true,
+      timer_base_seconds: currentBase,
+      timer_started_at: Date.now(),
       status: 'LIVE',
       current_period: match.current_period === 'NOT_STARTED' || !match.current_period ? '1ST_HALF' : match.current_period
     };
   } else if (action === 'PAUSE') {
+    const currentTotal = calculateMatchElapsed(match);
     updates = {
       is_timer_running: false,
+      timer_base_seconds: currentTotal,
+      timer_seconds_elapsed: currentTotal,
+      timer_started_at: null,
       status: match.status === 'ENDED' ? 'ENDED' : 'PAUSED'
     };
   } else if (action === 'RESET') {
     updates = {
       is_timer_running: false,
       timer_seconds_elapsed: 0,
+      timer_base_seconds: 0,
+      timer_started_at: null,
       computed_elapsed_seconds: 0,
       home_score: 0,
       away_score: 0,

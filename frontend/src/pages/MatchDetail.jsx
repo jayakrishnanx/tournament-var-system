@@ -6,6 +6,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { ScorerConsole } from '../components/ScorerConsole';
 import { LiveStreamBroadcaster } from '../components/LiveStreamBroadcaster';
 import { LiveStreamViewer } from '../components/LiveStreamViewer';
+import { calculateMatchElapsed } from '../services/firebaseService';
 import { ArrowLeft, Radio, Award } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -49,22 +50,15 @@ export const MatchDetail = () => {
   }, [id]);
 
   useEffect(() => {
-    if (match) {
-      setElapsedSeconds(match.computed_elapsed_seconds || match.timer_seconds_elapsed || 0);
-    }
-  }, [match?.computed_elapsed_seconds, match?.timer_seconds_elapsed]);
-
-  useEffect(() => {
-    let timerInterval = null;
-    if (match?.is_timer_running) {
-      timerInterval = setInterval(() => {
-        setElapsedSeconds(prev => prev + 1);
-      }, 1000);
-    }
-    return () => {
-      if (timerInterval) clearInterval(timerInterval);
+    const updateTimer = () => {
+      if (match) {
+        setElapsedSeconds(calculateMatchElapsed(match));
+      }
     };
-  }, [match?.is_timer_running]);
+    updateTimer();
+    const timerInterval = setInterval(updateTimer, 1000);
+    return () => clearInterval(timerInterval);
+  }, [match]);
 
   const handleMatchUpdate = (updatedMatch) => {
     setMatch(updatedMatch);

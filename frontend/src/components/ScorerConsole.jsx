@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import { calculateMatchElapsed } from '../services/firebaseService';
 import { Play, Pause, Plus, Minus, RotateCcw, Flag, Clock, Award } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -18,23 +19,16 @@ export const ScorerConsole = ({ match, onUpdate }) => {
   const [editMinute, setEditMinute] = useState(0);
   const [editSecond, setEditSecond] = useState(0);
 
-  const [elapsedSeconds, setElapsedSeconds] = useState(match.computed_elapsed_seconds || match.timer_seconds_elapsed || 0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(() => calculateMatchElapsed(match));
 
   useEffect(() => {
-    setElapsedSeconds(match.computed_elapsed_seconds || match.timer_seconds_elapsed || 0);
-  }, [match.computed_elapsed_seconds, match.timer_seconds_elapsed]);
-
-  useEffect(() => {
-    let timerInterval = null;
-    if (match.is_timer_running) {
-      timerInterval = setInterval(() => {
-        setElapsedSeconds(prev => prev + 1);
-      }, 1000);
-    }
-    return () => {
-      if (timerInterval) clearInterval(timerInterval);
+    const updateTimer = () => {
+      setElapsedSeconds(calculateMatchElapsed(match));
     };
-  }, [match.is_timer_running]);
+    updateTimer();
+    const timerInterval = setInterval(updateTimer, 1000);
+    return () => clearInterval(timerInterval);
+  }, [match]);
 
   if (user?.role !== 'ADMIN') {
     return null;
