@@ -10,7 +10,7 @@ export const Dashboard = () => {
   const [tournaments, setTournaments] = useState([]);
   const [teams, setTeams] = useState([]);
   const [stats, setStats] = useState({ top_scorers: [], yellow_cards: [], red_cards: [] });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState('');
   const [showModal, setShowModal] = useState(false);
 

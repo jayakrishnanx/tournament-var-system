@@ -7,7 +7,7 @@ export const Standings = () => {
   const [standings, setStandings] = useState([]);
   const [tournaments, setTournaments] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
 
   const handleResetStandings = async () => {

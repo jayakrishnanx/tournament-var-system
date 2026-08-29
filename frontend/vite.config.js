@@ -12,6 +12,9 @@ export default defineConfig({
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
               return 'vendor-react';
             }
+            if (id.includes('firebase')) {
+              return 'vendor-firebase';
+            }
             if (id.includes('lucide-react')) {
               return 'vendor-icons';
             }
@@ -23,6 +26,6 @@ export default defineConfig({
         }
       }
     },
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 1000,
   }
 })

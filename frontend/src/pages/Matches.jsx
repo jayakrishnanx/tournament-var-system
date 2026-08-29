@@ -9,7 +9,7 @@ export const Matches = () => {
   const [matches, setMatches] = useState([]);
   const [tournaments, setTournaments] = useState([]);
   const [teams, setTeams] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [showModal, setShowModal] = useState(false);
   

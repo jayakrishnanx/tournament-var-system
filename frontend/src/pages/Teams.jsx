@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 export const Teams = () => {
   const [teams, setTeams] = useState([]);
   const [tournaments, setTournaments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Team modals
   const [showTeamModal, setShowTeamModal] = useState(false);

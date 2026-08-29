@@ -11,7 +11,7 @@ export const Bracket = () => {
   const [tournament, setTournament] = useState(null);
   const [matches, setMatches] = useState([]);
   const [teams, setTeams] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Generator & Reset states for admin
   const [selectedTeams, setSelectedTeams] = useState([]);
