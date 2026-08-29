@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import { subscribeTournaments } from '../services/firebaseService';
 import { StatusBadge } from '../components/StatusBadge';
 import { Trophy, Plus, Calendar, MapPin, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -42,6 +43,15 @@ export const Tournaments = () => {
 
   useEffect(() => {
     fetchTournaments();
+
+    const unsub = subscribeTournaments((liveTourns) => {
+      if (liveTourns && liveTourns.length > 0) {
+        setTournaments(liveTourns);
+      }
+      setLoading(false);
+    });
+
+    return () => unsub();
   }, []);
 
   const handleCreate = async (e) => {
