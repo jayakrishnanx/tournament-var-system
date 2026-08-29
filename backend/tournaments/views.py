@@ -221,7 +221,7 @@ class TeamViewSet(viewsets.ModelViewSet):
         return queryset
 
 class PlayerViewSet(viewsets.ModelViewSet):
-    queryset = Player.objects.all().order_by('jersey_number')
+    queryset = Player.objects.all().order_by('name')
     serializer_class = PlayerSerializer
     permission_classes = [IsAdminOrReadOnly]
 
@@ -335,14 +335,13 @@ class MatchViewSet(viewsets.ModelViewSet):
 
         # Top scorers
         goal_events = events_qs.filter(event_type=MatchEvent.EventType.GOAL).values(
-            'player__id', 'player__name', 'player__jersey_number', 'team__id', 'team__name', 'team__code'
+            'player__id', 'player__name', 'team__id', 'team__name', 'team__code'
         ).annotate(count=Count('id')).order_by('-count')
-        
+
         top_scorers = [
             {
                 "player_id": item['player__id'],
                 "player_name": item['player__name'] or "Unknown Player",
-                "jersey_number": item['player__jersey_number'],
                 "team_id": item['team__id'],
                 "team_name": item['team__name'] or "Unknown Team",
                 "team_code": item['team__code'] or "",
@@ -353,14 +352,13 @@ class MatchViewSet(viewsets.ModelViewSet):
 
         # Yellow cards
         yellow_events = events_qs.filter(event_type=MatchEvent.EventType.YELLOW_CARD).values(
-            'player__id', 'player__name', 'player__jersey_number', 'team__id', 'team__name', 'team__code'
+            'player__id', 'player__name', 'team__id', 'team__name', 'team__code'
         ).annotate(count=Count('id')).order_by('-count')
-        
+
         yellow_cards = [
             {
                 "player_id": item['player__id'],
                 "player_name": item['player__name'] or "Unknown Player",
-                "jersey_number": item['player__jersey_number'],
                 "team_id": item['team__id'],
                 "team_name": item['team__name'] or "Unknown Team",
                 "team_code": item['team__code'] or "",
@@ -371,14 +369,13 @@ class MatchViewSet(viewsets.ModelViewSet):
 
         # Red cards
         red_events = events_qs.filter(event_type=MatchEvent.EventType.RED_CARD).values(
-            'player__id', 'player__name', 'player__jersey_number', 'team__id', 'team__name', 'team__code'
+            'player__id', 'player__name', 'team__id', 'team__name', 'team__code'
         ).annotate(count=Count('id')).order_by('-count')
-        
+
         red_cards = [
             {
                 "player_id": item['player__id'],
                 "player_name": item['player__name'] or "Unknown Player",
-                "jersey_number": item['player__jersey_number'],
                 "team_id": item['team__id'],
                 "team_name": item['team__name'] or "Unknown Team",
                 "team_code": item['team__code'] or "",

@@ -14,7 +14,7 @@ export const Teams = () => {
 
   const [teamForm, setTeamForm] = useState({ name: '', code: '', tournament: '' });
   const [editTeamForm, setEditTeamForm] = useState({ id: null, name: '', tournament: '' });
-  const [playerForm, setPlayerForm] = useState({ name: '', jersey_number: '', position: 'Forward' });
+  const [playerForm, setPlayerForm] = useState({ name: '', position: 'Forward' });
   const { user } = useAuth();
 
   const fetchTeams = async () => {
@@ -197,7 +197,7 @@ export const Teams = () => {
                     ) : (
                       team.players?.map(p => (
                         <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '6px 10px', backgroundColor: '#1D2128', borderRadius: '6px' }}>
-                          <span style={{ fontWeight: '700', color: '#f8fafc' }}>#{p.jersey_number} {p.name}</span>
+                          <span style={{ fontWeight: '700', color: '#f8fafc' }}>{p.name}</span>
                         </div>
                       ))
                     )}
@@ -307,16 +307,7 @@ export const Teams = () => {
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px' }}>Jersey #</label>
-                <input
-                  type="number"
-                  required
-                  value={playerForm.jersey_number}
-                  onChange={e => setPlayerForm({ ...playerForm, jersey_number: e.target.value === '' ? '' : parseInt(e.target.value) })}
-                  style={{ width: '100%', padding: '8px 12px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white' }}
-                />
-              </div>
+
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
                 <button type="button" onClick={() => setShowPlayerModal(false)} className="btn-secondary">Cancel</button>

@@ -329,7 +329,7 @@ export const ScorerConsole = ({ match, onUpdate }) => {
             >
               <option value="">Select Player (Optional)</option>
               {currentPlayers.map(p => (
-                <option key={p.id} value={p.id}>#{p.jersey_number} {p.name}</option>
+                <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
 
@@ -408,7 +408,7 @@ export const ScorerConsole = ({ match, onUpdate }) => {
                         >
                           <option value="">Select Player (Optional)</option>
                           {(editSelectedTeam === match.home_team ? homePlayers : awayPlayers).map(p => (
-                            <option key={p.id} value={p.id}>#{p.jersey_number} {p.name}</option>
+                            <option key={p.id} value={p.id}>{p.name}</option>
                           ))}
                         </select>
                       </div>
