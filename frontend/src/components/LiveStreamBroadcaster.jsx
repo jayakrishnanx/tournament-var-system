@@ -10,9 +10,9 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
   
   const streamRoomId = `kallikalam_match_${matchId}`;
   
-  // Forces Landscape, Auto-Rotation & Manual Rotation support
+  // Forces 5G/4G Mobile Carrier NAT Bypass, Global TURN Relay on Port 443, Landscape 16:9 & Auto-Rotation
   const rotationParam = rotationAngle > 0 ? `&rotate=${rotationAngle}` : '';
-  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1${rotationParam}&zoom&autostart=1&webcam&audiodevice&quality=0&bitrate=4000`;
+  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1${rotationParam}&zoom&relay=1&force443&turn&autostart=1&webcam&audiodevice&quality=0&bitrate=3000`;
 
   const startBroadcast = async () => {
     setIsStreaming(true);

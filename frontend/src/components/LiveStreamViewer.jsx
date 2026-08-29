@@ -5,9 +5,8 @@ import { db } from '../services/firebase';
 
 export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayScore, clockTime, matchStatus }) => {
   const [isLive, setIsLive] = useState(false);
-  const streamRoomId = `kallikalam_match_${matchId}`;
-  // Full wide field view without artificial crop or zoom
-  const viewerUrl = `https://vdo.ninja/?view=${streamRoomId}&autoplay=1&cleanoutput=1&transparent=1&aspect=16:9&scale=100`;
+  // Forces 5G/4G Mobile Carrier NAT Bypass, Global TURN Relay on Port 443 with smooth cellular buffer
+  const viewerUrl = `https://vdo.ninja/?view=${streamRoomId}&autoplay=1&cleanoutput=1&transparent=1&aspect=16:9&scale=100&relay=1&force443&turn&buffer=200`;
 
   useEffect(() => {
     // Listen to Firestore live stream document
