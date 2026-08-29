@@ -34,9 +34,22 @@ const setCache = (key, data) => {
   } catch (e) {}
 };
 
+// Helper to deep clean undefined values from objects before writing to Firestore
+export const cleanData = (obj) => {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(cleanData);
+  const result = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined && typeof value !== 'function') {
+      result[key] = typeof value === 'object' && value !== null ? cleanData(value) : value;
+    }
+  }
+  return result;
+};
+
 // Auto-sync existing local data to Firestore if cloud is new/empty
 let isSyncedToCloud = false;
-const syncLocalToCloud = async () => {
+export const syncLocalToCloud = async () => {
   if (isSyncedToCloud) return;
   isSyncedToCloud = true;
 
@@ -46,48 +59,37 @@ const syncLocalToCloud = async () => {
     const localMatches = getCache('matches', []);
 
     // Sync Tournaments
-    if (localTourns.length > 0) {
-      for (const t of localTourns) {
-        if (t.id) {
-          await setDoc(doc(db, 'tournaments', String(t.id)), {
-            ...t,
-            updated_at: serverTimestamp()
-          }, { merge: true });
-        }
+    for (const t of localTourns) {
+      if (t && t.id) {
+        const cleaned = cleanData(t);
+        await setDoc(doc(db, 'tournaments', String(t.id)), cleaned, { merge: true });
       }
     }
 
     // Sync Teams
-    if (localTeams.length > 0) {
-      for (const tm of localTeams) {
-        if (tm.id) {
-          await setDoc(doc(db, 'teams', String(tm.id)), {
-            ...tm,
-            updated_at: serverTimestamp()
-          }, { merge: true });
-        }
+    for (const tm of localTeams) {
+      if (tm && tm.id) {
+        const cleaned = cleanData(tm);
+        await setDoc(doc(db, 'teams', String(tm.id)), cleaned, { merge: true });
       }
     }
 
     // Sync Matches
-    if (localMatches.length > 0) {
-      for (const m of localMatches) {
-        if (m.id) {
-          await setDoc(doc(db, 'matches', String(m.id)), {
-            ...m,
-            updated_at: serverTimestamp()
-          }, { merge: true });
-        }
+    for (const m of localMatches) {
+      if (m && m.id) {
+        const cleaned = cleanData(m);
+        await setDoc(doc(db, 'matches', String(m.id)), cleaned, { merge: true });
       }
     }
+    console.log(`🔥 Synced to Cloud: ${localTourns.length} tournaments, ${localTeams.length} teams, ${localMatches.length} matches`);
   } catch (err) {
     console.warn('Auto cloud sync notice:', err);
   }
 };
 
-// Kick off background cloud sync
+// Kick off background cloud sync on app start
 if (typeof window !== 'undefined') {
-  setTimeout(syncLocalToCloud, 500);
+  setTimeout(syncLocalToCloud, 200);
 }
 
 // ==========================================
@@ -414,10 +416,10 @@ export const createMatch = async (data) => {
   setCache('matches', [...cached, newMatch]);
 
   try {
-    await setDoc(doc(db, 'matches', newId), {
+    await setDoc(doc(db, 'matches', newId), cleanData({
       ...newMatch,
       created_at: serverTimestamp()
-    });
+    }));
   } catch (e) {
     console.error('Create match firestore error:', e);
   }
@@ -431,7 +433,7 @@ export const updateMatch = async (id, data) => {
   setCache('matches', updated);
 
   try {
-    await updateDoc(doc(db, 'matches', String(id)), data);
+    await updateDoc(doc(db, 'matches', String(id)), cleanData(data));
   } catch (e) {}
   return { id, ...data };
 };
