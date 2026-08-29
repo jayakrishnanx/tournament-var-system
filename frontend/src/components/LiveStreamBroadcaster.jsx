@@ -1,17 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Radio, Play, Square, ExternalLink, Sparkles, Volume2, Video } from 'lucide-react';
+import { Camera, Radio, Play, Square, ExternalLink, RefreshCw, Volume2, Video } from 'lucide-react';
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { cleanData } from '../services/firebaseService';
 
 export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) => {
   const [isStreaming, setIsStreaming] = useState(false);
+  const [rotationAngle, setRotationAngle] = useState(0); // 0, 90, 180, 270
+  
   const streamRoomId = `kallikalam_match_${matchId}`;
-  // Natural Wide-Angle Rear Camera with Zoom In / Zoom Out slider controls
-  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&zoom&autostart=1&webcam&audiodevice&quality=0&bitrate=4000`;
+  
+  // Forces Landscape, Auto-Rotation & Manual Rotation support
+  const rotationParam = rotationAngle > 0 ? `&rotate=${rotationAngle}` : '';
+  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1${rotationParam}&zoom&autostart=1&webcam&audiodevice&quality=0&bitrate=4000`;
 
   const startBroadcast = async () => {
     setIsStreaming(true);
+
+    // Try requesting device landscape orientation lock if supported
+    try {
+      if (window.screen?.orientation?.lock) {
+        window.screen.orientation.lock('landscape').catch(() => {});
+      }
+    } catch (e) {}
 
     try {
       await setDoc(doc(db, 'live_streams', String(matchId)), cleanData({
@@ -42,6 +53,11 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     } catch (e) {}
   };
 
+  const cycleRotation = () => {
+    const next = (rotationAngle + 90) % 360;
+    setRotationAngle(next);
+  };
+
   return (
     <div className="glass-panel" style={{
       padding: '18px 20px',
@@ -59,29 +75,47 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
             <h3 style={{ fontSize: '1.05rem', fontWeight: '900', color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               {isStreaming ? '🔴 LIVE CAMERA BROADCASTER ACTIVE' : '📹 FIELD CAMERA LIVE BROADCAST'}
               <span style={{ fontSize: '0.65rem', backgroundColor: '#10b981', color: '#000000', padding: '2px 8px', borderRadius: '4px', fontWeight: '900' }}>
-                HD 60FPS / ZERO APPS NEEDED
+                LANDSCAPE 16:9
               </span>
             </h3>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-              Broadcast directly from your phone camera & microphone — all spectators watch inside the scoreboard!
+              Broadcast directly from your phone back camera — all spectators watch inside the scoreboard!
             </span>
           </div>
         </div>
 
         {isStreaming && (
-          <span style={{
-            backgroundColor: '#ef4444',
-            color: '#ffffff',
-            fontSize: '0.75rem',
-            fontWeight: '900',
-            padding: '4px 12px',
-            borderRadius: '9999px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}>
-            ● BROADCASTING LIVE
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={cycleRotation}
+              className="btn-secondary"
+              style={{
+                padding: '5px 10px',
+                fontSize: '0.75rem',
+                fontWeight: '800',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                backgroundColor: '#1e293b'
+              }}
+              title="Click if video is sideways"
+            >
+              <RefreshCw size={12} /> Rotate ({rotationAngle}°)
+            </button>
+            <span style={{
+              backgroundColor: '#ef4444',
+              color: '#ffffff',
+              fontSize: '0.75rem',
+              fontWeight: '900',
+              padding: '4px 12px',
+              borderRadius: '9999px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              ● BROADCASTING LIVE
+            </span>
+          </div>
         )}
       </div>
 
@@ -103,6 +137,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
       }}>
         {isStreaming ? (
           <iframe
+            key={`broadcast-${rotationAngle}`}
             src={broadcastUrl}
             title="Field Camera Broadcast"
             allow="camera; microphone; display-capture; autoplay"
@@ -125,7 +160,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
               Field Camera Ready to Go Live
             </p>
             <p style={{ fontSize: '0.82rem', color: '#94a3b8', maxWidth: '440px', margin: '0 auto' }}>
-              Tap <strong>"Start Live Camera Stream"</strong> below to activate your phone camera & microphone. All spectators will instantly see and hear the match!
+              Turn your phone horizontally (landscape mode) and tap <strong>"Start Live Camera Stream"</strong> below to broadcast live!
             </p>
           </div>
         )}
@@ -180,6 +215,25 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
             >
               <ExternalLink size={16} /> 📱 Open Fullscreen Camera Studio
             </a>
+            <button
+              onClick={cycleRotation}
+              style={{
+                backgroundColor: '#1e293b',
+                color: '#f8fafc',
+                fontWeight: '800',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                fontSize: '0.88rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                border: '1px solid #475569',
+                cursor: 'pointer'
+              }}
+            >
+              <RefreshCw size={14} /> Rotate ({rotationAngle}°)
+            </button>
             <button
               onClick={stopBroadcast}
               style={{
