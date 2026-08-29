@@ -21,34 +21,51 @@ export const Dashboard = () => {
 
   const { user } = useAuth();
 
-  const fetchData = async () => {
+  const fetchStaticData = async () => {
     try {
-      const url = selectedTournament ? `/tournaments/matches/?tournament=${selectedTournament}` : '/tournaments/matches/';
-      const statsUrl = selectedTournament ? `/tournaments/matches/stats/?tournament=${selectedTournament}` : '/tournaments/matches/stats/';
-
-      const [mRes, tRes, tmRes, stRes] = await Promise.all([
-        api.get(url),
+      const [tRes, tmRes] = await Promise.all([
         api.get('/tournaments/tournaments/'),
-        api.get('/tournaments/teams/'),
-        api.get(statsUrl)
+        api.get('/tournaments/teams/')
       ]);
-      setMatches(mRes.data);
       setTournaments(tRes.data);
       setTeams(tmRes.data);
-      setStats(stRes.data);
       if (tRes.data.length > 0 && !selectedTournament) {
         setSelectedTournament(tRes.data[0].id);
       }
     } catch (err) {
-      console.error('Error fetching dashboard data:', err);
+      console.error('Error fetching static data:', err);
+    }
+  };
+
+  const fetchLiveData = async () => {
+    try {
+      const url = selectedTournament ? `/tournaments/matches/?tournament=${selectedTournament}` : '/tournaments/matches/';
+      const statsUrl = selectedTournament ? `/tournaments/matches/stats/?tournament=${selectedTournament}` : '/tournaments/matches/stats/';
+      const [mRes, stRes] = await Promise.all([
+        api.get(url),
+        api.get(statsUrl)
+      ]);
+      setMatches(mRes.data);
+      setStats(stRes.data);
+    } catch (err) {
+      console.error('Error fetching live data:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchData = async () => {
+    await Promise.all([fetchStaticData(), fetchLiveData()]);
+  };
+
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 2000);
+    fetchStaticData();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedTournament) return;
+    fetchLiveData();
+    const interval = setInterval(fetchLiveData, 8000);
     return () => clearInterval(interval);
   }, [selectedTournament]);
 

@@ -47,11 +47,12 @@ export const MatchDetail = () => {
       (err) => setWsConnected(false)
     );
 
+    // Fallback poll — only fires every 10s as backup when WS may miss updates
     const pollInterval = setInterval(() => {
       api.get(`/tournaments/matches/${id}/`).then(mRes => {
         setMatch(mRes.data);
       }).catch(() => {});
-    }, 1500);
+    }, 10000);
 
     return () => {
       ws.close();

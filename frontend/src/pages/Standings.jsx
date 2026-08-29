@@ -55,7 +55,7 @@ export const Standings = () => {
     };
 
     fetchStandings();
-    const interval = setInterval(fetchStandings, 3000);
+    const interval = setInterval(fetchStandings, 10000);
     return () => clearInterval(interval);
   }, [selectedTournament]);
 

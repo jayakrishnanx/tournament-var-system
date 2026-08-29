@@ -21,7 +21,7 @@ class IsVarOperatorOrAdmin(permissions.BasePermission):
         return True
 
 class TournamentViewSet(viewsets.ModelViewSet):
-    queryset = Tournament.objects.all().order_by('-created_at')
+    queryset = Tournament.objects.all().order_by('-created_at').prefetch_related('teams', 'teams__players', 'matches')
     serializer_class = TournamentSerializer
     permission_classes = [IsAdminOrReadOnly]
 
@@ -209,7 +209,7 @@ class TournamentViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
 class TeamViewSet(viewsets.ModelViewSet):
-    queryset = Team.objects.all().order_by('name')
+    queryset = Team.objects.all().order_by('name').select_related('tournament').prefetch_related('players')
     serializer_class = TeamSerializer
     permission_classes = [IsAdminOrReadOnly]
 
@@ -221,7 +221,7 @@ class TeamViewSet(viewsets.ModelViewSet):
         return queryset
 
 class PlayerViewSet(viewsets.ModelViewSet):
-    queryset = Player.objects.all().order_by('name')
+    queryset = Player.objects.all().order_by('name').select_related('team', 'team__tournament')
     serializer_class = PlayerSerializer
     permission_classes = [IsAdminOrReadOnly]
 
@@ -233,7 +233,13 @@ class PlayerViewSet(viewsets.ModelViewSet):
         return queryset
 
 class MatchViewSet(viewsets.ModelViewSet):
-    queryset = Match.objects.all().order_by('-scheduled_time')
+    queryset = Match.objects.all().order_by('-scheduled_time').select_related(
+        'tournament', 'home_team', 'away_team'
+    ).prefetch_related(
+        'home_team__players', 'away_team__players',
+        'events', 'events__team', 'events__player',
+        'camera_feeds'
+    )
     serializer_class = MatchSerializer
     permission_classes = [IsAdminOrReadOnly]
 
