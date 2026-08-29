@@ -147,12 +147,13 @@ export const createTournament = async (data) => {
   setCache('tournaments', [newTourn, ...cached]);
 
   try {
-    await setDoc(doc(db, 'tournaments', newId), {
+    await setDoc(doc(db, 'tournaments', newId), cleanData({
       ...data,
       created_at: serverTimestamp()
-    });
+    }));
   } catch (e) {
     console.error('Create tournament firestore error:', e);
+    alert('⚠️ Firebase Cloud write warning: ' + e.message + '\n\nPlease ensure Firestore Rules are set to allow read/write in Firebase Console.');
   }
 
   return newTourn;
@@ -164,7 +165,7 @@ export const updateTournament = async (id, data) => {
   setCache('tournaments', updated);
 
   try {
-    await updateDoc(doc(db, 'tournaments', String(id)), data);
+    await updateDoc(doc(db, 'tournaments', String(id)), cleanData(data));
   } catch (e) {}
   return { id, ...data };
 };
@@ -227,12 +228,13 @@ export const createTeam = async (data) => {
   setCache('teams', [...cached, newTeam]);
 
   try {
-    await setDoc(doc(db, 'teams', newId), {
+    await setDoc(doc(db, 'teams', newId), cleanData({
       ...data,
       created_at: serverTimestamp()
-    });
+    }));
   } catch (e) {
     console.error('Create team firestore error:', e);
+    alert('⚠️ Firebase Cloud write warning: ' + e.message + '\n\nPlease ensure Firestore Rules are set to allow read/write in Firebase Console.');
   }
 
   return newTeam;

@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -15,21 +15,6 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const auth = getAuth(app);
-
-// Enable offline persistence when available in browser
-if (typeof window !== 'undefined') {
-  try {
-    enableIndexedDbPersistence(db).catch((err) => {
-      if (err.code === 'failed-precondition') {
-        console.warn('Firebase persistence warning: multiple tabs open');
-      } else if (err.code === 'unimplemented') {
-        console.warn('Firebase persistence not supported by browser');
-      }
-    });
-  } catch (e) {
-    // Ignore in unsupported environments
-  }
-}
 
 export { app, db, auth };
 export default db;
