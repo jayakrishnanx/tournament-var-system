@@ -7,7 +7,7 @@ import { cleanData, updateMatch } from '../services/firebaseService';
 export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [rotationAngle, setRotationAngle] = useState(0); // 0, 90, 180, 270
-  const [zoomLevel, setZoomLevel] = useState(1.0); // 0.8x to 4.0x (0.1x steps)
+  const [zoomLevel, setZoomLevel] = useState(1.00); // 1.00x to 3.00x (micro 0.05x steps)
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isPinching, setIsPinching] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -16,7 +16,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
   );
 
   const iframeRef = useRef(null);
-  const touchStateRef = useRef({ initialDist: null, initialZoom: 1.0 });
+  const touchStateRef = useRef({ initialDist: null, initialZoom: 1.00 });
   const streamRoomId = `kallikalam_match_${matchId}`;
   
   // Track device orientation changes in real time
@@ -34,7 +34,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     };
   }, []);
 
-  // Persistent Broadcast URL with native camera sensor zoom
+  // Persistent Broadcast URL — completely static so iframe NEVER reloads or cuts stream
   const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1&zoom=1&zoom&meter=1&autostart=1&webcam&audiodevice&bitrate=2500&fps=60&zerolatency=1&buffer=0&fast&noerror`;
 
   // Send hardware camera video frame zoom command to WebRTC track
@@ -44,7 +44,6 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         iframeRef.current.contentWindow.postMessage({ action: 'zoom', value: zoomLevel }, '*');
         iframeRef.current.contentWindow.postMessage({ function: 'zoom', value: zoomLevel }, '*');
         iframeRef.current.contentWindow.postMessage({ zoom: zoomLevel }, '*');
-        iframeRef.current.contentWindow.postMessage({ target: 'camera', zoom: zoomLevel }, '*');
       }
     } catch (e) {}
   }, [zoomLevel]);
@@ -102,17 +101,17 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     setRotationAngle(prev => (prev + 90) % 360);
   };
 
-  // Precise Point-by-Point Zoom Steps (0.1x per tap)
+  // Fine-Grain Micro Zoom Steps (0.05x per tap for tiny, smooth frame adjustments)
   const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(4.0, parseFloat((prev + 0.1).toFixed(1))));
+    setZoomLevel(prev => Math.min(3.00, parseFloat((prev + 0.05).toFixed(2))));
   };
 
   const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(0.8, parseFloat((prev - 0.1).toFixed(1))));
+    setZoomLevel(prev => Math.max(1.00, parseFloat((prev - 0.05).toFixed(2))));
   };
 
   const handleSliderZoom = (e) => {
-    setZoomLevel(parseFloat(parseFloat(e.target.value).toFixed(1)));
+    setZoomLevel(parseFloat(parseFloat(e.target.value).toFixed(2)));
   };
 
   const setPresetZoom = (lvl) => {
@@ -134,7 +133,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     });
   };
 
-  // Two-Finger Damped Pinch Gesture for Point-by-Point Smooth Scaling
+  // Two-Finger Ultra-Smooth Micro Pinch Gestures
   const handleTouchStart = (e) => {
     if (e.touches.length === 2) {
       const dist = Math.hypot(
@@ -152,10 +151,10 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
-      // Gentle damping factor so zoom changes point-by-point smoothly
-      const delta = (currentDist - touchStateRef.current.initialDist) * 0.0035;
-      const targetZoom = Math.min(4.0, Math.max(0.8, touchStateRef.current.initialZoom + delta));
-      setZoomLevel(parseFloat(targetZoom.toFixed(1)));
+      // Ultra-gentle damping for micro adjustments
+      const delta = (currentDist - touchStateRef.current.initialDist) * 0.0015;
+      const targetZoom = Math.min(3.00, Math.max(1.00, touchStateRef.current.initialZoom + delta));
+      setZoomLevel(parseFloat(targetZoom.toFixed(2)));
     }
   };
 
@@ -164,7 +163,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     setIsPinching(false);
   };
 
-  const transformStyle = rotationAngle > 0 ? `rotate(${rotationAngle}deg)` : 'none';
+  const transformStyle = `scale(${zoomLevel}) ${rotationAngle > 0 ? `rotate(${rotationAngle}deg)` : ''}`;
 
   // 100% IMMERSIVE FULLSCREEN CAMERA VIEW (TRIGGERED IN LANDSCAPE)
   const shouldRenderFullscreen = isStreaming && (isDeviceLandscape || isFullscreen);
@@ -214,7 +213,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
               display: 'block',
               transform: transformStyle,
               transformOrigin: 'center center',
-              transition: isPinching ? 'none' : 'transform 0.15s ease-out'
+              transition: isPinching ? 'none' : 'transform 0.12s ease-out'
             }}
           />
 
@@ -227,16 +226,16 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
               transform: 'translate(-50%, -50%)',
               backgroundColor: 'rgba(0, 0, 0, 0.85)',
               color: '#38bdf8',
-              padding: '10px 20px',
+              padding: '8px 18px',
               borderRadius: '12px',
               border: '2px solid #38bdf8',
-              fontSize: '1.3rem',
+              fontSize: '1.2rem',
               fontWeight: '900',
               boxShadow: '0 0 20px rgba(56, 189, 248, 0.5)',
               pointerEvents: 'none',
               zIndex: 50
             }}>
-              🔍 {zoomLevel.toFixed(1)}x
+              🔍 {zoomLevel.toFixed(2)}x
             </div>
           )}
 
@@ -289,7 +288,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
             </div>
           </div>
 
-          {/* Sleek Floating Bottom Controls with Point-by-Point Zoom Slider & Buttons */}
+          {/* Sleek Floating Bottom Controls with Micro Step Zoom & Slider */}
           <div style={{
             position: 'absolute',
             bottom: '10px',
@@ -302,40 +301,39 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
             flexWrap: 'wrap',
             gap: '8px'
           }}>
-            {/* Point-by-Point Zoom Controls & Slider */}
+            {/* Micro Zoom Controls */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              backgroundColor: 'rgba(0, 0, 0, 0.82)',
               padding: '4px 10px',
               borderRadius: '8px',
               border: '1px solid rgba(255, 255, 255, 0.25)'
             }}>
               <button
                 onClick={handleZoomOut}
-                disabled={zoomLevel <= 0.8}
+                disabled={zoomLevel <= 1.00}
                 style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.15)',
                   color: '#fff',
                   border: 'none',
                   borderRadius: '4px',
                   padding: '4px 8px',
-                  fontSize: '0.82rem',
+                  fontSize: '0.75rem',
                   fontWeight: '900',
                   cursor: 'pointer'
                 }}
-                title="Zoom Out (0.1x)"
+                title="Micro Zoom Out (-0.05x)"
               >
-                - 0.1x
+                - 0.05x
               </button>
 
-              {/* Point-by-Point Zoom Slider */}
               <input
                 type="range"
-                min="0.8"
-                max="4.0"
-                step="0.1"
+                min="1.00"
+                max="2.50"
+                step="0.02"
                 value={zoomLevel}
                 onChange={handleSliderZoom}
                 style={{
@@ -345,26 +343,43 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
                 }}
               />
 
-              <span style={{ fontSize: '0.78rem', fontWeight: '900', color: '#38bdf8', minWidth: '36px', textAlign: 'center' }}>
-                {zoomLevel.toFixed(1)}x
+              <span style={{ fontSize: '0.78rem', fontWeight: '900', color: '#38bdf8', minWidth: '42px', textAlign: 'center' }}>
+                {zoomLevel.toFixed(2)}x
               </span>
 
               <button
                 onClick={handleZoomIn}
-                disabled={zoomLevel >= 4.0}
+                disabled={zoomLevel >= 3.00}
                 style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.15)',
                   color: '#fff',
                   border: 'none',
                   borderRadius: '4px',
                   padding: '4px 8px',
-                  fontSize: '0.82rem',
+                  fontSize: '0.75rem',
                   fontWeight: '900',
                   cursor: 'pointer'
                 }}
-                title="Zoom In (0.1x)"
+                title="Micro Zoom In (+0.05x)"
               >
-                + 0.1x
+                + 0.05x
+              </button>
+
+              <button
+                onClick={() => setPresetZoom(1.00)}
+                style={{
+                  backgroundColor: 'transparent',
+                  color: '#94a3b8',
+                  border: '1px solid #475569',
+                  borderRadius: '4px',
+                  padding: '3px 6px',
+                  fontSize: '0.68rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  marginLeft: '2px'
+                }}
+              >
+                1.0x
               </button>
             </div>
 
@@ -432,7 +447,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
             <h3 style={{ fontSize: '1.05rem', fontWeight: '900', color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               {isStreaming ? '🔴 LIVE CAMERA BROADCASTER' : '📹 FIELD CAMERA LIVE BROADCAST'}
               <span style={{ fontSize: '0.65rem', backgroundColor: '#10b981', color: '#000000', padding: '2px 8px', borderRadius: '4px', fontWeight: '900' }}>
-                POINT-BY-POINT ZOOM
+                MICRO-STEP ZOOM
               </span>
             </h3>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
@@ -494,7 +509,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
                 display: 'block',
                 transform: transformStyle,
                 transformOrigin: 'center center',
-                transition: isPinching ? 'none' : 'transform 0.15s ease-out'
+                transition: isPinching ? 'none' : 'transform 0.12s ease-out'
               }}
             />
             {/* Visual HUD when Pinching on Screen */}
@@ -506,16 +521,16 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
                 transform: 'translate(-50%, -50%)',
                 backgroundColor: 'rgba(0, 0, 0, 0.85)',
                 color: '#38bdf8',
-                padding: '12px 24px',
+                padding: '10px 20px',
                 borderRadius: '12px',
                 border: '2px solid #38bdf8',
-                fontSize: '1.4rem',
+                fontSize: '1.3rem',
                 fontWeight: '900',
                 boxShadow: '0 0 20px rgba(56, 189, 248, 0.5)',
                 pointerEvents: 'none',
                 zIndex: 30
               }}>
-                🔍 {zoomLevel.toFixed(1)}x
+                🔍 {zoomLevel.toFixed(2)}x
               </div>
             )}
           </>
@@ -537,7 +552,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         )}
       </div>
 
-      {/* 🎛️ Live Broadcaster Control Bar (Point-by-Point Zoom, Slider, Mic, Rotate) */}
+      {/* 🎛️ Live Broadcaster Control Bar (Micro-Step Zoom, Slider, Mic, Rotate) */}
       {isStreaming && (
         <div style={{
           backgroundColor: '#161c28',
@@ -551,31 +566,31 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              🎛️ Point-by-Point Zoom & Audio Controls
+              🎛️ Micro Frame Zoom & Audio Controls
             </span>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-              Scale: <strong style={{ color: '#38bdf8' }}>{zoomLevel.toFixed(1)}x</strong>
+              Frame Scale: <strong style={{ color: '#38bdf8' }}>{zoomLevel.toFixed(2)}x</strong>
             </span>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-            {/* Point-by-Point Step Buttons & Smooth Slider */}
+            {/* Micro Step Buttons & Precision Slider */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <button
                 onClick={handleZoomOut}
-                disabled={zoomLevel <= 0.8}
+                disabled={zoomLevel <= 1.00}
                 className="btn-secondary"
-                style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
-                title="Zoom Out by 0.1x"
+                style={{ padding: '6px 12px', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
+                title="Micro Zoom Out by 0.05x"
               >
-                <ZoomOut size={14} /> - 0.1x
+                <ZoomOut size={13} /> - 0.05x
               </button>
 
               <input
                 type="range"
-                min="0.8"
-                max="4.0"
-                step="0.1"
+                min="1.00"
+                max="2.50"
+                step="0.02"
                 value={zoomLevel}
                 onChange={handleSliderZoom}
                 style={{
@@ -587,16 +602,16 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
 
               <button
                 onClick={handleZoomIn}
-                disabled={zoomLevel >= 4.0}
+                disabled={zoomLevel >= 3.00}
                 className="btn-secondary"
-                style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
-                title="Zoom In by 0.1x"
+                style={{ padding: '6px 12px', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
+                title="Micro Zoom In by 0.05x"
               >
-                <ZoomIn size={14} /> + 0.1x
+                <ZoomIn size={13} /> + 0.05x
               </button>
 
               <button
-                onClick={() => setPresetZoom(1.0)}
+                onClick={() => setPresetZoom(1.00)}
                 style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.08)',
                   color: '#94a3b8',
@@ -608,7 +623,23 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
                   cursor: 'pointer'
                 }}
               >
-                Reset (1.0x)
+                1.0x (Normal)
+              </button>
+
+              <button
+                onClick={() => setPresetZoom(1.20)}
+                style={{
+                  backgroundColor: zoomLevel === 1.20 ? '#2563eb' : 'rgba(255, 255, 255, 0.08)',
+                  color: '#fff',
+                  border: '1px solid #475569',
+                  borderRadius: '6px',
+                  padding: '6px 10px',
+                  fontSize: '0.72rem',
+                  fontWeight: '700',
+                  cursor: 'pointer'
+                }}
+              >
+                1.2x
               </button>
             </div>
 
