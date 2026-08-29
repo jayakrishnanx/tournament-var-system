@@ -239,3 +239,13 @@ button:disabled {
     display: none !important;
   }
 }
+
+/* Mobile Landscape Fullscreen Studio & Clean View */
+@media (max-height: 540px) and (orientation: landscape) {
+  nav.nav-container {
+    display: none !important;
+  }
+  body {
+    overflow-x: hidden;
+  }
+}

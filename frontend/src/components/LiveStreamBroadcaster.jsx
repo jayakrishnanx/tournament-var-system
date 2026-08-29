@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Radio, Play, Square, ExternalLink, RefreshCw, Mic, MicOff, ZoomIn, ZoomOut, Sparkles } from 'lucide-react';
+import { Camera, Radio, Play, Square, ExternalLink, RefreshCw, Mic, MicOff, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { cleanData } from '../services/firebaseService';
@@ -10,6 +10,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
   const [zoomLevel, setZoomLevel] = useState(1.0); // 0.5x to 4.0x
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isPinching, setIsPinching] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const touchStateRef = useRef({ initialDist: null, initialZoom: 1.0 });
   const streamRoomId = `kallikalam_match_${matchId}`;
@@ -50,6 +51,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
 
   const stopBroadcast = async () => {
     setIsStreaming(false);
+    setIsFullscreen(false);
 
     try {
       await updateDoc(doc(db, 'live_streams', String(matchId)), {
@@ -77,6 +79,10 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
 
   const toggleMic = () => {
     setIsMicMuted(prev => !prev);
+  };
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(prev => !prev);
   };
 
   // Two-Finger Native Touch Pinch-In / Pinch-Out Gesture Handlers
@@ -108,6 +114,264 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     setIsPinching(false);
   };
 
+  // FULLSCREEN IMMERSIVE CAMERA STUDIO (Zero Navbar, Zero Scrolling)
+  if (isStreaming && isFullscreen) {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: '#000000',
+        zIndex: 999999,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}>
+        {/* Fullscreen Video Viewport with Touch Gestures */}
+        <div
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          style={{
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            backgroundColor: '#000000',
+            touchAction: 'none'
+          }}
+        >
+          <iframe
+            key={`broadcast-fs-${rotationAngle}-${isMicMuted}-${zoomLevel}`}
+            src={broadcastUrl}
+            title="Fullscreen Camera Broadcast"
+            allow="camera; microphone; display-capture; autoplay"
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              display: 'block'
+            }}
+          />
+
+          {/* Pinch Zoom Real-time HUD */}
+          {isPinching && (
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              backgroundColor: 'rgba(0, 0, 0, 0.85)',
+              color: '#38bdf8',
+              padding: '12px 24px',
+              borderRadius: '12px',
+              border: '2px solid #38bdf8',
+              fontSize: '1.4rem',
+              fontWeight: '900',
+              boxShadow: '0 0 20px rgba(56, 189, 248, 0.5)',
+              pointerEvents: 'none',
+              zIndex: 40
+            }}>
+              🔍 {zoomLevel.toFixed(1)}x {zoomLevel <= 0.6 ? '(Ultra-Wide)' : ''}
+            </div>
+          )}
+
+          {/* Floating Top HUD */}
+          <div style={{
+            position: 'absolute',
+            top: '12px',
+            left: '12px',
+            right: '12px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            zIndex: 30,
+            pointerEvents: 'none'
+          }}>
+            <span style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.85)',
+              color: '#ffffff',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              fontWeight: '900',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              pointerEvents: 'auto'
+            }}>
+              ● LIVE BROADCASTING
+            </span>
+
+            <div style={{ display: 'flex', gap: '8px', pointerEvents: 'auto' }}>
+              <button
+                onClick={cycleRotation}
+                style={{
+                  backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '6px',
+                  padding: '6px 10px',
+                  fontSize: '0.75rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <RefreshCw size={14} /> Rotate ({rotationAngle}°)
+              </button>
+
+              <button
+                onClick={toggleFullscreen}
+                style={{
+                  backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '6px',
+                  padding: '6px 12px',
+                  fontSize: '0.75rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <Minimize2 size={14} /> Exit Fullscreen
+              </button>
+            </div>
+          </div>
+
+          {/* Floating Bottom Lens & Mic Bar */}
+          <div style={{
+            position: 'absolute',
+            bottom: '14px',
+            left: '12px',
+            right: '12px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            zIndex: 30,
+            flexWrap: 'wrap',
+            gap: '8px'
+          }}>
+            {/* Lens Presets */}
+            <div style={{ display: 'flex', gap: '6px', backgroundColor: 'rgba(0, 0, 0, 0.75)', padding: '4px 8px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
+              <button
+                onClick={() => setPresetZoom(0.5)}
+                style={{
+                  backgroundColor: zoomLevel === 0.5 ? '#2563eb' : 'transparent',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '5px 8px',
+                  fontSize: '0.72rem',
+                  fontWeight: '800',
+                  cursor: 'pointer'
+                }}
+              >
+                0.5x Ultra
+              </button>
+              <button
+                onClick={() => setPresetZoom(1.0)}
+                style={{
+                  backgroundColor: zoomLevel === 1.0 ? '#2563eb' : 'transparent',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '5px 8px',
+                  fontSize: '0.72rem',
+                  fontWeight: '800',
+                  cursor: 'pointer'
+                }}
+              >
+                1.0x Wide
+              </button>
+              <button
+                onClick={() => setPresetZoom(2.0)}
+                style={{
+                  backgroundColor: zoomLevel === 2.0 ? '#2563eb' : 'transparent',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '5px 8px',
+                  fontSize: '0.72rem',
+                  fontWeight: '800',
+                  cursor: 'pointer'
+                }}
+              >
+                2.0x Zoom
+              </button>
+              <button
+                onClick={handleZoomOut}
+                disabled={zoomLevel <= 0.5}
+                style={{ backgroundColor: 'transparent', color: '#fff', border: 'none', padding: '4px 6px', fontSize: '0.8rem', fontWeight: '900', cursor: 'pointer' }}
+              >
+                -
+              </button>
+              <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#38bdf8', display: 'flex', alignItems: 'center' }}>
+                {zoomLevel.toFixed(1)}x
+              </span>
+              <button
+                onClick={handleZoomIn}
+                disabled={zoomLevel >= 4.0}
+                style={{ backgroundColor: 'transparent', color: '#fff', border: 'none', padding: '4px 6px', fontSize: '0.8rem', fontWeight: '900', cursor: 'pointer' }}
+              >
+                +
+              </button>
+            </div>
+
+            {/* Mic & End Controls */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={toggleMic}
+                style={{
+                  backgroundColor: isMicMuted ? '#ef4444' : '#10b981',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 14px',
+                  fontSize: '0.75rem',
+                  fontWeight: '900',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)'
+                }}
+              >
+                {isMicMuted ? <MicOff size={14} /> : <Mic size={14} />}
+                {isMicMuted ? 'Mic Muted' : 'Mic ON'}
+              </button>
+              <button
+                onClick={stopBroadcast}
+                style={{
+                  backgroundColor: '#dc2626',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 14px',
+                  fontSize: '0.75rem',
+                  fontWeight: '900',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                <Square size={14} /> Stop
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // STANDARD IN-PAGE VIEW
   return (
     <div className="glass-panel" style={{
       padding: '18px 20px',
@@ -129,7 +393,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
               </span>
             </h3>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-              Pinch on the camera preview with 2 fingers to zoom in or zoom out, or use buttons below!
+              Hold your phone in landscape mode. Tap "⛶ Fullscreen Studio" below for zero-clutter fullscreen camera mode!
             </span>
           </div>
         </div>
@@ -264,7 +528,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
                   cursor: 'pointer'
                 }}
               >
-                0.5x Ultra-Wide
+                0.5x Ultra
               </button>
               <button
                 onClick={() => setPresetZoom(1.0)}
@@ -279,7 +543,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
                   cursor: 'pointer'
                 }}
               >
-                1.0x Standard
+                1.0x Wide
               </button>
               <button
                 onClick={() => setPresetZoom(2.0)}
@@ -294,7 +558,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
                   cursor: 'pointer'
                 }}
               >
-                2.0x Telephoto
+                2.0x Zoom
               </button>
 
               {/* Fine-Tuning Step Zoom */}
@@ -341,7 +605,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
                 }}
               >
                 {isMicMuted ? <MicOff size={14} /> : <Mic size={14} />}
-                {isMicMuted ? '🔇 Mic OFF (Muted)' : '🎙️ Mic ON (Active)'}
+                {isMicMuted ? '🔇 Mic Muted' : '🎙️ Mic ON'}
               </button>
 
               {/* Rotate */}
@@ -392,29 +656,28 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
           </button>
         ) : (
           <>
-            <a
-              href={broadcastUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={toggleFullscreen}
               style={{
                 flex: 1,
                 minWidth: '220px',
                 backgroundColor: '#2563eb',
                 color: '#ffffff',
-                fontWeight: '800',
+                fontWeight: '900',
                 padding: '12px 18px',
                 borderRadius: '8px',
-                fontSize: '0.88rem',
+                fontSize: '0.9rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                textDecoration: 'none',
-                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)'
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.45)'
               }}
             >
-              <ExternalLink size={16} /> 📱 Open Fullscreen Camera Studio
-            </a>
+              <Maximize2 size={18} /> ⛶ Fullscreen Camera Studio
+            </button>
             <button
               onClick={stopBroadcast}
               style={{
