@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Radio, Play, Square, RefreshCw, Mic, MicOff } from 'lucide-react';
+import { Camera, Radio, Play, Square, RefreshCw, Mic, MicOff, ZoomIn, ZoomOut } from 'lucide-react';
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { cleanData, updateMatch } from '../services/firebaseService';
@@ -7,6 +7,7 @@ import { cleanData, updateMatch } from '../services/firebaseService';
 export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [rotationAngle, setRotationAngle] = useState(0); // 0, 90, 180, 270
+  const [zoomLevel, setZoomLevel] = useState(1.0); // 1.0 to 3.0 (0.1x steps)
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDeviceLandscape, setIsDeviceLandscape] = useState(
@@ -33,6 +34,17 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
 
   // Persistent Broadcast URL with hardware camera sensor zoom (broadcasts zoomed feed to spectators)
   const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1&zoom&meter=1&autostart=1&webcam&audiodevice&bitrate=2500&fps=60&zerolatency=1&buffer=0&fast&noerror`;
+
+  // Send hardware optical/digital zoom commands to physical camera track
+  useEffect(() => {
+    try {
+      if (iframeRef.current?.contentWindow) {
+        iframeRef.current.contentWindow.postMessage({ action: 'zoom', value: zoomLevel }, '*');
+        iframeRef.current.contentWindow.postMessage({ function: 'zoom', value: zoomLevel }, '*');
+        iframeRef.current.contentWindow.postMessage({ zoom: zoomLevel }, '*');
+      }
+    } catch (e) {}
+  }, [zoomLevel]);
 
   const startBroadcast = async () => {
     setIsStreaming(true);
@@ -85,6 +97,23 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
 
   const cycleRotation = () => {
     setRotationAngle(prev => (prev + 90) % 360);
+  };
+
+  // Precise Point-by-Point Zoom Steps (0.1x per tap)
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(3.0, parseFloat((prev + 0.1).toFixed(1))));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(1.0, parseFloat((prev - 0.1).toFixed(1))));
+  };
+
+  const handleSliderZoom = (e) => {
+    setZoomLevel(parseFloat(parseFloat(e.target.value).toFixed(1)));
+  };
+
+  const setPresetZoom = (lvl) => {
+    setZoomLevel(lvl);
   };
 
   // Instant Live Mic Toggle WITHOUT pausing or cutting the stream
@@ -142,11 +171,11 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
               <h3 style={{ fontSize: '1.05rem', fontWeight: '900', color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {isStreaming ? '🔴 LIVE CAMERA BROADCASTER' : '📹 FIELD CAMERA LIVE BROADCAST'}
                 <span style={{ fontSize: '0.65rem', backgroundColor: '#10b981', color: '#000000', padding: '2px 8px', borderRadius: '4px', fontWeight: '900' }}>
-                  AUTO-LANDSCAPE
+                  POINT-BY-POINT ZOOM
                 </span>
               </h3>
               <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                Hold your phone in landscape mode for full-screen camera framing!
+                Rotate your phone into landscape mode for full-screen camera studio!
               </span>
             </div>
           </div>
@@ -169,7 +198,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         </div>
       )}
 
-      {/* Floating Status Bar in Fullscreen Landscape */}
+      {/* Floating Top Status in Fullscreen Landscape */}
       {isLandscapeMode && (
         <div style={{
           position: 'absolute',
@@ -290,8 +319,89 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
             flexWrap: 'wrap',
             gap: '8px'
           }}>
+            {/* Point-by-Point Zoom Controls in Landscape */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: 'rgba(0, 0, 0, 0.82)',
+              padding: '4px 10px',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.25)'
+            }}>
+              <button
+                onClick={handleZoomOut}
+                disabled={zoomLevel <= 1.0}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  fontSize: '0.75rem',
+                  fontWeight: '900',
+                  cursor: 'pointer'
+                }}
+                title="Zoom Out (-0.1x)"
+              >
+                - 0.1x
+              </button>
+
+              <input
+                type="range"
+                min="1.0"
+                max="3.0"
+                step="0.1"
+                value={zoomLevel}
+                onChange={handleSliderZoom}
+                style={{
+                  width: '80px',
+                  accentColor: '#38bdf8',
+                  cursor: 'pointer'
+                }}
+              />
+
+              <span style={{ fontSize: '0.78rem', fontWeight: '900', color: '#38bdf8', minWidth: '36px', textAlign: 'center' }}>
+                {zoomLevel.toFixed(1)}x
+              </span>
+
+              <button
+                onClick={handleZoomIn}
+                disabled={zoomLevel >= 3.0}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  fontSize: '0.75rem',
+                  fontWeight: '900',
+                  cursor: 'pointer'
+                }}
+                title="Zoom In (+0.1x)"
+              >
+                + 0.1x
+              </button>
+
+              <button
+                onClick={() => setPresetZoom(1.0)}
+                style={{
+                  backgroundColor: 'transparent',
+                  color: '#94a3b8',
+                  border: '1px solid #475569',
+                  borderRadius: '4px',
+                  padding: '3px 6px',
+                  fontSize: '0.68rem',
+                  fontWeight: '700',
+                  cursor: 'pointer'
+                }}
+              >
+                1.0x
+              </button>
+            </div>
+
             {/* Live Non-Cutting Mic Toggle & Stop Broadcast */}
-            <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 onClick={toggleMic}
                 style={{
@@ -345,50 +455,131 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
           padding: '12px 14px',
           marginBottom: '14px',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '10px'
+          flexDirection: 'column',
+          gap: '12px'
         }}>
-          {/* Mic Toggle */}
-          <button
-            onClick={toggleMic}
-            style={{
-              backgroundColor: isMicMuted ? '#ef4444' : '#10b981',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '7px 14px',
-              fontSize: '0.78rem',
-              fontWeight: '900',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              cursor: 'pointer',
-              boxShadow: isMicMuted ? '0 2px 8px rgba(239, 68, 68, 0.3)' : '0 2px 8px rgba(16, 185, 129, 0.3)'
-            }}
-          >
-            {isMicMuted ? <MicOff size={14} /> : <Mic size={14} />}
-            {isMicMuted ? '🔇 Mic Muted' : '🎙️ Mic ON'}
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              🎛️ Point-by-Point Hardware Camera Zoom & Mic
+            </span>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+              Current Scale: <strong style={{ color: '#38bdf8' }}>{zoomLevel.toFixed(1)}x</strong>
+            </span>
+          </div>
 
-          {/* Rotate */}
-          <button
-            onClick={cycleRotation}
-            className="btn-secondary"
-            style={{
-              padding: '7px 12px',
-              fontSize: '0.78rem',
-              fontWeight: '800',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              backgroundColor: '#1e293b'
-            }}
-            title="Rotate 90 degrees"
-          >
-            <RefreshCw size={14} /> Rotate ({rotationAngle}°)
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            {/* Point-by-Point Zoom Buttons & Slider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                onClick={handleZoomOut}
+                disabled={zoomLevel <= 1.0}
+                className="btn-secondary"
+                style={{ padding: '6px 12px', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
+                title="Zoom Out by 0.1x"
+              >
+                <ZoomOut size={13} /> - 0.1x
+              </button>
+
+              <input
+                type="range"
+                min="1.0"
+                max="3.0"
+                step="0.1"
+                value={zoomLevel}
+                onChange={handleSliderZoom}
+                style={{
+                  width: '100px',
+                  accentColor: '#38bdf8',
+                  cursor: 'pointer'
+                }}
+              />
+
+              <button
+                onClick={handleZoomIn}
+                disabled={zoomLevel >= 3.0}
+                className="btn-secondary"
+                style={{ padding: '6px 12px', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
+                title="Zoom In by 0.1x"
+              >
+                <ZoomIn size={13} /> + 0.1x
+              </button>
+
+              <button
+                onClick={() => setPresetZoom(1.0)}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                  color: '#94a3b8',
+                  border: '1px solid #475569',
+                  borderRadius: '6px',
+                  padding: '6px 10px',
+                  fontSize: '0.72rem',
+                  fontWeight: '700',
+                  cursor: 'pointer'
+                }}
+              >
+                1.0x (Normal)
+              </button>
+
+              <button
+                onClick={() => setPresetZoom(1.5)}
+                style={{
+                  backgroundColor: zoomLevel === 1.5 ? '#2563eb' : 'rgba(255, 255, 255, 0.08)',
+                  color: '#fff',
+                  border: '1px solid #475569',
+                  borderRadius: '6px',
+                  padding: '6px 10px',
+                  fontSize: '0.72rem',
+                  fontWeight: '700',
+                  cursor: 'pointer'
+                }}
+              >
+                1.5x
+              </button>
+            </div>
+
+            {/* Mic Toggle & Rotation */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {/* Mic On/Off */}
+              <button
+                onClick={toggleMic}
+                style={{
+                  backgroundColor: isMicMuted ? '#ef4444' : '#10b981',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '7px 14px',
+                  fontSize: '0.78rem',
+                  fontWeight: '900',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  boxShadow: isMicMuted ? '0 2px 8px rgba(239, 68, 68, 0.3)' : '0 2px 8px rgba(16, 185, 129, 0.3)'
+                }}
+              >
+                {isMicMuted ? <MicOff size={14} /> : <Mic size={14} />}
+                {isMicMuted ? '🔇 Mic Muted' : '🎙️ Mic ON'}
+              </button>
+
+              {/* Rotate */}
+              <button
+                onClick={cycleRotation}
+                className="btn-secondary"
+                style={{
+                  padding: '7px 12px',
+                  fontSize: '0.78rem',
+                  fontWeight: '800',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  backgroundColor: '#1e293b'
+                }}
+                title="Rotate 90 degrees"
+              >
+                <RefreshCw size={14} /> Rotate ({rotationAngle}°)
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
