@@ -31,8 +31,8 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     };
   }, []);
 
-  // Persistent Broadcast URL — completely static so iframe NEVER reloads or cuts stream
-  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1&meter=1&autostart=1&webcam&audiodevice&bitrate=2500&fps=60&zerolatency=1&buffer=0&fast&noerror`;
+  // Persistent Broadcast URL with hardware camera sensor zoom (broadcasts zoomed feed to spectators)
+  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1&zoom&meter=1&autostart=1&webcam&audiodevice&bitrate=2500&fps=60&zerolatency=1&buffer=0&fast&noerror`;
 
   const startBroadcast = async () => {
     setIsStreaming(true);
