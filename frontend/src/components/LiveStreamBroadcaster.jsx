@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Radio, Play, Square, ExternalLink, RefreshCw, Mic, MicOff, ZoomIn, ZoomOut } from 'lucide-react';
+import { Camera, Radio, Play, Square, ExternalLink, RefreshCw, Mic, MicOff, ZoomIn, ZoomOut, Sparkles } from 'lucide-react';
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { cleanData } from '../services/firebaseService';
@@ -7,15 +7,15 @@ import { cleanData } from '../services/firebaseService';
 export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [rotationAngle, setRotationAngle] = useState(0); // 0, 90, 180, 270
-  const [zoomLevel, setZoomLevel] = useState(1.0); // 1.0x to 4.0x
+  const [zoomLevel, setZoomLevel] = useState(1.0); // 0.5x to 4.0x
   const [isMicMuted, setIsMicMuted] = useState(false);
   
   const streamRoomId = `kallikalam_match_${matchId}`;
   
-  // Ultra-Low Latency (<100ms), 60 FPS, Zoom, Mute & Rotation Controls
+  // Ultra-Low Latency (<100ms), 60 FPS, 0.5x Ultra-Wide to 4.0x Zoom, Mute & Rotation Controls
   const rotationParam = rotationAngle > 0 ? `&rotate=${rotationAngle}` : '';
   const muteParam = isMicMuted ? '&mute=1' : '';
-  const zoomParam = zoomLevel > 1.0 ? `&zoom=${zoomLevel}` : '';
+  const zoomParam = `&zoom=${zoomLevel}&minzoom=0.5&maxzoom=4.0`;
   
   const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1${rotationParam}${muteParam}${zoomParam}&autostart=1&webcam&audiodevice&bitrate=2500&fps=60&zerolatency=1&buffer=0&fast&noerror&cleanoutput=1`;
 
@@ -66,11 +66,11 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
   };
 
   const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(1.0, parseFloat((prev - 0.2).toFixed(1))));
+    setZoomLevel(prev => Math.max(0.5, parseFloat((prev - 0.2).toFixed(1))));
   };
 
-  const resetZoom = () => {
-    setZoomLevel(1.0);
+  const setPresetZoom = (lvl) => {
+    setZoomLevel(lvl);
   };
 
   const toggleMic = () => {
@@ -167,7 +167,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         )}
       </div>
 
-      {/* 🎛️ Live Broadcaster Control Bar (Zoom, Mic, Rotate) */}
+      {/* 🎛️ Live Broadcaster Control Bar (Zoom, Lens Presets, Mic, Rotate) */}
       {isStreaming && (
         <div style={{
           backgroundColor: '#161c28',
@@ -177,54 +177,87 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
           marginBottom: '14px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '10px'
+          gap: '12px'
         }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            🎛️ Live Camera & Audio Controls
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              🎛️ Camera Lens, Zoom & Audio Controls
+            </span>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+              Current Scale: <strong style={{ color: '#38bdf8' }}>{zoomLevel.toFixed(1)}x</strong>
+            </span>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-            {/* Zoom Controls */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#cbd5e1' }}>Zoom:</span>
+            {/* Quick Lens Preset Buttons (0.5x Ultra-Wide, 1.0x Normal, 2.0x Telephoto) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
               <button
-                onClick={handleZoomOut}
-                disabled={zoomLevel <= 1.0}
-                className="btn-secondary"
-                style={{ padding: '6px 10px', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
-                title="Zoom Out"
+                onClick={() => setPresetZoom(0.5)}
+                style={{
+                  backgroundColor: zoomLevel === 0.5 ? '#2563eb' : '#1e293b',
+                  color: '#ffffff',
+                  border: zoomLevel === 0.5 ? '1px solid #60a5fa' : '1px solid #334155',
+                  borderRadius: '6px',
+                  padding: '6px 10px',
+                  fontSize: '0.75rem',
+                  fontWeight: '800',
+                  cursor: 'pointer'
+                }}
               >
-                <ZoomOut size={14} /> -
+                0.5x Ultra-Wide
               </button>
-              <span style={{ fontSize: '0.85rem', fontWeight: '900', color: '#38bdf8', minWidth: '40px', textAlign: 'center' }}>
-                {zoomLevel.toFixed(1)}x
-              </span>
               <button
-                onClick={handleZoomIn}
-                disabled={zoomLevel >= 4.0}
-                className="btn-secondary"
-                style={{ padding: '6px 10px', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
-                title="Zoom In"
+                onClick={() => setPresetZoom(1.0)}
+                style={{
+                  backgroundColor: zoomLevel === 1.0 ? '#2563eb' : '#1e293b',
+                  color: '#ffffff',
+                  border: zoomLevel === 1.0 ? '1px solid #60a5fa' : '1px solid #334155',
+                  borderRadius: '6px',
+                  padding: '6px 10px',
+                  fontSize: '0.75rem',
+                  fontWeight: '800',
+                  cursor: 'pointer'
+                }}
               >
-                <ZoomIn size={14} /> +
+                1.0x Standard
               </button>
-              {zoomLevel > 1.0 && (
+              <button
+                onClick={() => setPresetZoom(2.0)}
+                style={{
+                  backgroundColor: zoomLevel === 2.0 ? '#2563eb' : '#1e293b',
+                  color: '#ffffff',
+                  border: zoomLevel === 2.0 ? '1px solid #60a5fa' : '1px solid #334155',
+                  borderRadius: '6px',
+                  padding: '6px 10px',
+                  fontSize: '0.75rem',
+                  fontWeight: '800',
+                  cursor: 'pointer'
+                }}
+              >
+                2.0x Telephoto
+              </button>
+
+              {/* Fine-Tuning Step Zoom */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '6px' }}>
                 <button
-                  onClick={resetZoom}
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    color: '#94a3b8',
-                    border: '1px solid #475569',
-                    borderRadius: '6px',
-                    padding: '6px 8px',
-                    fontSize: '0.72rem',
-                    fontWeight: '700',
-                    cursor: 'pointer'
-                  }}
+                  onClick={handleZoomOut}
+                  disabled={zoomLevel <= 0.5}
+                  className="btn-secondary"
+                  style={{ padding: '6px 10px', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '2px' }}
+                  title="Zoom Out"
                 >
-                  Reset (1.0x)
+                  <ZoomOut size={13} /> -
                 </button>
-              )}
+                <button
+                  onClick={handleZoomIn}
+                  disabled={zoomLevel >= 4.0}
+                  className="btn-secondary"
+                  style={{ padding: '6px 10px', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '2px' }}
+                  title="Zoom In"
+                >
+                  <ZoomIn size={13} /> +
+                </button>
+              </div>
             </div>
 
             {/* Mic Toggle & Rotation */}
