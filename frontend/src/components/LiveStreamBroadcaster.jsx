@@ -16,18 +16,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const peerRef = useRef(null);
-  const activeCallsRef = useRef(new Set());
-
-  // Attach stream to video whenever streaming state or video ref changes
-  useEffect(() => {
-    if (isStreaming && streamRef.current && videoRef.current) {
-      videoRef.current.srcObject = streamRef.current;
-      videoRef.current.setAttribute('playsinline', 'true');
-      videoRef.current.setAttribute('webkit-playsinline', 'true');
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(err => console.warn('Video play warning:', err));
-    }
-  }, [isStreaming]);
+  const viewersRef = useRef(new Map());
 
   // Clean up on unmount
   useEffect(() => {
@@ -48,22 +37,26 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     }
 
     try {
-      // 1. Get user media with multi-tier fallback for iOS Safari and Android Chrome
+      // 1. Get user media with fallback
       let stream = null;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: facingMode } },
+          video: {
+            facingMode: { ideal: facingMode },
+            width: { ideal: 1280, max: 1920 },
+            height: { ideal: 720, max: 1080 }
+          },
           audio: true
         });
       } catch (err1) {
         console.warn('Tier 1 camera access failed, trying standard video+audio...', err1);
         try {
           stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
+            video: { facingMode: facingMode },
             audio: true
           });
         } catch (err2) {
-          console.warn('Tier 2 camera access failed, trying video only...', err2);
+          console.warn('Tier 2 camera access failed, trying basic video...', err2);
           stream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: false
@@ -76,24 +69,27 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
       }
 
       streamRef.current = stream;
-
-      // Attach stream to video preview immediately
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.setAttribute('playsinline', 'true');
-        videoRef.current.setAttribute('webkit-playsinline', 'true');
-        videoRef.current.muted = true;
-        try {
-          await videoRef.current.play();
-        } catch (e) {
-          console.warn('Video auto-play warning:', e);
-        }
-      }
-
       setIsStreaming(true);
+
+      // Attach stream to video preview element
+      setTimeout(() => {
+        if (videoRef.current && streamRef.current) {
+          const video = videoRef.current;
+          video.srcObject = streamRef.current;
+          video.muted = true;
+          video.playsInline = true;
+          video.setAttribute('playsinline', 'true');
+          video.setAttribute('webkit-playsinline', 'true');
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(e => console.warn('Preview play warning:', e));
+          }
+        }
+      }, 100);
+
       setStatusMessage('Connecting live cloud broadcast...');
 
-      // 2. Initialize PeerJS as Broadcaster
+      // 2. Initialize Broadcaster Peer
       const broadcasterPeerId = `kallikalam_live_${matchId}_broadcaster`;
 
       if (peerRef.current) {
@@ -106,7 +102,8 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' }
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
           ]
         }
       });
@@ -122,7 +119,8 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
             matchId: String(matchId),
             is_active: true,
             broadcaster_peer_id: id,
-            started_at: serverTimestamp()
+            started_at: serverTimestamp(),
+            updated_at: serverTimestamp()
           }), { merge: true });
 
           await updateDoc(doc(db, 'matches', String(matchId)), {
@@ -134,21 +132,43 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         }
       });
 
-      // Handle incoming viewer calls
+      // 3. Handle spectator join requests via data connection -> Broadcaster calls Spectator with real stream!
+      peer.on('connection', (conn) => {
+        conn.on('data', (data) => {
+          if (data && data.type === 'JOIN_STREAM' && data.viewerId && streamRef.current) {
+            // Call the spectator with our live camera stream
+            const call = peer.call(data.viewerId, streamRef.current);
+            if (call) {
+              viewersRef.current.set(data.viewerId, call);
+              setViewerCount(viewersRef.current.size);
+
+              call.on('close', () => {
+                viewersRef.current.delete(data.viewerId);
+                setViewerCount(viewersRef.current.size);
+              });
+              call.on('error', () => {
+                viewersRef.current.delete(data.viewerId);
+                setViewerCount(viewersRef.current.size);
+              });
+            }
+          }
+        });
+      });
+
+      // Also handle incoming calls if viewer calls directly
       peer.on('call', (call) => {
         if (streamRef.current) {
           call.answer(streamRef.current);
-          activeCallsRef.current.add(call);
-          setViewerCount(activeCallsRef.current.size);
+          viewersRef.current.set(call.peer, call);
+          setViewerCount(viewersRef.current.size);
 
           call.on('close', () => {
-            activeCallsRef.current.delete(call);
-            setViewerCount(activeCallsRef.current.size);
+            viewersRef.current.delete(call.peer);
+            setViewerCount(viewersRef.current.size);
           });
-
           call.on('error', () => {
-            activeCallsRef.current.delete(call);
-            setViewerCount(activeCallsRef.current.size);
+            viewersRef.current.delete(call.peer);
+            setViewerCount(viewersRef.current.size);
           });
         }
       });
@@ -162,7 +182,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
 
     } catch (err) {
       console.error('Camera access error:', err);
-      const msg = 'Camera Error: ' + (err.name || '') + ' - ' + err.message + '. Please allow Camera & Microphone permissions in your phone browser settings.';
+      const msg = 'Camera Error: ' + (err.name || '') + ' - ' + err.message + '. Please allow Camera & Microphone permissions in your phone browser.';
       setErrorMessage(msg);
       setStatusMessage('');
       setIsStreaming(false);
@@ -189,10 +209,10 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     }
 
     // Close all viewer calls
-    activeCallsRef.current.forEach(call => {
+    viewersRef.current.forEach(call => {
       try { call.close(); } catch (e) {}
     });
-    activeCallsRef.current.clear();
+    viewersRef.current.clear();
 
     // Destroy Peer
     if (peerRef.current) {
@@ -286,13 +306,13 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         )}
       </div>
 
-      {/* Video Container (Always renders video tag so ref is never null) */}
+      {/* Video Container */}
       <div style={{
         position: 'relative',
         width: '100%',
         maxHeight: '420px',
         height: isStreaming ? '56.25vw' : 'auto',
-        minHeight: isStreaming ? '220px' : 'auto',
+        minHeight: isStreaming ? '240px' : 'auto',
         backgroundColor: '#000000',
         borderRadius: '10px',
         overflow: 'hidden',
@@ -302,21 +322,21 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         alignItems: 'center',
         justifyContent: 'center'
       }}>
-        <video
-          ref={videoRef}
-          playsInline={true}
-          autoPlay={true}
-          muted={true}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            display: isStreaming ? 'block' : 'none'
-          }}
-        />
+        {isStreaming ? (
+          <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <video
+              ref={videoRef}
+              playsInline={true}
+              autoPlay={true}
+              muted={true}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block'
+              }}
+            />
 
-        {isStreaming && (
-          <>
             {/* HUD Score Overlay on Camera */}
             <div style={{
               position: 'absolute',
@@ -391,22 +411,20 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
                 {isMuted ? <MicOff size={14} /> : <Mic size={14} />} {isMuted ? 'Muted' : 'Mic On'}
               </button>
             </div>
-          </>
-        )}
-
-        {!isStreaming && (
+          </div>
+        ) : (
           <div style={{
             backgroundColor: '#090d16',
-            padding: '24px 16px',
+            padding: '28px 16px',
             textAlign: 'center',
             width: '100%'
           }}>
-            <Camera size={36} color="#64748b" style={{ margin: '0 auto 8px auto', display: 'block' }} />
-            <p style={{ fontSize: '0.9rem', fontWeight: '800', color: '#EAECF0', marginBottom: '4px' }}>
+            <Camera size={40} color="#64748b" style={{ margin: '0 auto 8px auto', display: 'block' }} />
+            <p style={{ fontSize: '0.95rem', fontWeight: '800', color: '#EAECF0', marginBottom: '4px' }}>
               Camera Stream is Currently Offline
             </p>
-            <p style={{ fontSize: '0.78rem', color: '#94a3b8', maxWidth: '420px', margin: '0 auto' }}>
-              Tap the button below to start streaming this live match from your phone's back camera directly to all spectator devices.
+            <p style={{ fontSize: '0.8rem', color: '#94a3b8', maxWidth: '420px', margin: '0 auto' }}>
+              Tap the button below to start streaming this live match from your phone's camera directly to all spectators.
             </p>
           </div>
         )}
@@ -473,3 +491,5 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     </div>
   );
 };
+
+export default LiveStreamBroadcaster;

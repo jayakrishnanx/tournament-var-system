@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Peer from 'peerjs';
-import { Volume2, VolumeX, Maximize2, Radio, Play, AlertCircle, RefreshCw } from 'lucide-react';
+import { Volume2, VolumeX, Maximize2, Radio, RefreshCw, Eye } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
@@ -9,49 +9,45 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
   const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [connectionStatus, setConnectionStatus] = useState('');
   
   const videoRef = useRef(null);
   const peerRef = useRef(null);
-  const callRef = useRef(null);
-  const retryTimerRef = useRef(null);
-
-  const remoteStreamRef = useRef(null);
+  const activeStreamRef = useRef(null);
+  const retryIntervalRef = useRef(null);
 
   useEffect(() => {
-    // Listen to Firestore for live stream status
+    // Listen to Firestore live stream document
     const unsub = onSnapshot(doc(db, 'live_streams', String(matchId)), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (data.is_active) {
           setIsLive(true);
           const broadcasterId = data.broadcaster_peer_id || `kallikalam_live_${matchId}_broadcaster`;
-          connectToLiveStream(broadcasterId);
+          initViewerConnection(broadcasterId);
         } else {
           setIsLive(false);
           setHasRemoteVideo(false);
-          cleanupCall();
+          cleanupViewer();
         }
       } else {
         setIsLive(false);
         setHasRemoteVideo(false);
-        cleanupCall();
+        cleanupViewer();
       }
-    }, () => {
-      connectToLiveStream(`kallikalam_live_${matchId}_broadcaster`);
+    }, (err) => {
+      console.warn('Firestore live_streams snapshot notice:', err);
+      initViewerConnection(`kallikalam_live_${matchId}_broadcaster`);
     });
 
     return () => {
       unsub();
-      cleanupCall();
-      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+      cleanupViewer();
+      if (retryIntervalRef.current) clearInterval(retryIntervalRef.current);
     };
   }, [matchId]);
 
-  const cleanupCall = () => {
-    if (callRef.current) {
-      try { callRef.current.close(); } catch (e) {}
-      callRef.current = null;
-    }
+  const cleanupViewer = () => {
     if (peerRef.current) {
       try { peerRef.current.destroy(); } catch (e) {}
       peerRef.current = null;
@@ -59,78 +55,104 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    remoteStreamRef.current = null;
+    activeStreamRef.current = null;
     setIsConnecting(false);
   };
 
-  const connectToLiveStream = (broadcasterId) => {
-    if (isConnecting || (callRef.current && hasRemoteVideo)) return;
+  const attachStreamToVideo = (stream) => {
+    activeStreamRef.current = stream;
+    setHasRemoteVideo(true);
+    setIsLive(true);
+    setIsConnecting(false);
+    setConnectionStatus('');
+
+    if (videoRef.current) {
+      const video = videoRef.current;
+      video.srcObject = stream;
+      video.muted = isMuted;
+      video.playsInline = true;
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('webkit-playsinline', 'true');
+      
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Retry playback on user interaction
+          video.muted = true;
+          video.play().catch(e => console.warn('Playback error:', e));
+        });
+      }
+    }
+  };
+
+  const initViewerConnection = (broadcasterId) => {
+    if (isConnecting && peerRef.current) return;
     setIsConnecting(true);
+    setConnectionStatus('Connecting to live camera broadcast...');
 
     try {
-      const viewerId = `viewer_${Math.random().toString(36).substr(2, 9)}_${Date.now()}`;
+      const viewerId = `kallikalam_viewer_${Math.random().toString(36).substr(2, 9)}_${Date.now()}`;
       const peer = new Peer(viewerId, {
         debug: 1,
         config: {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' }
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
           ]
         }
       });
 
       peerRef.current = peer;
 
-      peer.on('open', () => {
-        // Create canvas media stream to establish bidirectional WebRTC
-        const canvas = document.createElement('canvas');
-        canvas.width = 2;
-        canvas.height = 2;
-        const dummyStream = canvas.captureStream(1);
+      peer.on('open', (id) => {
+        // 1. Join broadcaster via data channel so broadcaster calls us with real camera stream
+        const conn = peer.connect(broadcasterId, { reliable: true });
+        
+        conn.on('open', () => {
+          conn.send({ type: 'JOIN_STREAM', viewerId: id });
+        });
 
-        const call = peer.call(broadcasterId, dummyStream);
-        callRef.current = call;
+        // 2. Listen for incoming call from Broadcaster with real stream
+        peer.on('call', (call) => {
+          call.answer(); // Answer incoming stream
+          call.on('stream', (remoteStream) => {
+            attachStreamToVideo(remoteStream);
+          });
+          call.on('close', () => {
+            setHasRemoteVideo(false);
+          });
+        });
 
-        call.on('stream', (remoteStream) => {
-          remoteStreamRef.current = remoteStream;
-          setHasRemoteVideo(true);
-          setIsLive(true);
-          setIsConnecting(false);
-
-          if (videoRef.current) {
-            videoRef.current.srcObject = remoteStream;
-            videoRef.current.setAttribute('playsinline', 'true');
-            videoRef.current.setAttribute('webkit-playsinline', 'true');
-            videoRef.current.muted = isMuted;
-            videoRef.current.play().catch(() => {});
+        // 3. Fallback: Also try calling broadcaster directly if broadcaster call takes longer than 2.5s
+        setTimeout(() => {
+          if (!activeStreamRef.current && peer && !peer.destroyed) {
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = 2;
+              canvas.height = 2;
+              const dummyStream = canvas.captureStream ? canvas.captureStream(1) : null;
+              if (dummyStream) {
+                const directCall = peer.call(broadcasterId, dummyStream);
+                if (directCall) {
+                  directCall.on('stream', (remoteStream) => {
+                    attachStreamToVideo(remoteStream);
+                  });
+                }
+              }
+            } catch (e) {}
           }
-        });
-
-        call.on('close', () => {
-          setHasRemoteVideo(false);
-          setIsConnecting(false);
-        });
-
-        call.on('error', (err) => {
-          console.warn('Viewer call error:', err);
-          setHasRemoteVideo(false);
-          setIsConnecting(false);
-        });
+        }, 2500);
       });
 
       peer.on('error', (err) => {
-        console.warn('Viewer peer error:', err);
+        console.warn('Viewer Peer warning:', err);
         setIsConnecting(false);
-        // Retry connection in 3 seconds if broadcaster is still active
-        if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-        retryTimerRef.current = setTimeout(() => {
-          connectToLiveStream(broadcasterId);
-        }, 3500);
       });
 
     } catch (e) {
-      console.warn('Error initiating stream connection:', e);
+      console.warn('Error starting viewer connection:', e);
       setIsConnecting(false);
     }
   };
@@ -163,20 +185,20 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
       backgroundColor: '#000000',
       position: 'relative'
     }}>
-      {/* Video Stream / Standby Container */}
+      {/* Video Container */}
       <div style={{
         position: 'relative',
         width: '100%',
         height: '56.25vw',
         maxHeight: '480px',
-        minHeight: '220px',
+        minHeight: '240px',
         backgroundColor: '#070a10',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden'
       }}>
-        {/* Always in DOM for clean stream binding */}
+        {/* Real Video Element (rendered in DOM) */}
         <video
           ref={videoRef}
           playsInline={true}
@@ -190,10 +212,11 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
           }}
         />
 
+        {/* Offline / Connecting Standby Display */}
         {!hasRemoteVideo && (
           <div style={{
             textAlign: 'center',
-            padding: '24px 16px',
+            padding: '28px 16px',
             color: '#94a3b8',
             display: 'flex',
             flexDirection: 'column',
@@ -217,20 +240,20 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
             <h3 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#f8fafc', marginBottom: '6px' }}>
               {isLive ? '📡 Connecting to Live Field Camera...' : 'Live Match Stream Offline'}
             </h3>
-            <p style={{ fontSize: '0.8rem', color: '#64748b', maxWidth: '380px' }}>
+            <p style={{ fontSize: '0.82rem', color: '#64748b', maxWidth: '380px', margin: 0 }}>
               {isLive
-                ? 'Receiving live video feed from the field camera. Connecting now...'
+                ? 'Field camera is online. Connecting live peer video feed...'
                 : 'The video stream will automatically connect and play here once the field camera goes live!'}
             </p>
             {isConnecting && (
-              <span style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: '700', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: '700', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <RefreshCw size={12} className="animate-spin" /> Connecting live peer network...
               </span>
             )}
           </div>
         )}
 
-        {/* Top HUD Overlay */}
+        {/* Top HUD Overlay (Always Visible) */}
         <div style={{
           position: 'absolute',
           top: '10px',
@@ -271,7 +294,7 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
           </div>
         </div>
 
-        {/* Bottom Stream Player Controls */}
+        {/* Bottom Controls Overlay */}
         {hasRemoteVideo && (
           <div style={{
             position: 'absolute',
