@@ -105,7 +105,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
       peer.on('open', async (id) => {
         setStatusMessage('🔴 Live Stream Active!');
 
-        // Update Firestore live stream document
+        // Update Firestore live stream document & match status
         try {
           await setDoc(doc(db, 'live_streams', String(matchId)), cleanData({
             matchId: String(matchId),
@@ -113,6 +113,11 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
             broadcaster_peer_id: id,
             started_at: serverTimestamp()
           }), { merge: true });
+
+          await updateDoc(doc(db, 'matches', String(matchId)), {
+            status: 'LIVE',
+            is_live_streaming: true
+          });
         } catch (e) {
           console.warn('Firestore live stream record error:', e);
         }

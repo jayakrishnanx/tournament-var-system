@@ -5,6 +5,8 @@ import { StatusBadge } from '../components/StatusBadge';
 import { Activity, PlusCircle, Award, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+import { subscribeMatches, subscribeTournaments } from '../services/firebaseService';
+
 export const Dashboard = () => {
   const [matches, setMatches] = useState([]);
   const [tournaments, setTournaments] = useState([]);
@@ -54,20 +56,28 @@ export const Dashboard = () => {
     }
   };
 
-  const fetchData = async () => {
-    await Promise.all([fetchStaticData(), fetchLiveData()]);
-  };
-
   useEffect(() => {
     fetchStaticData();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedTournament) return;
     fetchLiveData();
-    const interval = setInterval(fetchLiveData, 8000);
-    return () => clearInterval(interval);
-  }, [selectedTournament]);
+
+    // Active real-time listeners
+    const unsubMatches = subscribeMatches(null, (liveMatches) => {
+      if (liveMatches && liveMatches.length > 0) {
+        setMatches(liveMatches);
+      }
+    });
+
+    const unsubTourns = subscribeTournaments((liveTourns) => {
+      if (liveTourns && liveTourns.length > 0) {
+        setTournaments(liveTourns);
+      }
+    });
+
+    return () => {
+      unsubMatches();
+      unsubTourns();
+    };
+  }, []);
 
   const handleScheduleMatch = async (e) => {
     e.preventDefault();
@@ -255,35 +265,35 @@ export const Dashboard = () => {
       {/* 1.5 ACTIVE LIVE MATCH HIGHLIGHT CARD FOR SPECTATORS */}
       {liveMatch && (
         <div className="glass-panel" style={{
-          padding: '16px 20px',
+          padding: '18px 20px',
           marginBottom: '20px',
-          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), #1D2128)',
-          border: '1px solid rgba(239, 68, 68, 0.4)',
-          borderLeft: '4px solid #ef4444',
-          boxShadow: '0 0 15px rgba(239, 68, 68, 0.15)',
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.22), #151a23)',
+          border: '2px solid #ef4444',
+          borderRadius: '12px',
+          boxShadow: '0 0 20px rgba(239, 68, 68, 0.3)',
           animation: 'pulseLiveBorder 2s infinite'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444', display: 'inline-block', animation: 'blinkLive 1.1s infinite' }}></span>
-              🔴 MATCH IS LIVE NOW
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: '900', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444', display: 'inline-block', animation: 'blinkLive 1.1s infinite' }}></span>
+              🔴 LIVE CAMERA STREAM & MATCH SCOREBOARD
             </span>
-            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#9aa4b2' }}>
-              Match #{liveMatch.match_number}
+            <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#9aa4b2', backgroundColor: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '4px' }}>
+              Match #{liveMatch.match_number || 'Live'}
             </span>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <div style={{ fontSize: '1.2rem', fontWeight: '900', color: '#EAECF0', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#EAECF0', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
               <span>{liveMatch.home_team_details?.name}</span>
               <span style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                padding: '4px 10px',
+                backgroundColor: '#ef4444',
+                padding: '4px 12px',
                 borderRadius: '6px',
-                color: '#ef4444',
-                fontSize: '1.1rem',
+                color: '#ffffff',
+                fontSize: '1.2rem',
                 fontWeight: '900',
-                border: '1px solid rgba(239, 68, 68, 0.4)',
+                boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)',
                 display: 'inline-block'
               }}>
                 {liveMatch.home_score} - {liveMatch.away_score}
@@ -295,14 +305,18 @@ export const Dashboard = () => {
               backgroundColor: '#ef4444',
               color: '#ffffff',
               fontWeight: '900',
-              padding: '8px 16px',
-              borderRadius: '6px',
-              fontSize: '0.82rem',
+              padding: '10px 20px',
+              borderRadius: '8px',
+              fontSize: '0.88rem',
               whiteSpace: 'nowrap',
               border: 'none',
-              boxShadow: '0 4px 10px rgba(239, 68, 68, 0.3)'
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)',
+              textDecoration: 'none'
             }}>
-              Watch Live Scoreboard & Cameras
+              ▶️ Watch Live Stream
             </Link>
           </div>
           <style>{`
