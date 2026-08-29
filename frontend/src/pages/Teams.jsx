@@ -14,7 +14,7 @@ export const Teams = () => {
 
   const [teamForm, setTeamForm] = useState({ name: '', code: '', tournament: '' });
   const [editTeamForm, setEditTeamForm] = useState({ id: null, name: '', tournament: '' });
-  const [playerForm, setPlayerForm] = useState({ name: '', jersey_number: 10, position: 'Forward' });
+  const [playerForm, setPlayerForm] = useState({ name: '', jersey_number: '', position: 'Forward' });
   const { user } = useAuth();
 
   const fetchTeams = async () => {
@@ -91,7 +91,16 @@ export const Teams = () => {
       setShowPlayerModal(false);
       fetchTeams();
     } catch (err) {
-      alert('Error adding player: ' + (err.response?.data?.detail || err.message));
+      let errorMsg = err.message;
+      if (err.response?.data) {
+        if (err.response.data.detail) errorMsg = err.response.data.detail;
+        else if (err.response.data.non_field_errors) errorMsg = err.response.data.non_field_errors[0];
+        else if (typeof err.response.data === 'object') {
+            errorMsg = Object.values(err.response.data)[0];
+            if (Array.isArray(errorMsg)) errorMsg = errorMsg[0];
+        }
+      }
+      alert('Error adding player: ' + errorMsg);
     }
   };
 
@@ -304,7 +313,7 @@ export const Teams = () => {
                   type="number"
                   required
                   value={playerForm.jersey_number}
-                  onChange={e => setPlayerForm({ ...playerForm, jersey_number: parseInt(e.target.value) })}
+                  onChange={e => setPlayerForm({ ...playerForm, jersey_number: e.target.value === '' ? '' : parseInt(e.target.value) })}
                   style={{ width: '100%', padding: '8px 12px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white' }}
                 />
               </div>
