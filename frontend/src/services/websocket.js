@@ -1,25 +1,31 @@
-import { subscribeMatch } from './firebaseService';
+import api from './api';
 
 export const connectMatchWebSocket = (matchId, onMessage, onError) => {
-  try {
-    const unsubscribe = subscribeMatch(matchId, (matchData) => {
-      if (matchData) {
+  let isClosed = false;
+
+  const fetchUpdate = async () => {
+    if (isClosed) return;
+    try {
+      const res = await api.get(`/tournaments/matches/${matchId}/`);
+      if (res.data && !isClosed) {
         onMessage({
           type: 'match_update',
-          match: matchData
+          match: res.data
         });
       }
-    });
+    } catch (err) {
+      if (onError && !isClosed) onError(err);
+    }
+  };
 
-    return {
-      close: () => {
-        if (typeof unsubscribe === 'function') {
-          unsubscribe();
-        }
-      }
-    };
-  } catch (err) {
-    if (onError) onError(err);
-    return { close: () => {} };
-  }
+  // Immediate fetch then recurring poll
+  fetchUpdate();
+  const interval = setInterval(fetchUpdate, 2500);
+
+  return {
+    close: () => {
+      isClosed = true;
+      clearInterval(interval);
+    }
+  };
 };
