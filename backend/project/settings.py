@@ -58,10 +58,30 @@ ASGI_APPLICATION = 'project.asgi.application'
 
 AUTH_USER_MODEL = 'authentication.User'
 
-# Database Configuration (PostgreSQL / SQLite fallback)
-USE_POSTGRES = os.getenv('USE_POSTGRES', 'False').lower() == 'true'
+# Database Configuration (PostgreSQL / DATABASE_URL / SQLite fallback)
+DATABASE_URL = os.getenv('DATABASE_URL')
+USE_POSTGRES = os.getenv('USE_POSTGRES', 'False').lower() == 'true' or bool(DATABASE_URL)
 
-if USE_POSTGRES:
+if DATABASE_URL:
+    try:
+        import dj_database_url
+        DATABASES = {
+            'default': dj_database_url.config(
+                default=DATABASE_URL,
+                conn_max_age=600,
+                conn_health_checks=True,
+                ssl_require=True if 'localhost' not in DATABASE_URL and '127.0.0.1' not in DATABASE_URL else False
+            )
+        }
+    except Exception as e:
+        print(f"dj_database_url error: {e}, falling back to manual postgres/sqlite")
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+elif USE_POSTGRES:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -70,6 +90,7 @@ if USE_POSTGRES:
             'PASSWORD': os.getenv('DB_PASSWORD', 'var_password'),
             'HOST': os.getenv('DB_HOST', 'localhost'),
             'PORT': os.getenv('DB_PORT', '5432'),
+            'CONN_MAX_AGE': 600,
         }
     }
 else:
@@ -79,6 +100,7 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
 
 # Django Channels & Redis Configuration
 USE_REDIS = os.getenv('USE_REDIS', 'False').lower() == 'true'
