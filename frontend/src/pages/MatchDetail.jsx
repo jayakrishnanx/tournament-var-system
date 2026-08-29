@@ -8,7 +8,7 @@ import { LiveStreamBroadcaster } from '../components/LiveStreamBroadcaster';
 import { LiveStreamViewer } from '../components/LiveStreamViewer';
 import { LiveStreamEmbedPlayer } from '../components/LiveStreamEmbedPlayer';
 import { AdminStreamManager } from '../components/AdminStreamManager';
-import { calculateMatchElapsed } from '../services/firebaseService';
+import { calculateMatchElapsed, subscribeMatch } from '../services/firebaseService';
 import { ArrowLeft, Radio, Award } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -24,7 +24,9 @@ export const MatchDetail = () => {
   const fetchMatchDetails = async () => {
     try {
       const mRes = await api.get(`/tournaments/matches/${id}/`);
-      setMatch(mRes.data);
+      if (mRes.data) {
+        setMatch(mRes.data);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -35,19 +37,16 @@ export const MatchDetail = () => {
   useEffect(() => {
     fetchMatchDetails();
 
-    const ws = connectMatchWebSocket(
-      id,
-      (data) => {
-        if (data.type === 'match_update') {
-          setMatch(prev => prev ? ({ ...prev, ...data.match }) : data.match);
-        }
+    const unsubMatch = subscribeMatch(id, (liveMatch) => {
+      if (liveMatch) {
+        setMatch(liveMatch);
+        setLoading(false);
         setWsConnected(true);
-      },
-      (err) => setWsConnected(false)
-    );
+      }
+    });
 
     return () => {
-      ws.close();
+      unsubMatch();
     };
   }, [id]);
 
