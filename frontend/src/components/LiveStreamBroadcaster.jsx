@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Radio, Play, Square, ExternalLink, RefreshCw, Volume2, Video } from 'lucide-react';
+import { Camera, Radio, Play, Square, ExternalLink, RefreshCw, Mic, MicOff, ZoomIn, ZoomOut } from 'lucide-react';
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { cleanData } from '../services/firebaseService';
@@ -7,17 +7,21 @@ import { cleanData } from '../services/firebaseService';
 export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [rotationAngle, setRotationAngle] = useState(0); // 0, 90, 180, 270
+  const [zoomLevel, setZoomLevel] = useState(1.0); // 1.0x to 4.0x
+  const [isMicMuted, setIsMicMuted] = useState(false);
   
   const streamRoomId = `kallikalam_match_${matchId}`;
   
-  // Ultra-Low Latency (<100ms), 60 FPS, Instant Connect & Error-Free Stream
+  // Ultra-Low Latency (<100ms), 60 FPS, Zoom, Mute & Rotation Controls
   const rotationParam = rotationAngle > 0 ? `&rotate=${rotationAngle}` : '';
-  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1${rotationParam}&zoom&autostart=1&webcam&audiodevice&bitrate=2500&fps=60&zerolatency=1&buffer=0&fast&noerror&cleanoutput=1`;
+  const muteParam = isMicMuted ? '&mute=1' : '';
+  const zoomParam = zoomLevel > 1.0 ? `&zoom=${zoomLevel}` : '';
+  
+  const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1${rotationParam}${muteParam}${zoomParam}&autostart=1&webcam&audiodevice&bitrate=2500&fps=60&zerolatency=1&buffer=0&fast&noerror&cleanoutput=1`;
 
   const startBroadcast = async () => {
     setIsStreaming(true);
 
-    // Try requesting device landscape orientation lock if supported
     try {
       if (window.screen?.orientation?.lock) {
         window.screen.orientation.lock('landscape').catch(() => {});
@@ -54,8 +58,23 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
   };
 
   const cycleRotation = () => {
-    const next = (rotationAngle + 90) % 360;
-    setRotationAngle(next);
+    setRotationAngle(prev => (prev + 90) % 360);
+  };
+
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(4.0, parseFloat((prev + 0.2).toFixed(1))));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(1.0, parseFloat((prev - 0.2).toFixed(1))));
+  };
+
+  const resetZoom = () => {
+    setZoomLevel(1.0);
+  };
+
+  const toggleMic = () => {
+    setIsMicMuted(prev => !prev);
   };
 
   return (
@@ -73,49 +92,31 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
           <Radio size={22} color={isStreaming ? '#ef4444' : '#10b981'} className={isStreaming ? 'animate-pulse' : ''} />
           <div>
             <h3 style={{ fontSize: '1.05rem', fontWeight: '900', color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {isStreaming ? '🔴 LIVE CAMERA BROADCASTER ACTIVE' : '📹 FIELD CAMERA LIVE BROADCAST'}
+              {isStreaming ? '🔴 LIVE CAMERA BROADCASTER' : '📹 FIELD CAMERA LIVE BROADCAST'}
               <span style={{ fontSize: '0.65rem', backgroundColor: '#10b981', color: '#000000', padding: '2px 8px', borderRadius: '4px', fontWeight: '900' }}>
-                LANDSCAPE 16:9
+                CAMERA CONTROLS
               </span>
             </h3>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-              Broadcast directly from your phone back camera — all spectators watch inside the scoreboard!
+              Hold your phone in landscape mode to film the match. Use controls below to zoom, rotate, or mute!
             </span>
           </div>
         </div>
 
         {isStreaming && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button
-              onClick={cycleRotation}
-              className="btn-secondary"
-              style={{
-                padding: '5px 10px',
-                fontSize: '0.75rem',
-                fontWeight: '800',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                backgroundColor: '#1e293b'
-              }}
-              title="Click if video is sideways"
-            >
-              <RefreshCw size={12} /> Rotate ({rotationAngle}°)
-            </button>
-            <span style={{
-              backgroundColor: '#ef4444',
-              color: '#ffffff',
-              fontSize: '0.75rem',
-              fontWeight: '900',
-              padding: '4px 12px',
-              borderRadius: '9999px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}>
-              ● BROADCASTING LIVE
-            </span>
-          </div>
+          <span style={{
+            backgroundColor: '#ef4444',
+            color: '#ffffff',
+            fontSize: '0.75rem',
+            fontWeight: '900',
+            padding: '4px 12px',
+            borderRadius: '9999px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}>
+            ● BROADCASTING LIVE
+          </span>
         )}
       </div>
 
@@ -137,7 +138,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
       }}>
         {isStreaming ? (
           <iframe
-            key={`broadcast-${rotationAngle}`}
+            key={`broadcast-${rotationAngle}-${isMicMuted}-${zoomLevel}`}
             src={broadcastUrl}
             title="Field Camera Broadcast"
             allow="camera; microphone; display-capture; autoplay"
@@ -165,6 +166,112 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
           </div>
         )}
       </div>
+
+      {/* 🎛️ Live Broadcaster Control Bar (Zoom, Mic, Rotate) */}
+      {isStreaming && (
+        <div style={{
+          backgroundColor: '#161c28',
+          border: '1px solid #334155',
+          borderRadius: '10px',
+          padding: '12px 14px',
+          marginBottom: '14px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            🎛️ Live Camera & Audio Controls
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            {/* Zoom Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#cbd5e1' }}>Zoom:</span>
+              <button
+                onClick={handleZoomOut}
+                disabled={zoomLevel <= 1.0}
+                className="btn-secondary"
+                style={{ padding: '6px 10px', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
+                title="Zoom Out"
+              >
+                <ZoomOut size={14} /> -
+              </button>
+              <span style={{ fontSize: '0.85rem', fontWeight: '900', color: '#38bdf8', minWidth: '40px', textAlign: 'center' }}>
+                {zoomLevel.toFixed(1)}x
+              </span>
+              <button
+                onClick={handleZoomIn}
+                disabled={zoomLevel >= 4.0}
+                className="btn-secondary"
+                style={{ padding: '6px 10px', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
+                title="Zoom In"
+              >
+                <ZoomIn size={14} /> +
+              </button>
+              {zoomLevel > 1.0 && (
+                <button
+                  onClick={resetZoom}
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    color: '#94a3b8',
+                    border: '1px solid #475569',
+                    borderRadius: '6px',
+                    padding: '6px 8px',
+                    fontSize: '0.72rem',
+                    fontWeight: '700',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Reset (1.0x)
+                </button>
+              )}
+            </div>
+
+            {/* Mic Toggle & Rotation */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {/* Mic On/Off */}
+              <button
+                onClick={toggleMic}
+                style={{
+                  backgroundColor: isMicMuted ? '#ef4444' : '#10b981',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '7px 14px',
+                  fontSize: '0.78rem',
+                  fontWeight: '900',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  boxShadow: isMicMuted ? '0 2px 8px rgba(239, 68, 68, 0.3)' : '0 2px 8px rgba(16, 185, 129, 0.3)'
+                }}
+              >
+                {isMicMuted ? <MicOff size={14} /> : <Mic size={14} />}
+                {isMicMuted ? '🔇 Mic OFF (Muted)' : '🎙️ Mic ON (Active)'}
+              </button>
+
+              {/* Rotate */}
+              <button
+                onClick={cycleRotation}
+                className="btn-secondary"
+                style={{
+                  padding: '7px 12px',
+                  fontSize: '0.78rem',
+                  fontWeight: '800',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  backgroundColor: '#1e293b'
+                }}
+                title="Rotate 90 degrees"
+              >
+                <RefreshCw size={14} /> Rotate ({rotationAngle}°)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Broadcaster Actions */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
@@ -215,25 +322,6 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
             >
               <ExternalLink size={16} /> 📱 Open Fullscreen Camera Studio
             </a>
-            <button
-              onClick={cycleRotation}
-              style={{
-                backgroundColor: '#1e293b',
-                color: '#f8fafc',
-                fontWeight: '800',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                fontSize: '0.88rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                border: '1px solid #475569',
-                cursor: 'pointer'
-              }}
-            >
-              <RefreshCw size={14} /> Rotate ({rotationAngle}°)
-            </button>
             <button
               onClick={stopBroadcast}
               style={{
