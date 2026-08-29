@@ -1,8 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Peer from 'peerjs';
-import { Volume2, VolumeX, Maximize2, Radio, RefreshCw, Eye } from 'lucide-react';
+import { Volume2, VolumeX, Maximize2, Radio, RefreshCw } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase';
+
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun.relay.metered.ca:80' },
+  {
+    urls: 'turn:openrelay.metered.ca:80',
+    username: 'openrelay',
+    credential: 'openrelay'
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443',
+    username: 'openrelay',
+    credential: 'openrelay'
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+    username: 'openrelay',
+    credential: 'openrelay'
+  }
+];
 
 export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayScore, clockTime, matchStatus }) => {
   const [isLive, setIsLive] = useState(false);
@@ -14,7 +36,6 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
   const videoRef = useRef(null);
   const peerRef = useRef(null);
   const activeStreamRef = useRef(null);
-  const retryIntervalRef = useRef(null);
 
   useEffect(() => {
     // Listen to Firestore live stream document
@@ -36,14 +57,13 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
         cleanupViewer();
       }
     }, (err) => {
-      console.warn('Firestore live_streams snapshot notice:', err);
+      console.warn('Firestore live_streams snapshot error:', err);
       initViewerConnection(`kallikalam_live_${matchId}_broadcaster`);
     });
 
     return () => {
       unsub();
       cleanupViewer();
-      if (retryIntervalRef.current) clearInterval(retryIntervalRef.current);
     };
   }, [matchId]);
 
@@ -77,7 +97,6 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
       const playPromise = video.play();
       if (playPromise !== undefined) {
         playPromise.catch(() => {
-          // Retry playback on user interaction
           video.muted = true;
           video.play().catch(e => console.warn('Playback error:', e));
         });
@@ -88,26 +107,21 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
   const initViewerConnection = (broadcasterId) => {
     if (isConnecting && peerRef.current) return;
     setIsConnecting(true);
-    setConnectionStatus('Connecting to live camera broadcast...');
+    setConnectionStatus('Connecting to live camera broadcast via relay...');
 
     try {
       const viewerId = `kallikalam_viewer_${Math.random().toString(36).substr(2, 9)}_${Date.now()}`;
       const peer = new Peer(viewerId, {
         debug: 1,
         config: {
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:global.stun.twilio.com:3478' }
-          ]
+          iceServers: ICE_SERVERS
         }
       });
 
       peerRef.current = peer;
 
       peer.on('open', (id) => {
-        // 1. Join broadcaster via data channel so broadcaster calls us with real camera stream
+        // 1. Join broadcaster via data channel so broadcaster calls spectator directly
         const conn = peer.connect(broadcasterId, { reliable: true });
         
         conn.on('open', () => {
@@ -116,7 +130,7 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
 
         // 2. Listen for incoming call from Broadcaster with real stream
         peer.on('call', (call) => {
-          call.answer(); // Answer incoming stream
+          call.answer();
           call.on('stream', (remoteStream) => {
             attachStreamToVideo(remoteStream);
           });
@@ -125,7 +139,7 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
           });
         });
 
-        // 3. Fallback: Also try calling broadcaster directly if broadcaster call takes longer than 2.5s
+        // 3. Fallback: Also try calling broadcaster directly
         setTimeout(() => {
           if (!activeStreamRef.current && peer && !peer.destroyed) {
             try {
@@ -143,11 +157,11 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
               }
             } catch (e) {}
           }
-        }, 2500);
+        }, 2000);
       });
 
       peer.on('error', (err) => {
-        console.warn('Viewer Peer warning:', err);
+        console.warn('Viewer Peer notice:', err);
         setIsConnecting(false);
       });
 
@@ -258,12 +272,12 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
             </h3>
             <p style={{ fontSize: '0.82rem', color: '#64748b', maxWidth: '380px', margin: 0 }}>
               {isLive
-                ? 'Field camera is online. Connecting live peer video feed...'
+                ? 'Field camera is broadcasting. Establishing peer relay video feed...'
                 : 'The video stream will automatically connect and play here once the field camera goes live!'}
             </p>
             {isConnecting && (
               <span style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: '700', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <RefreshCw size={12} className="animate-spin" /> Connecting live peer network...
+                <RefreshCw size={12} className="animate-spin" /> Connecting cloud relay network...
               </span>
             )}
           </div>
@@ -330,8 +344,7 @@ export const LiveStreamViewer = ({ matchId, homeTeam, awayTeam, homeScore, awayS
               alignItems: 'center',
               gap: '6px',
               zIndex: 25,
-              boxShadow: '0 4px 14px rgba(239, 68, 68, 0.5)',
-              animation: 'pulseLiveBorder 2s infinite'
+              boxShadow: '0 4px 14px rgba(239, 68, 68, 0.5)'
             }}
           >
             <Volume2 size={16} /> 🔊 Tap to Unmute Audio

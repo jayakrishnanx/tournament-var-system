@@ -4,6 +4,8 @@ import api from '../services/api';
 import { connectMatchWebSocket } from '../services/websocket';
 import { StatusBadge } from '../components/StatusBadge';
 import { ScorerConsole } from '../components/ScorerConsole';
+import { LiveStreamBroadcaster } from '../components/LiveStreamBroadcaster';
+import { LiveStreamViewer } from '../components/LiveStreamViewer';
 import { LiveStreamEmbedPlayer } from '../components/LiveStreamEmbedPlayer';
 import { AdminStreamManager } from '../components/AdminStreamManager';
 import { calculateMatchElapsed } from '../services/firebaseService';
@@ -106,21 +108,40 @@ export const MatchDetail = () => {
         </div>
       </div>
 
-      {/* 1. ADMIN STREAM BROADCAST LINK MANAGER */}
+      {/* 1. ADMIN LIVE BROADCASTER (CAMERA STREAM) */}
       {isAdmin && (
-        <AdminStreamManager match={match} onUpdate={handleMatchUpdate} />
+        <LiveStreamBroadcaster
+          matchId={id}
+          homeTeam={match.home_team_details?.name}
+          awayTeam={match.away_team_details?.name}
+          score={`${match.home_score} - ${match.away_score}`}
+        />
       )}
 
-      {/* 2. LIVE STREAM VIDEO PLAYER (YOUTUBE / TWITCH LIVE) */}
-      <LiveStreamEmbedPlayer
-        streamUrl={match.stream_url}
-        homeTeam={match.home_team_details?.name}
-        awayTeam={match.away_team_details?.name}
-        homeScore={match.home_score}
-        awayScore={match.away_score}
-        clockTime={clockFormatted}
-        matchStatus={match.status}
-      />
+      {/* 2. SPECTATOR LIVE STREAM VIEWER */}
+      {!isAdmin && (
+        match.stream_url ? (
+          <LiveStreamEmbedPlayer
+            streamUrl={match.stream_url}
+            homeTeam={match.home_team_details?.name}
+            awayTeam={match.away_team_details?.name}
+            homeScore={match.home_score}
+            awayScore={match.away_score}
+            clockTime={clockFormatted}
+            matchStatus={match.status}
+          />
+        ) : (
+          <LiveStreamViewer
+            matchId={id}
+            homeTeam={match.home_team_details?.name}
+            awayTeam={match.away_team_details?.name}
+            homeScore={match.home_score}
+            awayScore={match.away_score}
+            clockTime={clockFormatted}
+            matchStatus={match.status}
+          />
+        )
+      )}
 
       {/* 3. Main Scoreboard Header */}
       <div className="glass-panel" style={{
@@ -180,6 +201,9 @@ export const MatchDetail = () => {
       {isAdmin ? (
         <div style={{ marginBottom: '24px' }}>
           <ScorerConsole match={match} onUpdate={handleMatchUpdate} />
+          <div style={{ marginTop: '20px' }}>
+            <AdminStreamManager match={match} onUpdate={handleMatchUpdate} />
+          </div>
         </div>
       ) : (
         <div className="glass-panel" style={{ padding: '20px' }}>

@@ -1,9 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Peer from 'peerjs';
-import { Camera, RefreshCw, Mic, MicOff, Radio, Users, Play, Square, AlertCircle } from 'lucide-react';
+import { Camera, RefreshCw, Mic, MicOff, Radio, Users, Play, Square, AlertCircle, Sparkles } from 'lucide-react';
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { cleanData } from '../services/firebaseService';
+
+// Global STUN & TURN Relay servers (Bypasses all mobile 4G/5G carrier firewalls)
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun.relay.metered.ca:80' },
+  {
+    urls: 'turn:openrelay.metered.ca:80',
+    username: 'openrelay',
+    credential: 'openrelay'
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443',
+    username: 'openrelay',
+    credential: 'openrelay'
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+    username: 'openrelay',
+    credential: 'openrelay'
+  }
+];
 
 export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) => {
   const [isStreaming, setIsStreaming] = useState(false);
@@ -27,7 +50,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
 
   const startStreaming = async () => {
     setErrorMessage('');
-    setStatusMessage('Accessing phone camera...');
+    setStatusMessage('Accessing phone camera & microphone...');
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       const err = 'Camera API is not supported on this browser. Please ensure you are on HTTPS.';
@@ -37,7 +60,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     }
 
     try {
-      // 1. Get user media with robust audio constraints
+      // 1. Get user media with fallback for mobile devices
       let stream = null;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -80,7 +103,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
       streamRef.current = stream;
       setIsStreaming(true);
 
-      // Attach stream to video preview element
+      // Attach stream to video preview element immediately
       setTimeout(() => {
         if (videoRef.current && streamRef.current) {
           const video = videoRef.current;
@@ -96,9 +119,9 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         }
       }, 100);
 
-      setStatusMessage('Connecting live cloud broadcast...');
+      setStatusMessage('Connecting global cloud relay network...');
 
-      // 2. Initialize Broadcaster Peer
+      // 2. Initialize Broadcaster Peer with Global TURN Relay
       const broadcasterPeerId = `kallikalam_live_${matchId}_broadcaster`;
 
       if (peerRef.current) {
@@ -108,19 +131,14 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
       const peer = new Peer(broadcasterPeerId, {
         debug: 1,
         config: {
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:global.stun.twilio.com:3478' }
-          ]
+          iceServers: ICE_SERVERS
         }
       });
 
       peerRef.current = peer;
 
       peer.on('open', async (id) => {
-        setStatusMessage('🔴 Live Stream Active!');
+        setStatusMessage('🔴 Live Stream Broadcasting to All Spectators!');
 
         // Update Firestore live stream document & match status
         try {
@@ -141,11 +159,10 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         }
       });
 
-      // 3. Handle spectator join requests via data connection -> Broadcaster calls Spectator with real stream!
+      // 3. Handle spectator join requests -> Broadcaster calls Spectator with live camera stream
       peer.on('connection', (conn) => {
         conn.on('data', (data) => {
           if (data && data.type === 'JOIN_STREAM' && data.viewerId && streamRef.current) {
-            // Call the spectator with our live camera stream
             const call = peer.call(data.viewerId, streamRef.current);
             if (call) {
               viewersRef.current.set(data.viewerId, call);
@@ -164,7 +181,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         });
       });
 
-      // Also handle incoming calls if viewer calls directly
+      // Also handle direct calls
       peer.on('call', (call) => {
         if (streamRef.current) {
           call.answer(streamRef.current);
@@ -191,7 +208,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
 
     } catch (err) {
       console.error('Camera access error:', err);
-      const msg = 'Camera Error: ' + (err.name || '') + ' - ' + err.message + '. Please allow Camera & Microphone permissions in your phone browser.';
+      const msg = 'Camera Error: ' + (err.name || '') + ' - ' + err.message + '. Please allow Camera & Microphone permissions in your phone browser settings.';
       setErrorMessage(msg);
       setStatusMessage('');
       setIsStreaming(false);
@@ -274,11 +291,14 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Radio size={20} color={isStreaming ? '#ef4444' : '#10b981'} className={isStreaming ? 'animate-pulse' : ''} />
           <div>
-            <h3 style={{ fontSize: '1rem', fontWeight: '900', color: '#f8fafc', margin: 0 }}>
-              {isStreaming ? '🔴 LIVE CAMERA BROADCASTER' : '📹 LIVE MATCH CAMERA STREAM'}
+            <h3 style={{ fontSize: '1rem', fontWeight: '900', color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {isStreaming ? '🔴 IN-BROWSER LIVE BROADCASTER' : '📹 LIVE CAMERA STREAM'}
+              <span style={{ fontSize: '0.65rem', backgroundColor: '#10b981', color: '#000', padding: '1px 6px', borderRadius: '4px', fontWeight: '900' }}>
+                ZERO APPS / NO SUBSCRIBERS NEEDED
+              </span>
             </h3>
             <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-              Stream directly from your phone camera to all spectators — no extra app needed!
+              Stream directly from your phone camera over cloud relay to all spectator devices!
             </span>
           </div>
         </div>
@@ -430,10 +450,10 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
           }}>
             <Camera size={40} color="#64748b" style={{ margin: '0 auto 8px auto', display: 'block' }} />
             <p style={{ fontSize: '0.95rem', fontWeight: '800', color: '#EAECF0', marginBottom: '4px' }}>
-              Camera Stream is Currently Offline
+              Direct In-Browser Camera Ready
             </p>
             <p style={{ fontSize: '0.8rem', color: '#94a3b8', maxWidth: '420px', margin: '0 auto' }}>
-              Tap the button below to start streaming this live match from your phone's camera directly to all spectators.
+              Tap the button below to start streaming your phone camera directly to all spectator devices with zero accounts or subscribers needed.
             </p>
           </div>
         )}

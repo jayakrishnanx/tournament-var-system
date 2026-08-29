@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import { connectMatchWebSocket } from '../services/websocket';
 import { StatusBadge } from '../components/StatusBadge';
+import { LiveStreamViewer } from '../components/LiveStreamViewer';
 import { LiveStreamEmbedPlayer } from '../components/LiveStreamEmbedPlayer';
 import { calculateMatchElapsed } from '../services/firebaseService';
 import { Radio, ArrowLeft, Award } from 'lucide-react';
@@ -72,16 +73,28 @@ export const PublicScoreboard = () => {
         </div>
       </div>
 
-      {/* Live Stream Video Player (YouTube / Twitch) */}
-      <LiveStreamEmbedPlayer
-        streamUrl={match.stream_url}
-        homeTeam={match.home_team_details?.name}
-        awayTeam={match.away_team_details?.name}
-        homeScore={match.home_score}
-        awayScore={match.away_score}
-        clockTime={clockFormatted}
-        matchStatus={match.status}
-      />
+      {/* Live Stream Video Player (In-Browser Camera Stream or Embedded Stream) */}
+      {match.stream_url ? (
+        <LiveStreamEmbedPlayer
+          streamUrl={match.stream_url}
+          homeTeam={match.home_team_details?.name}
+          awayTeam={match.away_team_details?.name}
+          homeScore={match.home_score}
+          awayScore={match.away_score}
+          clockTime={clockFormatted}
+          matchStatus={match.status}
+        />
+      ) : (
+        <LiveStreamViewer
+          matchId={id}
+          homeTeam={match.home_team_details?.name}
+          awayTeam={match.away_team_details?.name}
+          homeScore={match.home_score}
+          awayScore={match.away_score}
+          clockTime={clockFormatted}
+          matchStatus={match.status}
+        />
+      )}
 
       {/* Main Public Stadium Board */}
       <div className="glass-panel" style={{
