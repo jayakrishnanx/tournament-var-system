@@ -38,7 +38,12 @@ const api = {
       // 1. Tournaments list or detail
       if (cleanUrl === '/tournaments/tournaments') {
         const data = await fb.getTournaments();
-        return { data, status: 200 };
+        const allTeams = await fb.getTeams();
+        const enriched = data.map(t => ({
+          ...t,
+          teams: allTeams.filter(tm => tm.tournament === t.id || (!tm.tournament && data.length === 1))
+        }));
+        return { data: enriched, status: 200 };
       }
       const tournMatch = cleanUrl.match(/^\/tournaments\/tournaments\/([^/]+)$/);
       if (tournMatch) {

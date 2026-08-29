@@ -23,8 +23,16 @@ export const Tournaments = () => {
 
   const fetchTournaments = async () => {
     try {
-      const res = await api.get('/tournaments/tournaments/');
-      setTournaments(res.data);
+      const [tRes, tmRes] = await Promise.all([
+        api.get('/tournaments/tournaments/'),
+        api.get('/tournaments/teams/')
+      ]);
+      const allTeams = tmRes.data || [];
+      const enrichedTournaments = (tRes.data || []).map(t => ({
+        ...t,
+        teams: t.teams && t.teams.length > 0 ? t.teams : allTeams.filter(tm => tm.tournament === t.id || (!tm.tournament && tRes.data.length === 1))
+      }));
+      setTournaments(enrichedTournaments);
     } catch (err) {
       console.error(err);
     } finally {
