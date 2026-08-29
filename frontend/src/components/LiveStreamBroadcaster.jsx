@@ -7,7 +7,7 @@ import { cleanData } from '../services/firebaseService';
 export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [rotationAngle, setRotationAngle] = useState(0); // 0, 90, 180, 270
-  const [zoomLevel, setZoomLevel] = useState(1.0); // 0.8x to 4.0x
+  const [zoomLevel, setZoomLevel] = useState(1.0); // 0.8x to 4.0x (0.1x steps)
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isPinching, setIsPinching] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -34,7 +34,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     };
   }, []);
 
-  // Native on-camera mic toggle & pinch-zoom controls directly inside viewfinder
+  // Persistent Broadcast URL — completely static so iframe NEVER reloads or cuts stream
   const broadcastUrl = `https://vdo.ninja/?push=${streamRoomId}&facing=environment&rear&landscape=1&aspect=16:9&autorotate=1&zoom&meter=1&autostart=1&webcam&audiodevice&bitrate=2500&fps=60&zerolatency=1&buffer=0&fast&noerror`;
 
   // Send hardware optical zoom command to camera stream if supported
@@ -90,12 +90,17 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     setRotationAngle(prev => (prev + 90) % 360);
   };
 
+  // Precise Point-by-Point Zoom Steps (0.1x per tap)
   const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(4.0, parseFloat((prev + 0.2).toFixed(1))));
+    setZoomLevel(prev => Math.min(4.0, parseFloat((prev + 0.1).toFixed(1))));
   };
 
   const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(0.8, parseFloat((prev - 0.2).toFixed(1))));
+    setZoomLevel(prev => Math.max(0.8, parseFloat((prev - 0.1).toFixed(1))));
+  };
+
+  const handleSliderZoom = (e) => {
+    setZoomLevel(parseFloat(parseFloat(e.target.value).toFixed(1)));
   };
 
   const setPresetZoom = (lvl) => {
@@ -117,7 +122,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
     });
   };
 
-  // Two-Finger Native Touch Pinch-In (Zoom Out) & Pinch-Out (Zoom In)
+  // Two-Finger Damped Pinch Gesture for Point-by-Point Smooth Scaling
   const handleTouchStart = (e) => {
     if (e.touches.length === 2) {
       const dist = Math.hypot(
@@ -135,8 +140,9 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
-      const ratio = currentDist / touchStateRef.current.initialDist;
-      const targetZoom = Math.min(4.0, Math.max(0.8, touchStateRef.current.initialZoom * ratio));
+      // Gentle damping factor so zoom changes point-by-point smoothly
+      const delta = (currentDist - touchStateRef.current.initialDist) * 0.0035;
+      const targetZoom = Math.min(4.0, Math.max(0.8, touchStateRef.current.initialZoom + delta));
       setZoomLevel(parseFloat(targetZoom.toFixed(1)));
     }
   };
@@ -148,8 +154,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
 
   const transformStyle = `scale(${zoomLevel}) rotate(${rotationAngle}deg)`;
 
-  // 100% IMMERSIVE FULLSCREEN CAMERA VIEW (TRIGGERED IN LANDSCAPE OR VIA BUTTON)
-  // HIDES ALL BROWSER HEADERS, BANNERS, TEXT, AND SCROLLBARS SO ONLY THE CAMERA IS VISIBLE!
+  // 100% IMMERSIVE FULLSCREEN CAMERA VIEW (TRIGGERED IN LANDSCAPE)
   const shouldRenderFullscreen = isStreaming && (isDeviceLandscape || isFullscreen);
 
   if (shouldRenderFullscreen) {
@@ -219,7 +224,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
               pointerEvents: 'none',
               zIndex: 50
             }}>
-              🔍 {zoomLevel.toFixed(1)}x {zoomLevel <= 0.9 ? '(Wide Field)' : ''}
+              🔍 {zoomLevel.toFixed(1)}x
             </div>
           )}
 
@@ -272,7 +277,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
             </div>
           </div>
 
-          {/* Sleek Floating Bottom Controls */}
+          {/* Sleek Floating Bottom Controls with Point-by-Point Zoom Slider & Buttons */}
           <div style={{
             position: 'absolute',
             bottom: '10px',
@@ -285,76 +290,69 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
             flexWrap: 'wrap',
             gap: '8px'
           }}>
-            {/* Quick Lens Buttons */}
+            {/* Point-by-Point Zoom Controls & Slider */}
             <div style={{
               display: 'flex',
-              gap: '4px',
-              backgroundColor: 'rgba(0, 0, 0, 0.75)',
-              padding: '4px 6px',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: '4px 10px',
               borderRadius: '8px',
-              border: '1px solid rgba(255, 255, 255, 0.2)'
+              border: '1px solid rgba(255, 255, 255, 0.25)'
             }}>
-              <button
-                onClick={() => setPresetZoom(0.8)}
-                style={{
-                  backgroundColor: zoomLevel === 0.8 ? '#2563eb' : 'transparent',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '4px 8px',
-                  fontSize: '0.72rem',
-                  fontWeight: '800',
-                  cursor: 'pointer'
-                }}
-              >
-                Wide
-              </button>
-              <button
-                onClick={() => setPresetZoom(1.0)}
-                style={{
-                  backgroundColor: zoomLevel === 1.0 ? '#2563eb' : 'transparent',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '4px 8px',
-                  fontSize: '0.72rem',
-                  fontWeight: '800',
-                  cursor: 'pointer'
-                }}
-              >
-                1.0x
-              </button>
-              <button
-                onClick={() => setPresetZoom(1.8)}
-                style={{
-                  backgroundColor: zoomLevel === 1.8 ? '#2563eb' : 'transparent',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '4px 8px',
-                  fontSize: '0.72rem',
-                  fontWeight: '800',
-                  cursor: 'pointer'
-                }}
-              >
-                2.0x
-              </button>
               <button
                 onClick={handleZoomOut}
                 disabled={zoomLevel <= 0.8}
-                style={{ backgroundColor: 'transparent', color: '#fff', border: 'none', padding: '3px 6px', fontSize: '0.8rem', fontWeight: '900', cursor: 'pointer' }}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  fontSize: '0.82rem',
+                  fontWeight: '900',
+                  cursor: 'pointer'
+                }}
+                title="Zoom Out (0.1x)"
               >
-                -
+                - 0.1x
               </button>
-              <span style={{ fontSize: '0.72rem', fontWeight: '900', color: '#38bdf8', display: 'flex', alignItems: 'center' }}>
+
+              {/* Point-by-Point Zoom Slider */}
+              <input
+                type="range"
+                min="0.8"
+                max="4.0"
+                step="0.1"
+                value={zoomLevel}
+                onChange={handleSliderZoom}
+                style={{
+                  width: '90px',
+                  accentColor: '#38bdf8',
+                  cursor: 'pointer'
+                }}
+              />
+
+              <span style={{ fontSize: '0.78rem', fontWeight: '900', color: '#38bdf8', minWidth: '36px', textAlign: 'center' }}>
                 {zoomLevel.toFixed(1)}x
               </span>
+
               <button
                 onClick={handleZoomIn}
                 disabled={zoomLevel >= 4.0}
-                style={{ backgroundColor: 'transparent', color: '#fff', border: 'none', padding: '3px 6px', fontSize: '0.8rem', fontWeight: '900', cursor: 'pointer' }}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  fontSize: '0.82rem',
+                  fontWeight: '900',
+                  cursor: 'pointer'
+                }}
+                title="Zoom In (0.1x)"
               >
-                +
+                + 0.1x
               </button>
             </div>
 
@@ -422,11 +420,11 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
             <h3 style={{ fontSize: '1.05rem', fontWeight: '900', color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               {isStreaming ? '🔴 LIVE CAMERA BROADCASTER' : '📹 FIELD CAMERA LIVE BROADCAST'}
               <span style={{ fontSize: '0.65rem', backgroundColor: '#10b981', color: '#000000', padding: '2px 8px', borderRadius: '4px', fontWeight: '900' }}>
-                AUTO-FULLSCREEN
+                POINT-BY-POINT ZOOM
               </span>
             </h3>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-              Rotate your phone sideways into landscape mode to automatically enter full-screen camera viewfinder!
+              Rotate your phone sideways into landscape mode to enter full-screen camera viewfinder!
             </span>
           </div>
         </div>
@@ -505,7 +503,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
                 pointerEvents: 'none',
                 zIndex: 30
               }}>
-                🔍 {zoomLevel.toFixed(1)}x {zoomLevel <= 0.9 ? '(Wide Field)' : ''}
+                🔍 {zoomLevel.toFixed(1)}x
               </div>
             )}
           </>
@@ -527,7 +525,7 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         )}
       </div>
 
-      {/* 🎛️ Live Broadcaster Control Bar (Zoom, Lens Presets, Mic, Rotate) */}
+      {/* 🎛️ Live Broadcaster Control Bar (Point-by-Point Zoom, Slider, Mic, Rotate) */}
       {isStreaming && (
         <div style={{
           backgroundColor: '#161c28',
@@ -541,83 +539,65 @@ export const LiveStreamBroadcaster = ({ matchId, homeTeam, awayTeam, score }) =>
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              🎛️ Camera Lens, Pinch Zoom & Audio Controls
+              🎛️ Point-by-Point Zoom & Audio Controls
             </span>
             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-              Current Scale: <strong style={{ color: '#38bdf8' }}>{zoomLevel.toFixed(1)}x</strong>
+              Scale: <strong style={{ color: '#38bdf8' }}>{zoomLevel.toFixed(1)}x</strong>
             </span>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-            {/* Quick Lens Preset Buttons (Wide 0.8x, Normal 1.0x, Zoom 2.0x) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            {/* Point-by-Point Step Buttons & Smooth Slider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <button
-                onClick={() => setPresetZoom(0.8)}
+                onClick={handleZoomOut}
+                disabled={zoomLevel <= 0.8}
+                className="btn-secondary"
+                style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
+                title="Zoom Out by 0.1x"
+              >
+                <ZoomOut size={14} /> - 0.1x
+              </button>
+
+              <input
+                type="range"
+                min="0.8"
+                max="4.0"
+                step="0.1"
+                value={zoomLevel}
+                onChange={handleSliderZoom}
                 style={{
-                  backgroundColor: zoomLevel === 0.8 ? '#2563eb' : '#1e293b',
-                  color: '#ffffff',
-                  border: zoomLevel === 0.8 ? '1px solid #60a5fa' : '1px solid #334155',
-                  borderRadius: '6px',
-                  padding: '6px 10px',
-                  fontSize: '0.75rem',
-                  fontWeight: '800',
+                  width: '100px',
+                  accentColor: '#38bdf8',
                   cursor: 'pointer'
                 }}
+              />
+
+              <button
+                onClick={handleZoomIn}
+                disabled={zoomLevel >= 4.0}
+                className="btn-secondary"
+                style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}
+                title="Zoom In by 0.1x"
               >
-                Wide (0.8x)
+                <ZoomIn size={14} /> + 0.1x
               </button>
+
               <button
                 onClick={() => setPresetZoom(1.0)}
                 style={{
-                  backgroundColor: zoomLevel === 1.0 ? '#2563eb' : '#1e293b',
-                  color: '#ffffff',
-                  border: zoomLevel === 1.0 ? '1px solid #60a5fa' : '1px solid #334155',
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                  color: '#94a3b8',
+                  border: '1px solid #475569',
                   borderRadius: '6px',
                   padding: '6px 10px',
-                  fontSize: '0.75rem',
-                  fontWeight: '800',
+                  fontSize: '0.72rem',
+                  fontWeight: '700',
                   cursor: 'pointer'
                 }}
               >
-                1.0x Normal
+                Reset (1.0x)
               </button>
-              <button
-                onClick={() => setPresetZoom(1.8)}
-                style={{
-                  backgroundColor: zoomLevel === 1.8 ? '#2563eb' : '#1e293b',
-                  color: '#ffffff',
-                  border: zoomLevel === 1.8 ? '1px solid #60a5fa' : '1px solid #334155',
-                  borderRadius: '6px',
-                  padding: '6px 10px',
-                  fontSize: '0.75rem',
-                  fontWeight: '800',
-                  cursor: 'pointer'
-                }}
-              >
-                2.0x Zoom
-              </button>
-
-              {/* Fine-Tuning Step Zoom */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '6px' }}>
-                <button
-                  onClick={handleZoomOut}
-                  disabled={zoomLevel <= 0.8}
-                  className="btn-secondary"
-                  style={{ padding: '6px 10px', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '2px' }}
-                  title="Zoom Out"
-                >
-                  <ZoomOut size={13} /> -
-                </button>
-                <button
-                  onClick={handleZoomIn}
-                  disabled={zoomLevel >= 4.0}
-                  className="btn-secondary"
-                  style={{ padding: '6px 10px', fontSize: '0.75rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '2px' }}
-                  title="Zoom In"
-                >
-                  <ZoomIn size={13} /> +
-                </button>
-              </div>
             </div>
 
             {/* Mic Toggle & Rotation */}
