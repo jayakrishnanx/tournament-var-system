@@ -22,56 +22,42 @@ export const Dashboard = () => {
   const [homeTeam, setHomeTeam] = useState('');
   const [awayTeam, setAwayTeam] = useState('');
   const [scheduledDate, setScheduledDate] = useState(new Date().toISOString().slice(0, 16));
+  const [stage, setStage] = useState('REGULAR');
   const [submitting, setSubmitting] = useState(false);
 
   const { user } = useAuth();
 
-  const fetchStaticData = async () => {
+  const fetchData = async () => {
     try {
-      const [tRes, tmRes] = await Promise.all([
+      const [mRes, tRes, tmRes, stRes] = await Promise.all([
+        api.get('/tournaments/matches/'),
         api.get('/tournaments/tournaments/'),
-        api.get('/tournaments/teams/')
+        api.get('/tournaments/teams/'),
+        api.get('/tournaments/matches/stats/')
       ]);
+      if (mRes.data?.length > 0) setMatches(mRes.data);
       if (tRes.data?.length > 0) setTournaments(tRes.data);
       if (tmRes.data?.length > 0) setTeams(tmRes.data);
+      if (stRes.data) setStats(stRes.data);
       if (tRes.data?.length > 0 && !selectedTournament) {
         setSelectedTournament(tRes.data[0].id);
       }
     } catch (err) {
-      console.error('Error fetching static data:', err);
-    }
-  };
-
-  const fetchLiveData = async () => {
-    try {
-      const url = selectedTournament ? `/tournaments/matches/?tournament=${selectedTournament}` : '/tournaments/matches/';
-      const statsUrl = selectedTournament ? `/tournaments/matches/stats/?tournament=${selectedTournament}` : '/tournaments/matches/stats/';
-      const [mRes, stRes] = await Promise.all([
-        api.get(url),
-        api.get(statsUrl)
-      ]);
-      setMatches(mRes.data);
-      setStats(stRes.data);
-    } catch (err) {
-      console.error('Error fetching live data:', err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchStaticData();
-    fetchLiveData();
-
-    // Active real-time listeners
+    fetchData();
     const unsubMatches = subscribeMatches(null, (liveMatches) => {
-      if (liveMatches && liveMatches.length > 0) {
+      if (liveMatches) {
         setMatches(liveMatches);
       }
     });
-
     const unsubTourns = subscribeTournaments((liveTourns) => {
-      if (liveTourns && liveTourns.length > 0) {
+      if (liveTourns) {
         setTournaments(liveTourns);
       }
     });
@@ -98,11 +84,13 @@ export const Dashboard = () => {
         tournament: selectedTournament,
         home_team: homeTeam,
         away_team: awayTeam,
+        stage: stage || 'REGULAR',
         scheduled_time: new Date(scheduledDate).toISOString()
       });
       setShowModal(false);
       setHomeTeam('');
       setAwayTeam('');
+      setStage('REGULAR');
       fetchData();
     } catch (err) {
       console.error(err);
@@ -194,6 +182,22 @@ export const Dashboard = () => {
                   {tournamentTeams.map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px' }}>
+                  Match Stage / Category
+                </label>
+                <select
+                  value={stage}
+                  onChange={e => setStage(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                >
+                  <option value="REGULAR" style={{ background: '#1D2128' }}>Regular League Match</option>
+                  <option value="QUARTER_FINAL" style={{ background: '#1D2128' }}>🔥 Quarter-Final</option>
+                  <option value="SEMI_FINAL" style={{ background: '#1D2128' }}>⚡ Semi-Final</option>
+                  <option value="FINAL" style={{ background: '#1D2128' }}>🏆 Championship Final</option>
                 </select>
               </div>
 
@@ -399,10 +403,29 @@ export const Dashboard = () => {
           animation: 'pulseLiveBorder 2s infinite'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: '900', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444', display: 'inline-block', animation: 'blinkLive 1.1s infinite' }}></span>
-              🔴 LIVE CAMERA STREAM & MATCH SCOREBOARD
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: '900', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444', display: 'inline-block', animation: 'blinkLive 1.1s infinite' }}></span>
+                🔴 LIVE CAMERA STREAM & MATCH SCOREBOARD
+              </span>
+              {liveMatch.stage && liveMatch.stage !== 'REGULAR' && (
+                <span style={{
+                  fontSize: '0.72rem',
+                  fontWeight: '900',
+                  letterSpacing: '0.03em',
+                  color: liveMatch.stage === 'FINAL' ? '#fde047' : liveMatch.stage === 'SEMI_FINAL' ? '#38bdf8' : '#fb923c',
+                  backgroundColor: liveMatch.stage === 'FINAL' ? 'rgba(250, 204, 21, 0.25)' : liveMatch.stage === 'SEMI_FINAL' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(251, 146, 60, 0.25)',
+                  border: liveMatch.stage === 'FINAL' ? '1px solid rgba(250, 204, 21, 0.6)' : liveMatch.stage === 'SEMI_FINAL' ? '1px solid rgba(56, 189, 248, 0.6)' : '1px solid rgba(251, 146, 60, 0.6)',
+                  padding: '2px 8px',
+                  borderRadius: '5px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  {liveMatch.stage === 'FINAL' ? '🏆 FINAL' : liveMatch.stage === 'SEMI_FINAL' ? '⚡ SEMI-FINAL' : '🔥 QUARTER-FINAL'}
+                </span>
+              )}
+            </div>
             <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#9aa4b2', backgroundColor: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '4px' }}>
               Match #{liveMatch.match_number || 'Live'}
             </span>
@@ -469,9 +492,28 @@ export const Dashboard = () => {
           borderLeft: '4px solid #2B5748'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#FFCB56', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              📌 UPCOMING NEXT MATCH
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: '900', color: '#FFCB56', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                📌 UPCOMING NEXT MATCH
+              </span>
+              {nextMatch.stage && nextMatch.stage !== 'REGULAR' && (
+                <span style={{
+                  fontSize: '0.72rem',
+                  fontWeight: '900',
+                  letterSpacing: '0.03em',
+                  color: nextMatch.stage === 'FINAL' ? '#fde047' : nextMatch.stage === 'SEMI_FINAL' ? '#38bdf8' : '#fb923c',
+                  backgroundColor: nextMatch.stage === 'FINAL' ? 'rgba(250, 204, 21, 0.25)' : nextMatch.stage === 'SEMI_FINAL' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(251, 146, 60, 0.25)',
+                  border: nextMatch.stage === 'FINAL' ? '1px solid rgba(250, 204, 21, 0.6)' : nextMatch.stage === 'SEMI_FINAL' ? '1px solid rgba(56, 189, 248, 0.6)' : '1px solid rgba(251, 146, 60, 0.6)',
+                  padding: '2px 8px',
+                  borderRadius: '5px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  {nextMatch.stage === 'FINAL' ? '🏆 FINAL' : nextMatch.stage === 'SEMI_FINAL' ? '⚡ SEMI-FINAL' : '🔥 QUARTER-FINAL'}
+                </span>
+              )}
+            </div>
             <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#9aa4b2' }}>
               Match #{nextMatch.match_number}
             </span>
@@ -537,14 +579,26 @@ export const Dashboard = () => {
               }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '6px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                       <StatusBadge status={m.status} />
                       <Link to={`/tournaments/${m.tournament}`} style={{ textDecoration: 'none', fontSize: '0.75rem', fontWeight: '800', color: '#2b5748', backgroundColor: 'rgba(43, 87, 72, 0.18)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(43, 87, 72, 0.4)' }}>
                         🏆 {m.tournament_name || 'Tournament'}
                       </Link>
-                      {m.stage !== 'REGULAR' && (
-                        <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                          {m.stage.replace('_', ' ')}
+                      {m.stage && m.stage !== 'REGULAR' && (
+                        <span style={{
+                          fontSize: '0.72rem',
+                          fontWeight: '900',
+                          letterSpacing: '0.03em',
+                          color: m.stage === 'FINAL' ? '#fde047' : m.stage === 'SEMI_FINAL' ? '#38bdf8' : '#fb923c',
+                          backgroundColor: m.stage === 'FINAL' ? 'rgba(250, 204, 21, 0.18)' : m.stage === 'SEMI_FINAL' ? 'rgba(56, 189, 248, 0.18)' : 'rgba(251, 146, 60, 0.18)',
+                          border: m.stage === 'FINAL' ? '1px solid rgba(250, 204, 21, 0.5)' : m.stage === 'SEMI_FINAL' ? '1px solid rgba(56, 189, 248, 0.5)' : '1px solid rgba(251, 146, 60, 0.5)',
+                          padding: '2px 8px',
+                          borderRadius: '5px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          {m.stage === 'FINAL' ? '🏆 FINAL' : m.stage === 'SEMI_FINAL' ? '⚡ SEMI-FINAL' : '🔥 QUARTER-FINAL'}
                         </span>
                       )}
                     </div>

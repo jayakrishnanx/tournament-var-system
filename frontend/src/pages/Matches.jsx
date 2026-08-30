@@ -22,11 +22,12 @@ export const Matches = () => {
   const [homeTeam, setHomeTeam] = useState('');
   const [awayTeam, setAwayTeam] = useState('');
   const [scheduledDate, setScheduledDate] = useState(new Date().toISOString().slice(0, 16));
+  const [stage, setStage] = useState('REGULAR');
   const [submitting, setSubmitting] = useState(false);
 
   // Edit Match State
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editForm, setEditForm] = useState({ id: null, home_team: '', away_team: '', scheduled_date: '', tournament: null });
+  const [editForm, setEditForm] = useState({ id: null, home_team: '', away_team: '', scheduled_date: '', stage: 'REGULAR', tournament: null });
   
   const { user } = useAuth();
 
@@ -77,6 +78,7 @@ export const Matches = () => {
         tournament: selectedTournament,
         home_team: homeTeam,
         away_team: awayTeam,
+        stage: stage || 'REGULAR',
         status: 'SCHEDULED',
         current_period: 'NOT_STARTED',
         scheduled_time: new Date(scheduledDate).toISOString()
@@ -84,6 +86,7 @@ export const Matches = () => {
       setShowModal(false);
       setHomeTeam('');
       setAwayTeam('');
+      setStage('REGULAR');
       if (res.data) {
         setMatches(prev => [res.data, ...prev.filter(m => String(m.id) !== String(res.data.id))]);
       }
@@ -121,6 +124,7 @@ export const Matches = () => {
       id: m.id,
       home_team: m.home_team ? String(m.home_team) : '',
       away_team: m.away_team ? String(m.away_team) : '',
+      stage: m.stage || 'REGULAR',
       scheduled_date: m.scheduled_time ? new Date(m.scheduled_time).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
       tournament: m.tournament
     });
@@ -146,6 +150,7 @@ export const Matches = () => {
       ...m,
       home_team: editForm.home_team,
       away_team: editForm.away_team,
+      stage: editForm.stage || 'REGULAR',
       home_team_details: homeTeamObj || m.home_team_details,
       away_team_details: awayTeamObj || m.away_team_details,
       scheduled_time: new Date(editForm.scheduled_date).toISOString()
@@ -157,6 +162,7 @@ export const Matches = () => {
       await api.patch(`/tournaments/matches/${editForm.id}/`, {
         home_team: editForm.home_team,
         away_team: editForm.away_team,
+        stage: editForm.stage || 'REGULAR',
         scheduled_time: new Date(editForm.scheduled_date).toISOString()
       });
       fetchMatches();
@@ -435,6 +441,22 @@ export const Matches = () => {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px', fontWeight: '600' }}>
+                  Match Stage / Category (Optional)
+                </label>
+                <select
+                  value={stage}
+                  onChange={e => setStage(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                >
+                  <option value="REGULAR" style={{ background: '#1D2128' }}>Regular League Match</option>
+                  <option value="QUARTER_FINAL" style={{ background: '#1D2128' }}>🔥 Quarter-Final</option>
+                  <option value="SEMI_FINAL" style={{ background: '#1D2128' }}>⚡ Semi-Final</option>
+                  <option value="FINAL" style={{ background: '#1D2128' }}>🏆 Championship Final</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px', fontWeight: '600' }}>
                   Scheduled Match Date
                 </label>
                 <input
@@ -479,14 +501,26 @@ export const Matches = () => {
             }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '6px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <StatusBadge status={m.status} />
                     <Link to={`/tournaments/${m.tournament}`} style={{ textDecoration: 'none', fontSize: '0.75rem', fontWeight: '800', color: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
                       🏆 {m.tournament_name || 'Tournament'}
                     </Link>
-                    {m.stage !== 'REGULAR' && (
-                      <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                        {m.stage.replace('_', ' ')}
+                    {m.stage && m.stage !== 'REGULAR' && (
+                      <span style={{
+                        fontSize: '0.72rem',
+                        fontWeight: '900',
+                        letterSpacing: '0.03em',
+                        color: m.stage === 'FINAL' ? '#fde047' : m.stage === 'SEMI_FINAL' ? '#38bdf8' : '#fb923c',
+                        backgroundColor: m.stage === 'FINAL' ? 'rgba(250, 204, 21, 0.18)' : m.stage === 'SEMI_FINAL' ? 'rgba(56, 189, 248, 0.18)' : 'rgba(251, 146, 60, 0.18)',
+                        border: m.stage === 'FINAL' ? '1px solid rgba(250, 204, 21, 0.5)' : m.stage === 'SEMI_FINAL' ? '1px solid rgba(56, 189, 248, 0.5)' : '1px solid rgba(251, 146, 60, 0.5)',
+                        padding: '2px 8px',
+                        borderRadius: '5px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        {m.stage === 'FINAL' ? '🏆 FINAL' : m.stage === 'SEMI_FINAL' ? '⚡ SEMI-FINAL' : '🔥 QUARTER-FINAL'}
                       </span>
                     )}
                     {m.is_next_match && (
@@ -659,6 +693,22 @@ export const Matches = () => {
                   {editModalTeams.map(t => (
                     <option key={t.id} value={String(t.id)} style={{ background: '#1D2128' }}>{t.name}</option>
                   ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px', fontWeight: '600' }}>
+                  Match Stage / Category
+                </label>
+                <select
+                  value={editForm.stage || 'REGULAR'}
+                  onChange={e => setEditForm({ ...editForm, stage: e.target.value })}
+                  style={{ width: '100%', padding: '8px 10px', backgroundColor: '#1D2128', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.85rem' }}
+                >
+                  <option value="REGULAR" style={{ background: '#1D2128' }}>Regular League Match</option>
+                  <option value="QUARTER_FINAL" style={{ background: '#1D2128' }}>🔥 Quarter-Final</option>
+                  <option value="SEMI_FINAL" style={{ background: '#1D2128' }}>⚡ Semi-Final</option>
+                  <option value="FINAL" style={{ background: '#1D2128' }}>🏆 Championship Final</option>
                 </select>
               </div>
 
