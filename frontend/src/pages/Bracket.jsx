@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
-import { Trophy, Award, Activity, ArrowLeft, RotateCcw, Trash2, LayoutList, GitMerge, Shield } from 'lucide-react';
+import { Trophy, Award, Activity, ArrowLeft, RotateCcw, Trash2, LayoutList, GitMerge, Shield, Pencil, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getCache, subscribeMatches } from '../services/firebaseService';
 
@@ -34,6 +34,17 @@ export const Bracket = () => {
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [bracketGenerating, setBracketGenerating] = useState(false);
   const [bracketResetting, setBracketResetting] = useState(false);
+
+  // Edit Match Teams modal state for admin
+  const [editNodeModal, setEditNodeModal] = useState(false);
+  const [editNodeForm, setEditNodeForm] = useState({
+    id: null,
+    bracket_code: '',
+    labelText: '',
+    home_team: '',
+    away_team: '',
+    scheduled_date: ''
+  });
 
   // View preferences for mobile / desktop
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'tree'
@@ -176,6 +187,50 @@ export const Bracket = () => {
       await api.patch(`/tournaments/matches/${nextMatch.id}/`, payload);
       fetchAll(selectedTournament);
       alert(`✅ ${teamObj?.name || 'Team'} advanced to ${nextCode}!`);
+    }
+  };
+
+  const handleOpenEditNode = (m, labelText) => {
+    setEditNodeForm({
+      id: m.id,
+      bracket_code: m.bracket_code || '',
+      labelText: labelText || m.bracket_code,
+      home_team: m.home_team ? String(m.home_team) : '',
+      away_team: m.away_team ? String(m.away_team) : '',
+      scheduled_date: m.scheduled_time ? new Date(m.scheduled_time).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)
+    });
+    setEditNodeModal(true);
+  };
+
+  const handleSaveEditNode = async (e) => {
+    e.preventDefault();
+    const homeObj = teams.find(t => String(t.id) === String(editNodeForm.home_team));
+    const awayObj = teams.find(t => String(t.id) === String(editNodeForm.away_team));
+
+    // Optimistic UI update
+    setMatches(prev => prev.map(m => String(m.id) === String(editNodeForm.id) ? {
+      ...m,
+      home_team: editNodeForm.home_team || null,
+      away_team: editNodeForm.away_team || null,
+      home_team_details: homeObj || { name: 'TBD' },
+      away_team_details: awayObj || { name: 'TBD' },
+      scheduled_time: new Date(editNodeForm.scheduled_date).toISOString()
+    } : m));
+
+    setEditNodeModal(false);
+
+    try {
+      await api.patch(`/tournaments/matches/${editNodeForm.id}/`, {
+        home_team: editNodeForm.home_team || null,
+        away_team: editNodeForm.away_team || null,
+        scheduled_time: new Date(editNodeForm.scheduled_date).toISOString()
+      });
+      fetchAll(selectedTournament);
+      alert('✅ Knockout bracket match teams updated successfully!');
+    } catch (err) {
+      console.error(err);
+      alert('Error updating bracket match teams: ' + (err.response?.data?.error || err.message));
+      fetchAll(selectedTournament);
     }
   };
 
@@ -434,19 +489,46 @@ export const Bracket = () => {
               </div>
             )}
           </div>
-          <Link
-            to={`/matches/${m.id}`}
-            style={{
-              fontSize: '0.72rem',
-              color: '#3b82f6',
-              fontWeight: '800',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '3px'
-            }}
-          >
-            View Match →
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginLeft: 'auto' }}>
+            {user?.role === 'ADMIN' && (
+              <button
+                onClick={() => handleOpenEditNode(m, labelText)}
+                style={{
+                  background: 'rgba(59, 130, 246, 0.15)',
+                  border: '1px solid rgba(59, 130, 246, 0.4)',
+                  color: '#60a5fa',
+                  fontSize: '0.65rem',
+                  padding: '3px 8px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: '800',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '3px'
+                }}
+                title="Change teams for this knockout fixture"
+              >
+                <Pencil size={11} /> Change Teams
+              </button>
+            )}
+            <Link
+              to={`/matches/${m.id}`}
+              style={{
+                fontSize: '0.72rem',
+                color: '#3b82f6',
+                fontWeight: '800',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '3px',
+                textDecoration: 'none',
+                padding: '3px 6px',
+                borderRadius: '4px',
+                backgroundColor: 'rgba(59, 130, 246, 0.08)'
+              }}
+            >
+              View →
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -953,6 +1035,142 @@ export const Bracket = () => {
               </div>
               {renderBracketNode('F', 'Championship Final', true)}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Knockout Bracket Match Teams Modal for Admin */}
+      {editNodeModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.75)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '16px'
+        }}>
+          <div className="glass-panel" style={{
+            width: '100%',
+            maxWidth: '460px',
+            padding: '24px',
+            backgroundColor: '#11151c',
+            border: '2px solid #3b82f6',
+            borderRadius: '12px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.8)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Pencil size={18} color="#60a5fa" />
+                <h3 style={{ fontSize: '1.15rem', fontWeight: '900', color: '#ffffff', margin: 0 }}>
+                  Edit {editNodeForm.labelText || editNodeForm.bracket_code}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditNodeModal(false)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem', padding: '2px 6px' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '16px', lineHeight: 1.4 }}>
+              Select which teams compete in this knockout fixture or adjust the scheduled match time:
+            </p>
+
+            <form onSubmit={handleSaveEditNode} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: '#cbd5e1', marginBottom: '6px' }}>
+                  🔵 Home Team
+                </label>
+                <select
+                  value={editNodeForm.home_team}
+                  onChange={e => setEditNodeForm({ ...editNodeForm, home_team: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    backgroundColor: '#1D2128',
+                    border: '1px solid #334155',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  <option value="">-- TBD / Unassigned --</option>
+                  {teams.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: '#cbd5e1', marginBottom: '6px' }}>
+                  🔴 Away Team
+                </label>
+                <select
+                  value={editNodeForm.away_team}
+                  onChange={e => setEditNodeForm({ ...editNodeForm, away_team: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    backgroundColor: '#1D2128',
+                    border: '1px solid #334155',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  <option value="">-- TBD / Unassigned --</option>
+                  {teams.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: '#cbd5e1', marginBottom: '6px' }}>
+                  📅 Scheduled Kickoff Time
+                </label>
+                <input
+                  type="datetime-local"
+                  value={editNodeForm.scheduled_date}
+                  onChange={e => setEditNodeForm({ ...editNodeForm, scheduled_date: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    backgroundColor: '#1D2128',
+                    border: '1px solid #334155',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '0.85rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditNodeModal(false)}
+                  className="btn-secondary"
+                  style={{ flex: 1, padding: '10px', fontSize: '0.85rem', fontWeight: '800' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  style={{ flex: 1, padding: '10px', fontSize: '0.85rem', fontWeight: '800', backgroundColor: '#3b82f6', borderColor: '#3b82f6' }}
+                >
+                  💾 Save Teams
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
