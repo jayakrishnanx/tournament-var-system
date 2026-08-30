@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import api from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
-import { Activity, PlusCircle, Award, ArrowRight, Bell, BellRing } from 'lucide-react';
+import { Activity, PlusCircle, Award, ArrowRight, Bell, BellRing, Pencil } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-import { subscribeMatches, subscribeTournaments, getCache } from '../services/firebaseService';
+import { subscribeMatches, subscribeTournaments, getCache, saveCustomTopScorers, resetCustomTopScorers } from '../services/firebaseService';
 
 const playKickoffChime = () => {
   try {
@@ -35,6 +35,12 @@ export const Dashboard = () => {
     return cached.length > 0 ? cached[0].id : '';
   });
   const [showModal, setShowModal] = useState(false);
+  const [showScorersModal, setShowScorersModal] = useState(false);
+  const [customScorersForm, setCustomScorersForm] = useState([
+    { player_name: '', team_name: '', goals: 0 },
+    { player_name: '', team_name: '', goals: 0 },
+    { player_name: '', team_name: '', goals: 0 }
+  ]);
 
   const [homeTeam, setHomeTeam] = useState('');
   const [awayTeam, setAwayTeam] = useState('');
@@ -208,13 +214,21 @@ export const Dashboard = () => {
 
   const tournamentTeams = teams.filter(t => t.tournament === selectedTournament || !selectedTournament);
 
+  const selectedTournObj = tournaments.find(t => String(t.id) === String(selectedTournament)) || tournaments[0];
+
   const topScorers = React.useMemo(() => {
+    // 1. Prioritize Admin's manually edited Top Scorers
+    if (selectedTournObj && Array.isArray(selectedTournObj.custom_top_scorers) && selectedTournObj.custom_top_scorers.length > 0) {
+      const validCustom = selectedTournObj.custom_top_scorers.filter(s => s && s.player_name && s.player_name.trim());
+      if (validCustom.length > 0) return validCustom.slice(0, 3);
+    }
+    // 2. From backend stats if available
     if (stats.top_scorers && stats.top_scorers.length > 0) {
       return stats.top_scorers.slice(0, 3);
     }
+    // 3. Fallback calculated from completed matches
     const scorerMap = {};
     matches.forEach(m => {
-      // Only count goals from finished (ENDED) matches
       if (m.status !== 'ENDED') return;
 
       if (Array.isArray(m.recent_events)) {
@@ -231,9 +245,46 @@ export const Dashboard = () => {
       }
     });
     return Object.values(scorerMap).sort((a, b) => b.goals - a.goals).slice(0, 3);
-  }, [matches, stats]);
+  }, [matches, stats, selectedTournObj]);
 
   const topScorer = topScorers[0];
+
+  const handleOpenEditScorers = () => {
+    const current1 = topScorers[0] || { player_name: '', team_name: '', goals: 0 };
+    const current2 = topScorers[1] || { player_name: '', team_name: '', goals: 0 };
+    const current3 = topScorers[2] || { player_name: '', team_name: '', goals: 0 };
+
+    setCustomScorersForm([
+      { player_name: current1.player_name || '', team_name: current1.team_name || '', goals: current1.goals || 0 },
+      { player_name: current2.player_name || '', team_name: current2.team_name || '', goals: current2.goals || 0 },
+      { player_name: current3.player_name || '', team_name: current3.team_name || '', goals: current3.goals || 0 }
+    ]);
+    setShowScorersModal(true);
+  };
+
+  const handleSaveCustomScorers = async (e) => {
+    e.preventDefault();
+    const cleanList = customScorersForm
+      .filter(s => s.player_name && s.player_name.trim())
+      .map(s => ({
+        player_name: s.player_name.trim(),
+        team_name: s.team_name.trim() || 'Team',
+        goals: parseInt(s.goals, 10) || 0
+      }));
+
+    await saveCustomTopScorers(selectedTournament, cleanList);
+    setShowScorersModal(false);
+    fetchData();
+    alert('✅ Top 3 Tournament Scorers updated successfully!');
+  };
+
+  const handleResetToAutoScorers = async () => {
+    if (!window.confirm('Reset Top Scorers back to automatic match goal calculation?')) return;
+    await resetCustomTopScorers(selectedTournament);
+    setShowScorersModal(false);
+    fetchData();
+    alert('🔄 Top Scorers reset to auto-calculation from completed matches.');
+  };
 
   // Filter out unassigned knockout placeholder fixtures (e.g. TBD vs TBD) on user side
   const readyMatches = matches.filter(m => {
@@ -258,8 +309,6 @@ export const Dashboard = () => {
                     readyMatches.find(m => m.status === 'LIVE' && Boolean(m.is_timer_running)) ||
                     readyMatches.find(m => Boolean(m.is_live_streaming) && (m.status === 'LIVE' || m.status === 'PAUSED'));
   const nextMatch = readyMatches.find(m => m.is_next_match && m.status === 'SCHEDULED') || readyMatches.find(m => m.status === 'SCHEDULED');
-
-  if (user?.role === 'ADMIN') return <Navigate to="/matches" replace />;
 
   return (
     <div style={{ padding: '16px', maxWidth: '1280px', margin: '0 auto' }}>
@@ -410,34 +459,56 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* 1.2 TOP 3 TOURNAMENT SCORERS / GOLDEN BOOT LEADERBOARD (USER VIEW) */}
-      {user?.role !== 'ADMIN' && (
-        <div className="glass-panel" style={{
-          padding: '16px 20px',
-          marginBottom: '20px',
-          border: '1px solid rgba(234, 179, 8, 0.35)',
-          background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.08), #131720)',
-          borderRadius: '12px',
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)'
+      {/* 1.2 TOP 3 TOURNAMENT SCORERS / GOLDEN BOOT LEADERBOARD */}
+      <div className="glass-panel" style={{
+        padding: '16px 20px',
+        marginBottom: '20px',
+        border: '1px solid rgba(234, 179, 8, 0.35)',
+        background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.08), #131720)',
+        borderRadius: '12px',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '14px',
+          flexWrap: 'wrap',
+          gap: '8px'
         }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '14px',
-            flexWrap: 'wrap',
-            gap: '8px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Award size={20} color="#eab308" />
-              <h3 style={{ fontSize: '1rem', fontWeight: '900', color: '#fef08a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-                🏆 TOP 3 TOURNAMENT SCORERS (GOLDEN BOOT)
-              </h3>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Award size={20} color="#eab308" />
+            <h3 style={{ fontSize: '1rem', fontWeight: '900', color: '#fef08a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+              🏆 TOP 3 TOURNAMENT SCORERS (GOLDEN BOOT)
+            </h3>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            {user?.role === 'ADMIN' && (
+              <button
+                onClick={handleOpenEditScorers}
+                style={{
+                  backgroundColor: 'rgba(234, 179, 8, 0.18)',
+                  color: '#fef08a',
+                  border: '1px solid rgba(234, 179, 8, 0.4)',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title="Admin: Manually edit top scorers leaderboard"
+              >
+                <Pencil size={12} /> Edit Top Scorers
+              </button>
+            )}
             <Link to="/standings" style={{ fontSize: '0.78rem', color: '#38bdf8', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}>
               View Full Points Table <ArrowRight size={13} />
             </Link>
           </div>
+        </div>
 
           {topScorers.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
@@ -504,7 +575,6 @@ export const Dashboard = () => {
             </div>
           )}
         </div>
-      )}
 
       {/* 1.5 ACTIVE LIVE MATCH HIGHLIGHT CARD FOR SPECTATORS */}
       {liveMatch && (
@@ -904,6 +974,137 @@ export const Dashboard = () => {
             >
               ✕
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Top 3 Scorers Modal for Admin */}
+      {showScorersModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.75)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '16px'
+        }}>
+          <div className="glass-panel" style={{
+            width: '100%',
+            maxWidth: '480px',
+            padding: '24px',
+            backgroundColor: '#11151c',
+            border: '2px solid #eab308',
+            borderRadius: '12px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.8)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Award size={20} color="#eab308" />
+                <h3 style={{ fontSize: '1.15rem', fontWeight: '900', color: '#fef08a', margin: 0 }}>
+                  Edit Top 3 Tournament Scorers
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowScorersModal(false)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem', padding: '2px 6px' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '16px', lineHeight: 1.4 }}>
+              Manually set the Golden Boot top 3 scorers leaderboard for this tournament:
+            </p>
+
+            <form onSubmit={handleSaveCustomScorers} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {[0, 1, 2].map(rankIdx => {
+                const medal = rankIdx === 0 ? '🥇 1st Place (Golden Boot)' : rankIdx === 1 ? '🥈 2nd Place' : '🥉 3rd Place';
+                const labelColor = rankIdx === 0 ? '#fef08a' : rankIdx === 1 ? '#cbd5e1' : '#fba444';
+                return (
+                  <div key={rankIdx} style={{ padding: '10px 12px', backgroundColor: '#181d27', borderRadius: '8px', border: '1px solid #2d3748' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: '800', color: labelColor, marginBottom: '6px' }}>
+                      {medal}
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.2fr 0.8fr', gap: '8px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.68rem', color: '#94a3b8', marginBottom: '2px' }}>Player Name</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. John Doe"
+                          value={customScorersForm[rankIdx]?.player_name || ''}
+                          onChange={e => {
+                            const copy = [...customScorersForm];
+                            copy[rankIdx] = { ...copy[rankIdx], player_name: e.target.value };
+                            setCustomScorersForm(copy);
+                          }}
+                          style={{ width: '100%', padding: '6px 8px', backgroundColor: '#11151c', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.8rem' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.68rem', color: '#94a3b8', marginBottom: '2px' }}>Team Name</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. FC Strikers"
+                          value={customScorersForm[rankIdx]?.team_name || ''}
+                          onChange={e => {
+                            const copy = [...customScorersForm];
+                            copy[rankIdx] = { ...copy[rankIdx], team_name: e.target.value };
+                            setCustomScorersForm(copy);
+                          }}
+                          style={{ width: '100%', padding: '6px 8px', backgroundColor: '#11151c', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.8rem' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.68rem', color: '#94a3b8', marginBottom: '2px' }}>Goals</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={customScorersForm[rankIdx]?.goals ?? 0}
+                          onChange={e => {
+                            const copy = [...customScorersForm];
+                            copy[rankIdx] = { ...copy[rankIdx], goals: e.target.value };
+                            setCustomScorersForm(copy);
+                          }}
+                          style={{ width: '100%', padding: '6px 8px', backgroundColor: '#11151c', border: '1px solid #334155', borderRadius: '6px', color: 'white', fontSize: '0.8rem' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={handleResetToAutoScorers}
+                  className="btn-secondary"
+                  style={{ padding: '8px 12px', fontSize: '0.75rem', fontWeight: '700', color: '#f87171' }}
+                  title="Reset to automatic match calculation"
+                >
+                  🔄 Reset Auto
+                </button>
+                <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto', flex: 1, justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowScorersModal(false)}
+                    className="btn-secondary"
+                    style={{ padding: '8px 14px', fontSize: '0.8rem' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    style={{ padding: '8px 16px', fontSize: '0.8rem', fontWeight: '800', backgroundColor: '#eab308', borderColor: '#eab308', color: '#0f172a' }}
+                  >
+                    💾 Save Scorers
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       )}

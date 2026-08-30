@@ -1503,7 +1503,48 @@ export const calculateStandings = async (tournamentId) => {
   return list;
 };
 
+export const saveCustomTopScorers = async (tournamentId, customTopScorers) => {
+  const tournaments = getCache('tournaments', []);
+  const tId = tournamentId || (tournaments.length > 0 ? tournaments[0].id : null);
+  if (!tId) return;
+
+  const updated = tournaments.map(t => String(t.id) === String(tId) ? { ...t, custom_top_scorers: customTopScorers } : t);
+  setCache('tournaments', updated);
+
+  try {
+    await updateDoc(doc(db, 'tournaments', String(tId)), { custom_top_scorers: customTopScorers });
+  } catch (e) {
+    try {
+      await setDoc(doc(db, 'tournaments', String(tId)), { custom_top_scorers: customTopScorers }, { merge: true });
+    } catch (err) {
+      console.error('Error persisting custom top scorers:', err);
+    }
+  }
+  return customTopScorers;
+};
+
+export const resetCustomTopScorers = async (tournamentId) => {
+  return saveCustomTopScorers(tournamentId, null);
+};
+
 export const calculateTournamentStats = (tournamentId = null) => {
+  const tournaments = getCache('tournaments', []);
+  const activeTourn = tournamentId
+    ? tournaments.find(t => String(t.id) === String(tournamentId))
+    : (tournaments.length > 0 ? tournaments[0] : null);
+
+  // If Admin set custom Top Scorers, prioritize them
+  if (activeTourn && Array.isArray(activeTourn.custom_top_scorers) && activeTourn.custom_top_scorers.length > 0) {
+    const validCustom = activeTourn.custom_top_scorers.filter(s => s && s.player_name && s.player_name.trim());
+    if (validCustom.length > 0) {
+      return {
+        top_scorers: validCustom,
+        yellow_cards: [],
+        red_cards: []
+      };
+    }
+  }
+
   const matches = getCache('matches', []);
   const relevantMatches = tournamentId ? matches.filter(m => String(m.tournament) === String(tournamentId)) : matches;
   
