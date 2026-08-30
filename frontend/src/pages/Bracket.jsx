@@ -153,6 +153,32 @@ export const Bracket = () => {
     }
   };
 
+  const handleManualAdvance = async (match, winningTeamId) => {
+    if (!winningTeamId) return;
+    const teamObj = teams.find(t => String(t.id) === String(winningTeamId));
+    if (!window.confirm(`Advance ${teamObj?.name || 'this team'} to the next knockout round?`)) return;
+
+    let nextCode = null;
+    let isHome = true;
+
+    if (match.bracket_code === 'QF1') { nextCode = 'SF1'; isHome = true; }
+    else if (match.bracket_code === 'QF2') { nextCode = 'SF1'; isHome = false; }
+    else if (match.bracket_code === 'QF3') { nextCode = 'SF2'; isHome = true; }
+    else if (match.bracket_code === 'QF4') { nextCode = 'SF2'; isHome = false; }
+    else if (match.bracket_code === 'SF1') { nextCode = 'F'; isHome = true; }
+    else if (match.bracket_code === 'SF2') { nextCode = 'F'; isHome = false; }
+
+    if (!nextCode) return;
+
+    const nextMatch = matches.find(m => m.bracket_code === nextCode);
+    if (nextMatch) {
+      const payload = isHome ? { home_team: winningTeamId, home_team_details: teamObj } : { away_team: winningTeamId, away_team_details: teamObj };
+      await api.patch(`/tournaments/matches/${nextMatch.id}/`, payload);
+      fetchAll(selectedTournament);
+      alert(`✅ ${teamObj?.name || 'Team'} advanced to ${nextCode}!`);
+    }
+  };
+
   const handleResetBracket = async () => {
     if (!window.confirm('⚠️ Are you sure you want to completely RESET and delete the Knockout Bracket? All knockout fixtures, scores, and results will be permanently removed!')) {
       return;
@@ -359,11 +385,55 @@ export const Bracket = () => {
           borderTop: '1px solid #2d3748',
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '4px'
         }}>
-          <span style={{ fontSize: '0.65rem', color: '#64748b' }}>
-            {m.bracket_code}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '0.65rem', color: '#64748b' }}>
+              {m.bracket_code}
+            </span>
+            {user?.role === 'ADMIN' && m.bracket_code !== 'F' && (m.home_team || m.away_team) && (
+              <div style={{ display: 'flex', gap: '3px' }}>
+                {m.home_team && (
+                  <button
+                    onClick={() => handleManualAdvance(m, m.home_team)}
+                    style={{
+                      background: 'rgba(59, 130, 246, 0.15)',
+                      border: '1px solid rgba(59, 130, 246, 0.4)',
+                      color: '#60a5fa',
+                      fontSize: '0.62rem',
+                      padding: '2px 5px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: '700'
+                    }}
+                    title="Advance Home Team to Next Round"
+                  >
+                    Adv H
+                  </button>
+                )}
+                {m.away_team && (
+                  <button
+                    onClick={() => handleManualAdvance(m, m.away_team)}
+                    style={{
+                      background: 'rgba(59, 130, 246, 0.15)',
+                      border: '1px solid rgba(59, 130, 246, 0.4)',
+                      color: '#60a5fa',
+                      fontSize: '0.62rem',
+                      padding: '2px 5px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: '700'
+                    }}
+                    title="Advance Away Team to Next Round"
+                  >
+                    Adv A
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           <Link
             to={`/matches/${m.id}`}
             style={{

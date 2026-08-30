@@ -826,6 +826,10 @@ export const updateMatch = async (id, data) => {
     updateDoc(doc(db, 'matches', String(id)), cleanData(data)).catch(() => {});
   } catch (e) {}
 
+  if (merged.status === 'ENDED' && merged.stage !== 'REGULAR' && merged.bracket_code) {
+    advanceKnockoutWinner(merged).catch(() => {});
+  }
+
   return merged;
 };
 
