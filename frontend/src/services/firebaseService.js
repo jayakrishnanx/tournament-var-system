@@ -1499,3 +1499,44 @@ export const calculateStandings = async (tournamentId) => {
   return list;
 };
 
+export const calculateTournamentStats = (tournamentId = null) => {
+  const matches = getCache('matches', []);
+  const relevantMatches = tournamentId ? matches.filter(m => String(m.tournament) === String(tournamentId)) : matches;
+  
+  const scorerMap = {};
+  const yellowMap = {};
+  const redMap = {};
+
+  relevantMatches.forEach(m => {
+    if (Array.isArray(m.recent_events)) {
+      m.recent_events.forEach(ev => {
+        const pKey = ev.player_name || (ev.player ? String(ev.player) : null) || 'Unknown Player';
+        const teamName = ev.team_name || 'Team';
+
+        if (ev.event_type === 'GOAL') {
+          if (!scorerMap[pKey]) {
+            scorerMap[pKey] = { player_name: pKey, team_name: teamName, goals: 0 };
+          }
+          scorerMap[pKey].goals += 1;
+        } else if (ev.event_type === 'YELLOW_CARD') {
+          if (!yellowMap[pKey]) {
+            yellowMap[pKey] = { player_name: pKey, team_name: teamName, cards: 0 };
+          }
+          yellowMap[pKey].cards += 1;
+        } else if (ev.event_type === 'RED_CARD') {
+          if (!redMap[pKey]) {
+            redMap[pKey] = { player_name: pKey, team_name: teamName, cards: 0 };
+          }
+          redMap[pKey].cards += 1;
+        }
+      });
+    }
+  });
+
+  const top_scorers = Object.values(scorerMap).sort((a, b) => b.goals - a.goals);
+  const yellow_cards = Object.values(yellowMap).sort((a, b) => b.cards - a.cards);
+  const red_cards = Object.values(redMap).sort((a, b) => b.cards - a.cards);
+
+  return { top_scorers, yellow_cards, red_cards };
+};
+

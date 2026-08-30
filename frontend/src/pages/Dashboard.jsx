@@ -113,7 +113,30 @@ export const Dashboard = () => {
   };
 
   const tournamentTeams = teams.filter(t => t.tournament === selectedTournament || !selectedTournament);
-  const topScorer = stats.top_scorers[0];
+
+  const topScorers = React.useMemo(() => {
+    if (stats.top_scorers && stats.top_scorers.length > 0) {
+      return stats.top_scorers.slice(0, 3);
+    }
+    const scorerMap = {};
+    matches.forEach(m => {
+      if (Array.isArray(m.recent_events)) {
+        m.recent_events.forEach(ev => {
+          if (ev.event_type === 'GOAL') {
+            const pKey = ev.player_name || 'Player';
+            const teamName = ev.team_name || (String(m.home_team) === String(ev.team) ? m.home_team_details?.name : m.away_team_details?.name) || 'Team';
+            if (!scorerMap[pKey]) {
+              scorerMap[pKey] = { player_name: pKey, team_name: teamName, goals: 0 };
+            }
+            scorerMap[pKey].goals += 1;
+          }
+        });
+      }
+    });
+    return Object.values(scorerMap).sort((a, b) => b.goals - a.goals).slice(0, 3);
+  }, [matches, stats]);
+
+  const topScorer = topScorers[0];
 
   const sortedMatches = [...matches].sort((a, b) => {
     if (a.status === 'LIVE' && b.status !== 'LIVE') return -1;
@@ -265,6 +288,102 @@ export const Dashboard = () => {
               />
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 1.2 TOP 3 TOURNAMENT SCORERS / GOLDEN BOOT LEADERBOARD (USER VIEW) */}
+      {user?.role !== 'ADMIN' && (
+        <div className="glass-panel" style={{
+          padding: '16px 20px',
+          marginBottom: '20px',
+          border: '1px solid rgba(234, 179, 8, 0.35)',
+          background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.08), #131720)',
+          borderRadius: '12px',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '14px',
+            flexWrap: 'wrap',
+            gap: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Award size={20} color="#eab308" />
+              <h3 style={{ fontSize: '1rem', fontWeight: '900', color: '#fef08a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+                🏆 TOP 3 TOURNAMENT SCORERS (GOLDEN BOOT)
+              </h3>
+            </div>
+            <Link to="/standings" style={{ fontSize: '0.78rem', color: '#38bdf8', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}>
+              View Full Points Table <ArrowRight size={13} />
+            </Link>
+          </div>
+
+          {topScorers.length > 0 ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+              {topScorers.map((scorer, idx) => {
+                const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
+                const rankColor = idx === 0 ? '#eab308' : idx === 1 ? '#94a3b8' : '#d97706';
+                const badgeBg = idx === 0 ? 'rgba(234, 179, 8, 0.18)' : idx === 1 ? 'rgba(148, 163, 184, 0.18)' : 'rgba(217, 119, 6, 0.18)';
+                const border = idx === 0 ? '1px solid rgba(234, 179, 8, 0.4)' : idx === 1 ? '1px solid rgba(148, 163, 184, 0.4)' : '1px solid rgba(217, 119, 6, 0.4)';
+
+                return (
+                  <div key={idx} style={{
+                    backgroundColor: '#1D2128',
+                    padding: '12px 14px',
+                    borderRadius: '10px',
+                    border: border,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '10px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                      <span style={{ fontSize: '1.4rem' }}>{medal}</span>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: '0.92rem', fontWeight: '800', color: '#f8fafc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {scorer.player_name}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {scorer.team_name}
+                        </div>
+                      </div>
+                    </div>
+
+                    <span style={{
+                      backgroundColor: badgeBg,
+                      color: rankColor,
+                      fontSize: '0.82rem',
+                      fontWeight: '900',
+                      padding: '4px 10px',
+                      borderRadius: '20px',
+                      whiteSpace: 'nowrap',
+                      border: `1px solid ${rankColor}55`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      ⚽ {scorer.goals} {scorer.goals === 1 ? 'Goal' : 'Goals'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{
+              padding: '16px',
+              backgroundColor: '#1D2128',
+              borderRadius: '8px',
+              color: '#94a3b8',
+              fontSize: '0.82rem',
+              textAlign: 'center',
+              border: '1px dashed #334155'
+            }}>
+              ⚽ Tournament Golden Boot Leaderboard — Scorers will be featured here live as goals are scored!
+            </div>
+          )}
         </div>
       )}
 

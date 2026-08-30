@@ -50,7 +50,9 @@ const api = {
 
       // 3. Match Stats / Top Scorers
       if (cleanUrl === '/tournaments/matches/stats') {
-        return { data: { top_scorers: [], yellow_cards: [], red_cards: [] }, status: 200 };
+        const tourId = params.get('tournament');
+        const data = fb.calculateTournamentStats(tourId);
+        return { data, status: 200 };
       }
 
       // 4. Teams list or detail
