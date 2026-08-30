@@ -134,6 +134,22 @@ const api = {
         return { data, status: 200 };
       }
 
+      // 5b. Reset Knockout Bracket
+      const resetBracketMatch = cleanUrl.match(/^\/tournaments\/tournaments\/([^/]+)\/reset_bracket$/);
+      if (resetBracketMatch) {
+        const tId = resetBracketMatch[1];
+        const data = await fb.resetKnockoutBracket(tId);
+        return { data, status: 200 };
+      }
+
+      // 5c. Reset Standings
+      const resetStandingsMatch = cleanUrl.match(/^\/tournaments\/tournaments\/([^/]+)\/reset_standings$/);
+      if (resetStandingsMatch) {
+        const tId = resetStandingsMatch[1];
+        const data = await fb.resetStandings(tId);
+        return { data, status: 200 };
+      }
+
       // 6. Set Next Match
       const nextMatch = cleanUrl.match(/^\/tournaments\/matches\/([^/]+)\/set_next$/);
       if (nextMatch) {

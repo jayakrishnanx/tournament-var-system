@@ -1263,6 +1263,154 @@ export const finishMatch = async (matchId) => {
   return updated;
 };
 
+export const resetKnockoutBracket = async (tournamentId) => {
+  const cachedMatches = getCache('matches', []);
+  const remainingMatches = cachedMatches.filter(m => {
+    if (String(m.tournament) === String(tournamentId)) {
+      return m.stage === 'REGULAR' && !m.bracket_code;
+    }
+    return true;
+  });
+  setCache('matches', remainingMatches);
+
+  try {
+    const snap = await getDocs(collection(db, 'matches'));
+    for (const d of snap.docs) {
+      const data = d.data();
+      if (String(data.tournament) === String(tournamentId)) {
+        if (data.stage !== 'REGULAR' || data.bracket_code) {
+          await deleteDoc(doc(db, 'matches', d.id));
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('resetKnockoutBracket error:', e);
+  }
+
+  return { success: 'Knockout bracket reset successfully.' };
+};
+
+export const generateKnockoutBracket = async (tournamentId, teamIds = []) => {
+  // First clear any existing knockout matches for this tournament
+  await resetKnockoutBracket(tournamentId);
+
+  const allTeams = await getTeams(tournamentId);
+  let orderedTeams = Array.isArray(teamIds) && teamIds.length > 0 ? teamIds.map(id => String(id)) : allTeams.map(t => String(t.id));
+
+  const now = Date.now();
+  const createdMatches = [];
+
+  if (orderedTeams.length >= 8) {
+    const top8 = orderedTeams.slice(0, 8);
+    // QF1
+    createdMatches.push({
+      tournament: String(tournamentId),
+      home_team: top8[0],
+      away_team: top8[1],
+      stage: 'QUARTER_FINAL',
+      bracket_code: 'QF1',
+      scheduled_time: new Date(now + 2 * 3600 * 1000).toISOString()
+    });
+    // QF2
+    createdMatches.push({
+      tournament: String(tournamentId),
+      home_team: top8[2],
+      away_team: top8[3],
+      stage: 'QUARTER_FINAL',
+      bracket_code: 'QF2',
+      scheduled_time: new Date(now + 4 * 3600 * 1000).toISOString()
+    });
+    // QF3
+    createdMatches.push({
+      tournament: String(tournamentId),
+      home_team: top8[4],
+      away_team: top8[5],
+      stage: 'QUARTER_FINAL',
+      bracket_code: 'QF3',
+      scheduled_time: new Date(now + 6 * 3600 * 1000).toISOString()
+    });
+    // QF4
+    createdMatches.push({
+      tournament: String(tournamentId),
+      home_team: top8[6],
+      away_team: top8[7],
+      stage: 'QUARTER_FINAL',
+      bracket_code: 'QF4',
+      scheduled_time: new Date(now + 8 * 3600 * 1000).toISOString()
+    });
+    // SF1 (Placeholder)
+    createdMatches.push({
+      tournament: String(tournamentId),
+      home_team: null,
+      away_team: null,
+      stage: 'SEMI_FINAL',
+      bracket_code: 'SF1',
+      scheduled_time: new Date(now + 24 * 3600 * 1000).toISOString()
+    });
+    // SF2 (Placeholder)
+    createdMatches.push({
+      tournament: String(tournamentId),
+      home_team: null,
+      away_team: null,
+      stage: 'SEMI_FINAL',
+      bracket_code: 'SF2',
+      scheduled_time: new Date(now + 26 * 3600 * 1000).toISOString()
+    });
+    // F (Placeholder)
+    createdMatches.push({
+      tournament: String(tournamentId),
+      home_team: null,
+      away_team: null,
+      stage: 'FINAL',
+      bracket_code: 'F',
+      scheduled_time: new Date(now + 48 * 3600 * 1000).toISOString()
+    });
+  } else if (orderedTeams.length >= 4) {
+    const top4 = orderedTeams.slice(0, 4);
+    // SF1
+    createdMatches.push({
+      tournament: String(tournamentId),
+      home_team: top4[0],
+      away_team: top4[1],
+      stage: 'SEMI_FINAL',
+      bracket_code: 'SF1',
+      scheduled_time: new Date(now + 2 * 3600 * 1000).toISOString()
+    });
+    // SF2
+    createdMatches.push({
+      tournament: String(tournamentId),
+      home_team: top4[2],
+      away_team: top4[3],
+      stage: 'SEMI_FINAL',
+      bracket_code: 'SF2',
+      scheduled_time: new Date(now + 4 * 3600 * 1000).toISOString()
+    });
+    // F (Placeholder)
+    createdMatches.push({
+      tournament: String(tournamentId),
+      home_team: null,
+      away_team: null,
+      stage: 'FINAL',
+      bracket_code: 'F',
+      scheduled_time: new Date(now + 24 * 3600 * 1000).toISOString()
+    });
+  }
+
+  for (const m of createdMatches) {
+    await createMatch(m);
+  }
+
+  // Refresh matches cache
+  await getMatches(tournamentId, null, true);
+
+  return { success: 'Bracket generated successfully!' };
+};
+
+export const resetStandings = async (tournamentId) => {
+  await resetAllMatches(tournamentId);
+  return { success: 'Points table reset successfully.' };
+};
+
 export const setNextMatch = async (matchId) => {
   const cached = getCache('matches', []);
   const target = cached.find(m => String(m.id) === String(matchId));
@@ -1351,63 +1499,3 @@ export const calculateStandings = async (tournamentId) => {
   return list;
 };
 
-// ==========================================
-// 5. KNOCKOUT BRACKET GENERATION
-// ==========================================
-
-export const generateKnockoutBracket = async (tournamentId, teamIds) => {
-  const teams = await getTeams(tournamentId);
-  const selectedTeams = teams.filter(t => teamIds.includes(t.id));
-
-  if (selectedTeams.length !== 4 && selectedTeams.length !== 8) {
-    throw new Error('Must select 4 or 8 teams for knockout bracket');
-  }
-
-  const createdMatches = [];
-  const count = selectedTeams.length;
-
-  if (count === 4) {
-    // 2 Semi-Finals
-    const sf1 = await createMatch({
-      tournament: tournamentId,
-      home_team: selectedTeams[0].id,
-      away_team: selectedTeams[1].id,
-      stage: 'SEMI_FINAL',
-      match_number: 1,
-      bracket_position: 'SF1'
-    });
-    const sf2 = await createMatch({
-      tournament: tournamentId,
-      home_team: selectedTeams[2].id,
-      away_team: selectedTeams[3].id,
-      stage: 'SEMI_FINAL',
-      match_number: 2,
-      bracket_position: 'SF2'
-    });
-    // 1 Final
-    const fn = await createMatch({
-      tournament: tournamentId,
-      home_team: selectedTeams[0].id,
-      away_team: selectedTeams[2].id,
-      stage: 'FINAL',
-      match_number: 3,
-      bracket_position: 'F'
-    });
-    createdMatches.push(sf1, sf2, fn);
-  } else if (count === 8) {
-    // 4 Quarter-Finals
-    for (let i = 0; i < 4; i++) {
-      const qf = await createMatch({
-        tournament: tournamentId,
-        home_team: selectedTeams[i * 2].id,
-        away_team: selectedTeams[i * 2 + 1].id,
-        stage: 'QUARTER_FINAL',
-        match_number: i + 1,
-        bracket_position: `QF${i + 1}`
-      });
-      createdMatches.push(qf);
-    }
-  }
-
-  return createdMatches;
-};

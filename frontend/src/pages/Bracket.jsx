@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { Trophy, Award, Activity, ArrowLeft, RotateCcw, Trash2, LayoutList, GitMerge, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getCache } from '../services/firebaseService';
+import { getCache, subscribeMatches } from '../services/firebaseService';
 
 export const Bracket = () => {
   const { user } = useAuth();
@@ -60,16 +60,17 @@ export const Bracket = () => {
     const init = async () => {
       try {
         const res = await api.get('/tournaments/tournaments/');
-        setTournaments(res.data);
-        if (res.data.length > 0) {
-          const firstId = res.data[0].id;
-          setSelectedTournament(firstId);
-          await fetchAll(firstId);
-        } else {
-          setLoading(false);
+        if (res.data?.length > 0) {
+          setTournaments(res.data);
+          if (!selectedTournament) {
+            const firstId = res.data[0].id;
+            setSelectedTournament(firstId);
+            await fetchAll(firstId);
+          }
         }
       } catch (err) {
         console.error(err);
+      } finally {
         setLoading(false);
       }
     };
@@ -79,6 +80,12 @@ export const Bracket = () => {
   useEffect(() => {
     if (selectedTournament) {
       fetchAll(selectedTournament);
+      const unsub = subscribeMatches(selectedTournament, (liveMatches) => {
+        if (liveMatches && liveMatches.length > 0) {
+          setMatches(liveMatches);
+        }
+      });
+      return () => unsub();
     }
   }, [selectedTournament]);
 
@@ -176,7 +183,7 @@ export const Bracket = () => {
     }
   };
 
-  const bracketMatches = matches.filter(m => m.stage !== 'REGULAR');
+  const bracketMatches = matches.filter(m => (m.stage && m.stage !== 'REGULAR') || Boolean(m.bracket_code));
   const hasBracket = bracketMatches.length > 0;
   const getBracketMatch = (code) => bracketMatches.find(m => m.bracket_code === code);
   const hasQuarterFinals = Boolean(getBracketMatch('QF1'));
@@ -198,8 +205,11 @@ export const Bracket = () => {
       awayPlaceholder = hasQuarterFinals ? 'Winner of SF2' : 'Winner of Semi 2';
     }
 
-    const homeName = m.home_team_details?.name || homePlaceholder;
-    const awayName = m.away_team_details?.name || awayPlaceholder;
+    const homeTeamObj = teams.find(t => String(t.id) === String(m.home_team));
+    const awayTeamObj = teams.find(t => String(t.id) === String(m.away_team));
+
+    const homeName = m.home_team_details?.name || (homeTeamObj ? homeTeamObj.name : null) || (m.home_team ? 'Team' : homePlaceholder);
+    const awayName = m.away_team_details?.name || (awayTeamObj ? awayTeamObj.name : null) || (m.away_team ? 'Team' : awayPlaceholder);
 
     const isFinished = m.status === 'ENDED';
     const isLive = m.status === 'LIVE' || m.status === 'PAUSED';
