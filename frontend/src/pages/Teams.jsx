@@ -189,12 +189,11 @@ export const Teams = () => {
     }));
 
     try {
-      // Attempt bulk creation
       await api.post('/tournaments/players/', payload);
       setShowPlayerModal(false);
-      fetchTeams();
+      await fetchTeams();
     } catch (bulkErr) {
-      // Fallback: create one-by-one if bulk endpoint is unavailable or returns format error
+      console.warn('Bulk player add error, trying one-by-one fallback:', bulkErr);
       const errors = [];
       for (const item of payload) {
         try {
@@ -218,7 +217,7 @@ export const Teams = () => {
       } else {
         setShowPlayerModal(false);
       }
-      fetchTeams();
+      await fetchTeams();
     } finally {
       setAddingPlayers(false);
     }
@@ -390,10 +389,10 @@ export const Teams = () => {
                         <span style={{ fontSize: '0.8rem', color: '#64748b' }}>No players added to squad yet.</span>
                       </div>
                     ) : (
-                      team.players?.map(p => (
-                        <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', padding: '8px 12px', backgroundColor: '#1D2128', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      team.players?.map((p, idx) => (
+                        <div key={p.id || `${p.name}_${idx}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', padding: '8px 12px', backgroundColor: '#1D2128', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
-                            {p.jersey_number && (
+                            {p.jersey_number !== null && p.jersey_number !== undefined && p.jersey_number !== '' && (
                               <span style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60a5fa', fontSize: '0.75rem', fontWeight: '800', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(59,130,246,0.3)' }}>
                                 #{p.jersey_number}
                               </span>

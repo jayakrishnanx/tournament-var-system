@@ -60,6 +60,13 @@ const api = {
         return { data, status: 200 };
       }
 
+      // 4b. Players list
+      if (cleanUrl === '/tournaments/players') {
+        const teamId = params.get('team');
+        const data = await fb.getPlayers(teamId);
+        return { data, status: 200 };
+      }
+
       // 5. Matches list or detail
       if (cleanUrl === '/tournaments/matches') {
         const tourId = params.get('tournament');
@@ -245,6 +252,13 @@ const api = {
         return { data, status: 200 };
       }
 
+      const eventMatch = cleanUrl.match(/^\/tournaments\/events\/([^/]+)$/);
+      if (eventMatch) {
+        const eId = eventMatch[1];
+        const data = await fb.updateMatchEvent(eId, payload);
+        return { data, status: 200 };
+      }
+
       const tournMatch = cleanUrl.match(/^\/tournaments\/tournaments\/([^/]+)$/);
       if (tournMatch) {
         const tId = tournMatch[1];
@@ -278,6 +292,12 @@ const api = {
       const playerMatch = cleanUrl.match(/^\/tournaments\/players\/([^/]+)$/);
       if (playerMatch) {
         await fb.deletePlayer(playerMatch[1]);
+        return { data: { success: true }, status: 204 };
+      }
+
+      const eventMatch = cleanUrl.match(/^\/tournaments\/events\/([^/]+)$/);
+      if (eventMatch) {
+        await fb.deleteMatchEvent(eventMatch[1]);
         return { data: { success: true }, status: 204 };
       }
 

@@ -66,11 +66,19 @@ export const syncLocalToCloud = async () => {
       }
     }
 
-    // Sync Teams
+    // Sync Teams and Players
     for (const tm of localTeams) {
       if (tm && tm.id) {
         const cleaned = cleanData(tm);
         await setDoc(doc(db, 'teams', String(tm.id)), cleaned, { merge: true });
+        if (Array.isArray(tm.players)) {
+          for (const p of tm.players) {
+            if (p && (p.id || p.name)) {
+              const pId = p.id || generateId();
+              await setDoc(doc(db, 'players', String(pId)), cleanData({ ...p, id: pId, team: String(tm.id) }), { merge: true });
+            }
+          }
+        }
       }
     }
 
@@ -184,10 +192,100 @@ export const deleteTournament = async (id) => {
 // 2. TEAMS & PLAYERS
 // ==========================================
 
+export const getPlayers = async (teamId = null) => {
+  try {
+    const snap = await getDocs(collection(db, 'players'));
+    let players = [];
+    if (snap) {
+      snap.docs.forEach(d => {
+        const pdata = d.data();
+        if (pdata.name && (pdata.team || pdata.team_id)) {
+          players.push({ id: d.id, ...pdata, team: String(pdata.team || pdata.team_id) });
+        } else {
+          // Handle corrupted bulk doc format where items were saved as numeric keys
+          Object.keys(pdata).forEach(key => {
+            if (!isNaN(key) && pdata[key] && typeof pdata[key] === 'object' && pdata[key].name) {
+              players.push({
+                id: pdata[key].id || `${d.id}_${key}`,
+                ...pdata[key],
+                team: String(pdata[key].team || pdata[key].team_id || '')
+              });
+            }
+          });
+        }
+      });
+    }
+
+    // Also extract embedded players from cached teams
+    const cachedTeams = getCache('teams', []);
+    cachedTeams.forEach(t => {
+      if (Array.isArray(t.players)) {
+        t.players.forEach(p => {
+          if (p && p.name) {
+            players.push({ ...p, id: p.id || generateId(), team: String(p.team || t.id) });
+          }
+        });
+      }
+    });
+
+    const playerMap = new Map();
+    players.forEach(p => {
+      if (p && (p.id || p.name)) {
+        playerMap.set(String(p.id || p.name), p);
+      }
+    });
+    const uniquePlayers = Array.from(playerMap.values());
+    return teamId ? uniquePlayers.filter(p => String(p.team) === String(teamId)) : uniquePlayers;
+  } catch (e) {
+    console.warn('Firestore getPlayers read error:', e);
+    const cachedTeams = getCache('teams', []);
+    const list = [];
+    cachedTeams.forEach(t => {
+      if (Array.isArray(t.players)) {
+        t.players.forEach(p => list.push({ ...p, team: String(p.team || t.id) }));
+      }
+    });
+    return teamId ? list.filter(p => String(p.team) === String(teamId)) : list;
+  }
+};
+
 export const getTeams = async (tournamentId = null) => {
   try {
-    const snap = await getDocs(collection(db, 'teams'));
-    const teams = snap ? snap.docs.map(d => ({ id: d.id, ...d.data() })) : [];
+    const [snapTeams, allPlayers] = await Promise.all([
+      getDocs(collection(db, 'teams')),
+      getPlayers()
+    ]);
+
+    let teams = snapTeams ? snapTeams.docs.map(d => {
+      const data = d.data();
+      const teamId = String(d.id);
+      const teamPlayers = allPlayers.filter(p => String(p.team) === teamId);
+      const embeddedPlayers = Array.isArray(data.players) ? data.players : [];
+
+      const playerMap = new Map();
+      embeddedPlayers.forEach(p => {
+        if (p && (p.id || p.name)) {
+          playerMap.set(String(p.id || p.name), { ...p, team: teamId });
+        }
+      });
+      teamPlayers.forEach(p => {
+        if (p && (p.id || p.name)) {
+          playerMap.set(String(p.id || p.name), { ...p, team: teamId });
+        }
+      });
+
+      return {
+        id: d.id,
+        ...data,
+        players: Array.from(playerMap.values())
+      };
+    }) : [];
+
+    if (teams.length === 0) {
+      const cached = getCache('teams', []);
+      if (cached.length > 0) teams = cached;
+    }
+
     setCache('teams', teams);
     return tournamentId ? teams.filter(t => String(t.tournament) === String(tournamentId)) : teams;
   } catch (e) {
@@ -199,8 +297,33 @@ export const getTeams = async (tournamentId = null) => {
 
 export const subscribeTeams = (tournamentId, callback) => {
   try {
-    return onSnapshot(collection(db, 'teams'), (snapshot) => {
-      const data = snapshot ? snapshot.docs.map(d => ({ id: d.id, ...d.data() })) : [];
+    return onSnapshot(collection(db, 'teams'), async (snapshot) => {
+      const allPlayers = await getPlayers();
+      const data = snapshot ? snapshot.docs.map(d => {
+        const tdata = d.data();
+        const teamId = String(d.id);
+        const teamPlayers = allPlayers.filter(p => String(p.team) === teamId);
+        const embeddedPlayers = Array.isArray(tdata.players) ? tdata.players : [];
+
+        const playerMap = new Map();
+        embeddedPlayers.forEach(p => {
+          if (p && (p.id || p.name)) {
+            playerMap.set(String(p.id || p.name), { ...p, team: teamId });
+          }
+        });
+        teamPlayers.forEach(p => {
+          if (p && (p.id || p.name)) {
+            playerMap.set(String(p.id || p.name), { ...p, team: teamId });
+          }
+        });
+
+        return {
+          id: d.id,
+          ...tdata,
+          players: Array.from(playerMap.values())
+        };
+      }) : [];
+
       setCache('teams', data);
       const res = tournamentId ? data.filter(t => String(t.tournament) === String(tournamentId)) : data;
       callback(res);
@@ -230,6 +353,7 @@ export const createTeam = async (data) => {
   try {
     await setDoc(doc(db, 'teams', newId), cleanData({
       ...data,
+      players: [],
       created_at: serverTimestamp()
     }));
   } catch (e) {
@@ -246,7 +370,7 @@ export const updateTeam = async (id, data) => {
   setCache('teams', updated);
 
   try {
-    await updateDoc(doc(db, 'teams', String(id)), data);
+    await updateDoc(doc(db, 'teams', String(id)), cleanData(data));
   } catch (e) {}
   return { id, ...data };
 };
@@ -257,7 +381,19 @@ export const deleteTeam = async (teamId) => {
 
   try {
     await deleteDoc(doc(db, 'teams', String(teamId)));
-  } catch (e) {}
+    // Also remove players belonging to this team from players collection
+    const snapPlayers = await getDocs(collection(db, 'players'));
+    if (snapPlayers) {
+      for (const pDoc of snapPlayers.docs) {
+        const pdata = pDoc.data();
+        if (String(pdata.team || pdata.team_id) === String(teamId)) {
+          await deleteDoc(doc(db, 'players', pDoc.id));
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Delete team error:', e);
+  }
   return true;
 };
 
@@ -267,11 +403,29 @@ export const clearAllTeams = async (tournamentId = null) => {
   setCache('teams', remaining);
 
   try {
-    const snap = await getDocs(collection(db, 'teams'));
-    for (const d of snap.docs) {
-      const data = d.data();
-      if (!tournamentId || String(data.tournament) === String(tournamentId)) {
-        await deleteDoc(doc(db, 'teams', d.id));
+    const [teamsSnap, playersSnap] = await Promise.all([
+      getDocs(collection(db, 'teams')),
+      getDocs(collection(db, 'players'))
+    ]);
+
+    const deletedTeamIds = new Set();
+    if (teamsSnap) {
+      for (const d of teamsSnap.docs) {
+        const data = d.data();
+        if (!tournamentId || String(data.tournament) === String(tournamentId)) {
+          deletedTeamIds.add(String(d.id));
+          await deleteDoc(doc(db, 'teams', d.id));
+        }
+      }
+    }
+
+    if (playersSnap) {
+      for (const pDoc of playersSnap.docs) {
+        const pdata = pDoc.data();
+        const pTeam = String(pdata.team || pdata.team_id || '');
+        if (!tournamentId || deletedTeamIds.has(pTeam)) {
+          await deleteDoc(doc(db, 'players', pDoc.id));
+        }
       }
     }
   } catch (e) {
@@ -281,53 +435,125 @@ export const clearAllTeams = async (tournamentId = null) => {
 };
 
 export const addPlayer = async (data) => {
-  const newId = generateId();
-  const newPlayer = { id: newId, ...data };
+  const items = Array.isArray(data) ? data : [data];
+  if (items.length === 0) return Array.isArray(data) ? [] : null;
 
+  const addedPlayers = items.map(item => ({
+    id: item.id || generateId(),
+    name: item.name || '',
+    jersey_number: item.jersey_number !== undefined && item.jersey_number !== '' ? Number(item.jersey_number) : null,
+    position: item.position || '',
+    team: String(item.team || item.team_id || ''),
+    created_at: new Date().toISOString()
+  }));
+
+  // Update local memory cache immediately
+  const cachedTeams = getCache('teams', []);
+  const updatedTeams = cachedTeams.map(t => {
+    const newForThisTeam = addedPlayers.filter(p => String(p.team) === String(t.id));
+    if (newForThisTeam.length > 0) {
+      const currentPlayers = Array.isArray(t.players) ? [...t.players] : [];
+      newForThisTeam.forEach(np => {
+        const existingIdx = currentPlayers.findIndex(cp => String(cp.id) === String(np.id));
+        if (existingIdx >= 0) {
+          currentPlayers[existingIdx] = np;
+        } else {
+          currentPlayers.push(np);
+        }
+      });
+      return { ...t, players: currentPlayers };
+    }
+    return t;
+  });
+  setCache('teams', updatedTeams);
+
+  // Sync to Firestore
+  try {
+    for (const player of addedPlayers) {
+      await setDoc(doc(db, 'players', player.id), cleanData({
+        ...player,
+        created_at: serverTimestamp()
+      }));
+    }
+
+    // Also update team doc players array so the team doc contains the full roster
+    const teamIds = [...new Set(addedPlayers.map(p => p.team).filter(Boolean))];
+    for (const teamId of teamIds) {
+      const targetTeam = updatedTeams.find(t => String(t.id) === String(teamId));
+      if (targetTeam) {
+        await updateDoc(doc(db, 'teams', String(teamId)), {
+          players: cleanData(targetTeam.players || [])
+        });
+      }
+    }
+  } catch (e) {
+    console.error('Add player Firestore error:', e);
+  }
+
+  return Array.isArray(data) ? addedPlayers : addedPlayers[0];
+};
+
+export const updatePlayer = async (id, data) => {
   const cached = getCache('teams', []);
+  let targetTeamId = null;
   const updated = cached.map(t => {
-    if (String(t.id) === String(data.team)) {
-      return { ...t, players: [...(t.players || []), newPlayer] };
+    const hasPlayer = (t.players || []).some(p => String(p.id) === String(id));
+    if (hasPlayer) {
+      targetTeamId = t.id;
+      return {
+        ...t,
+        players: (t.players || []).map(p => String(p.id) === String(id) ? { ...p, ...data } : p)
+      };
     }
     return t;
   });
   setCache('teams', updated);
 
   try {
-    await setDoc(doc(db, 'players', newId), {
-      ...data,
-      created_at: serverTimestamp()
-    });
-  } catch (e) {}
-
-  return newPlayer;
-};
-
-export const updatePlayer = async (id, data) => {
-  const cached = getCache('teams', []);
-  const updated = cached.map(t => ({
-    ...t,
-    players: (t.players || []).map(p => String(p.id) === String(id) ? { ...p, ...data } : p)
-  }));
-  setCache('teams', updated);
-
-  try {
-    await updateDoc(doc(db, 'players', String(id)), data);
-  } catch (e) {}
+    await updateDoc(doc(db, 'players', String(id)), cleanData(data));
+    if (targetTeamId) {
+      const teamObj = updated.find(t => String(t.id) === String(targetTeamId));
+      if (teamObj) {
+        await updateDoc(doc(db, 'teams', String(targetTeamId)), {
+          players: cleanData(teamObj.players || [])
+        });
+      }
+    }
+  } catch (e) {
+    console.error('Update player Firestore error:', e);
+  }
   return { id, ...data };
 };
 
 export const deletePlayer = async (id) => {
   const cached = getCache('teams', []);
-  const updated = cached.map(t => ({
-    ...t,
-    players: (t.players || []).filter(p => String(p.id) !== String(id))
-  }));
+  let targetTeamId = null;
+  const updated = cached.map(t => {
+    const hasPlayer = (t.players || []).some(p => String(p.id) === String(id));
+    if (hasPlayer) {
+      targetTeamId = t.id;
+      return {
+        ...t,
+        players: (t.players || []).filter(p => String(p.id) !== String(id))
+      };
+    }
+    return t;
+  });
   setCache('teams', updated);
 
   try {
     await deleteDoc(doc(db, 'players', String(id)));
-  } catch (e) {}
+    if (targetTeamId) {
+      const teamObj = updated.find(t => String(t.id) === String(targetTeamId));
+      if (teamObj) {
+        await updateDoc(doc(db, 'teams', String(targetTeamId)), {
+          players: cleanData(teamObj.players || [])
+        });
+      }
+    }
+  } catch (e) {
+    console.error('Delete player Firestore error:', e);
+  }
   return true;
 };
 
@@ -335,12 +561,34 @@ export const deletePlayer = async (id) => {
 // 3. MATCHES
 // ==========================================
 
+export const ensureEventIds = (events) => {
+  if (!Array.isArray(events)) return [];
+  return events.map((e, idx) => ({
+    ...e,
+    id: e.id || `ev_${idx}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
+  }));
+};
+
 export const getMatches = async (tournamentId = null, stage = null) => {
   try {
-    const snap = await getDocs(collection(db, 'matches'));
-    const remote = snap ? snap.docs.map(d => ({ id: d.id, ...d.data() })) : [];
-    setCache('matches', remote);
-    let matches = remote;
+    const [matchesSnap, teamsList] = await Promise.all([
+      getDocs(collection(db, 'matches')),
+      getTeams()
+    ]);
+    const remote = matchesSnap ? matchesSnap.docs.map(d => ({ id: d.id, ...d.data() })) : [];
+    
+    const teamMap = new Map();
+    teamsList.forEach(t => teamMap.set(String(t.id), t));
+
+    const enriched = remote.map(m => ({
+      ...m,
+      recent_events: ensureEventIds(m.recent_events),
+      home_team_details: teamMap.get(String(m.home_team)) || m.home_team_details || { name: 'Home Team', players: [] },
+      away_team_details: teamMap.get(String(m.away_team)) || m.away_team_details || { name: 'Away Team', players: [] },
+    }));
+
+    setCache('matches', enriched);
+    let matches = enriched;
     if (tournamentId) matches = matches.filter(m => String(m.tournament) === String(tournamentId));
     if (stage) matches = matches.filter(m => m.stage === stage);
     return matches;
@@ -349,7 +597,7 @@ export const getMatches = async (tournamentId = null, stage = null) => {
     let cached = getCache('matches', []);
     if (tournamentId) cached = cached.filter(m => String(m.tournament) === String(tournamentId));
     if (stage) cached = cached.filter(m => m.stage === stage);
-    return cached;
+    return cached.map(m => ({ ...m, recent_events: ensureEventIds(m.recent_events) }));
   }
 };
 
@@ -357,18 +605,29 @@ export const subscribeMatches = (tournamentId, callback) => {
   try {
     return onSnapshot(collection(db, 'matches'), (snapshot) => {
       const data = snapshot ? snapshot.docs.map(d => ({ id: d.id, ...d.data() })) : [];
-      setCache('matches', data);
-      const res = tournamentId ? data.filter(m => String(m.tournament) === String(tournamentId)) : data;
+      const teams = getCache('teams', []);
+      const teamMap = new Map();
+      teams.forEach(t => teamMap.set(String(t.id), t));
+
+      const enriched = data.map(m => ({
+        ...m,
+        recent_events: ensureEventIds(m.recent_events),
+        home_team_details: teamMap.get(String(m.home_team)) || m.home_team_details || { name: 'Home Team', players: [] },
+        away_team_details: teamMap.get(String(m.away_team)) || m.away_team_details || { name: 'Away Team', players: [] },
+      }));
+
+      setCache('matches', enriched);
+      const res = tournamentId ? enriched.filter(m => String(m.tournament) === String(tournamentId)) : enriched;
       callback(res);
     }, () => {
       let cached = getCache('matches', []);
       if (tournamentId) cached = cached.filter(m => String(m.tournament) === String(tournamentId));
-      callback(cached);
+      callback(cached.map(m => ({ ...m, recent_events: ensureEventIds(m.recent_events) })));
     });
   } catch (e) {
     let cached = getCache('matches', []);
     if (tournamentId) cached = cached.filter(m => String(m.tournament) === String(tournamentId));
-    callback(cached);
+    callback(cached.map(m => ({ ...m, recent_events: ensureEventIds(m.recent_events) })));
     return () => {};
   }
 };
@@ -378,12 +637,22 @@ export const getMatch = async (id) => {
     const docRef = doc(db, 'matches', String(id));
     const snap = await getDoc(docRef);
     if (snap.exists()) {
-      return { id: snap.id, ...snap.data() };
+      const matchData = { id: snap.id, ...snap.data() };
+      const teams = getCache('teams', []);
+      const teamMap = new Map();
+      teams.forEach(t => teamMap.set(String(t.id), t));
+      return {
+        ...matchData,
+        recent_events: ensureEventIds(matchData.recent_events),
+        home_team_details: teamMap.get(String(matchData.home_team)) || matchData.home_team_details || { name: 'Home Team', players: [] },
+        away_team_details: teamMap.get(String(matchData.away_team)) || matchData.away_team_details || { name: 'Away Team', players: [] },
+      };
     }
   } catch (e) {}
 
   const cached = getCache('matches', []);
-  return cached.find(m => String(m.id) === String(id)) || null;
+  const item = cached.find(m => String(m.id) === String(id));
+  return item ? { ...item, recent_events: ensureEventIds(item.recent_events) } : null;
 };
 
 export const subscribeMatch = (matchId, callback) => {
@@ -520,6 +789,47 @@ export const calculateMatchElapsed = (match) => {
   return base + diffSec;
 };
 
+export const advanceKnockoutWinner = async (match) => {
+  if (!match || match.stage === 'REGULAR' || !match.bracket_code) return;
+
+  let winner = null;
+  if ((match.home_score || 0) > (match.away_score || 0)) {
+    winner = match.home_team;
+  } else if ((match.away_score || 0) > (match.home_score || 0)) {
+    winner = match.away_team;
+  }
+  if (!winner) return;
+
+  let nextCode = null;
+  let isHome = true;
+
+  if (match.bracket_code === 'QF1') { nextCode = 'SF1'; isHome = true; }
+  else if (match.bracket_code === 'QF2') { nextCode = 'SF1'; isHome = false; }
+  else if (match.bracket_code === 'QF3') { nextCode = 'SF2'; isHome = true; }
+  else if (match.bracket_code === 'QF4') { nextCode = 'SF2'; isHome = false; }
+  else if (match.bracket_code === 'SF1') { nextCode = 'F'; isHome = true; }
+  else if (match.bracket_code === 'SF2') { nextCode = 'F'; isHome = false; }
+
+  if (!nextCode) return;
+
+  const matches = await getMatches(match.tournament);
+  const nextMatch = matches.find(m => m.bracket_code === nextCode);
+  if (nextMatch) {
+    const teams = await getTeams(match.tournament);
+    const winnerTeamObj = teams.find(t => String(t.id) === String(winner)) || { id: winner, name: 'Team' };
+
+    const updatePayload = isHome ? {
+      home_team: winner,
+      home_team_details: winnerTeamObj
+    } : {
+      away_team: winner,
+      away_team_details: winnerTeamObj
+    };
+
+    await updateMatch(nextMatch.id, updatePayload);
+  }
+};
+
 export const toggleMatchTimer = async (matchId, action) => {
   const match = await getMatch(matchId);
   if (!match) return null;
@@ -543,6 +853,15 @@ export const toggleMatchTimer = async (matchId, action) => {
       timer_started_at: null,
       status: match.status === 'ENDED' ? 'ENDED' : 'PAUSED'
     };
+  } else if (action === 'FINISH' || action === 'END') {
+    const currentTotal = calculateMatchElapsed(match);
+    updates = {
+      is_timer_running: false,
+      timer_base_seconds: currentTotal,
+      timer_seconds_elapsed: currentTotal,
+      timer_started_at: null,
+      status: 'ENDED'
+    };
   } else if (action === 'RESET') {
     updates = {
       is_timer_running: false,
@@ -558,6 +877,9 @@ export const toggleMatchTimer = async (matchId, action) => {
   }
 
   const updated = await updateMatch(matchId, updates);
+  if (action === 'FINISH' || action === 'END') {
+    await advanceKnockoutWinner({ ...match, ...updates });
+  }
   return updated;
 };
 
@@ -648,24 +970,41 @@ export const recordMatchEvent = async (matchId, eventData) => {
   const match = await getMatch(matchId);
   if (!match) return null;
 
+  const allPlayers = await getPlayers();
+  const teams = getCache('teams', []);
+
+  const teamId = String(eventData.team_id || eventData.team || '');
+  const playerId = eventData.player_id || eventData.player || null;
+
+  const playerObj = allPlayers.find(p => String(p.id) === String(playerId));
+  const teamObj = teams.find(t => String(t.id) === String(teamId));
+
+  const teamName = eventData.team_name || (teamObj ? teamObj.name : (String(match.home_team) === teamId ? match.home_team_details?.name : match.away_team_details?.name)) || 'Team';
+  const playerName = eventData.player_name || (playerObj ? playerObj.name : 'Player');
+
+  const matchElapsed = calculateMatchElapsed(match);
+  const matchMin = Math.max(1, Math.floor(matchElapsed / 60) + 1);
+  const matchSec = matchElapsed % 60;
+
   const newEvent = {
     id: generateId(),
-    match: matchId,
+    match: String(matchId),
     event_type: eventData.event_type || 'GOAL',
-    team: eventData.team_id,
-    player: eventData.player_id,
-    player_name: eventData.player_name || 'Player',
-    team_name: eventData.team_name || (String(match.home_team) === String(eventData.team_id) ? match.home_team_details?.name : match.away_team_details?.name) || 'Team',
-    match_minute: Math.floor((match.timer_seconds_elapsed || 0) / 60) + 1,
+    team: teamId,
+    player: playerId,
+    player_name: playerName,
+    team_name: teamName,
+    match_minute: eventData.match_minute !== undefined ? Number(eventData.match_minute) : matchMin,
+    match_second: eventData.match_second !== undefined ? Number(eventData.match_second) : matchSec,
     created_at: new Date().toISOString()
   };
 
-  const existingEvents = match.recent_events || [];
+  const existingEvents = Array.isArray(match.recent_events) ? match.recent_events : [];
   const updatedEvents = [newEvent, ...existingEvents];
 
   let scoreUpdates = {};
-  if (eventData.event_type === 'GOAL') {
-    const isHome = String(match.home_team) === String(eventData.team_id);
+  if (newEvent.event_type === 'GOAL') {
+    const isHome = String(match.home_team) === teamId;
     scoreUpdates = {
       home_score: isHome ? (match.home_score || 0) + 1 : (match.home_score || 0),
       away_score: !isHome ? (match.away_score || 0) + 1 : (match.away_score || 0)
@@ -679,11 +1018,153 @@ export const recordMatchEvent = async (matchId, eventData) => {
   return updated;
 };
 
+export const updateMatchEvent = async (eventId, updateData) => {
+  const matches = getCache('matches', []);
+  let targetMatch = null;
+  let eventIdx = -1;
+
+  for (const m of matches) {
+    if (Array.isArray(m.recent_events)) {
+      const idx = m.recent_events.findIndex(e => String(e.id) === String(eventId));
+      if (idx >= 0) {
+        targetMatch = m;
+        eventIdx = idx;
+        break;
+      }
+    }
+  }
+
+  if (!targetMatch) {
+    const snap = await getDocs(collection(db, 'matches'));
+    if (snap) {
+      for (const d of snap.docs) {
+        const m = { id: d.id, ...d.data() };
+        if (Array.isArray(m.recent_events)) {
+          const idx = m.recent_events.findIndex(e => String(e.id) === String(eventId));
+          if (idx >= 0) {
+            targetMatch = m;
+            eventIdx = idx;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (!targetMatch || eventIdx === -1) {
+    console.warn(`Event ${eventId} not found in any match`);
+    return null;
+  }
+
+  const existingEvent = targetMatch.recent_events[eventIdx];
+  const teams = getCache('teams', []);
+  const allPlayers = await getPlayers();
+
+  const teamId = updateData.team !== undefined ? String(updateData.team || '') : (updateData.team_id !== undefined ? String(updateData.team_id || '') : existingEvent.team);
+  const playerId = updateData.player !== undefined ? (updateData.player || null) : (updateData.player_id !== undefined ? (updateData.player_id || null) : existingEvent.player);
+
+  const teamObj = teams.find(t => String(t.id) === String(teamId));
+  const playerObj = allPlayers.find(p => String(p.id) === String(playerId));
+
+  const teamName = teamObj ? teamObj.name : (String(targetMatch.home_team) === teamId ? targetMatch.home_team_details?.name : targetMatch.away_team_details?.name) || existingEvent.team_name || 'Team';
+  const playerName = playerObj ? playerObj.name : (updateData.player_name || existingEvent.player_name || 'Player');
+
+  const updatedEvent = {
+    ...existingEvent,
+    ...updateData,
+    id: eventId,
+    team: teamId,
+    player: playerId,
+    team_name: teamName,
+    player_name: playerName,
+    event_type: updateData.event_type || existingEvent.event_type || 'GOAL',
+    match_minute: updateData.match_minute !== undefined ? Number(updateData.match_minute) : existingEvent.match_minute,
+    match_second: updateData.match_second !== undefined ? Number(updateData.match_second) : (existingEvent.match_second || 0),
+    updated_at: new Date().toISOString()
+  };
+
+  const updatedEvents = [...targetMatch.recent_events];
+  updatedEvents[eventIdx] = updatedEvent;
+
+  // Recalculate score from all GOAL events
+  const homeGoals = updatedEvents.filter(e => e.event_type === 'GOAL' && String(e.team) === String(targetMatch.home_team)).length;
+  const awayGoals = updatedEvents.filter(e => e.event_type === 'GOAL' && String(e.team) === String(targetMatch.away_team)).length;
+
+  const matchUpdates = {
+    recent_events: updatedEvents,
+    home_score: homeGoals,
+    away_score: awayGoals
+  };
+
+  await updateMatch(targetMatch.id, matchUpdates);
+  return updatedEvent;
+};
+
+export const deleteMatchEvent = async (eventId) => {
+  const matches = getCache('matches', []);
+  let targetMatch = null;
+
+  for (const m of matches) {
+    if (Array.isArray(m.recent_events)) {
+      const idx = m.recent_events.findIndex(e => String(e.id) === String(eventId));
+      if (idx >= 0) {
+        targetMatch = m;
+        break;
+      }
+    }
+  }
+
+  if (!targetMatch) {
+    const snap = await getDocs(collection(db, 'matches'));
+    if (snap) {
+      for (const d of snap.docs) {
+        const m = { id: d.id, ...d.data() };
+        if (Array.isArray(m.recent_events)) {
+          const idx = m.recent_events.findIndex(e => String(e.id) === String(eventId));
+          if (idx >= 0) {
+            targetMatch = m;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (!targetMatch) {
+    console.warn(`Event ${eventId} not found in any match`);
+    return false;
+  }
+
+  const updatedEvents = (targetMatch.recent_events || []).filter(e => String(e.id) !== String(eventId));
+
+  // Recalculate score from all remaining GOAL events
+  const homeGoals = updatedEvents.filter(e => e.event_type === 'GOAL' && String(e.team) === String(targetMatch.home_team)).length;
+  const awayGoals = updatedEvents.filter(e => e.event_type === 'GOAL' && String(e.team) === String(targetMatch.away_team)).length;
+
+  const matchUpdates = {
+    recent_events: updatedEvents,
+    home_score: homeGoals,
+    away_score: awayGoals
+  };
+
+  await updateMatch(targetMatch.id, matchUpdates);
+  return true;
+};
+
 export const finishMatch = async (matchId) => {
-  return await updateMatch(matchId, {
+  const match = await getMatch(matchId);
+  const totalElapsed = match ? calculateMatchElapsed(match) : 0;
+  const updated = await updateMatch(matchId, {
     status: 'ENDED',
-    is_timer_running: false
+    is_timer_running: false,
+    timer_started_at: null,
+    timer_base_seconds: totalElapsed,
+    timer_seconds_elapsed: totalElapsed
   });
+  if (match) {
+    await advanceKnockoutWinner({ ...match, status: 'ENDED' });
+  }
+  return updated;
 };
 
 export const setNextMatch = async (matchId) => {
