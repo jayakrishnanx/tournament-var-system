@@ -1,11 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import api from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
-import { Activity, PlusCircle, Award, ArrowRight } from 'lucide-react';
+import { Activity, PlusCircle, Award, ArrowRight, Bell, BellRing } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 import { subscribeMatches, subscribeTournaments, getCache } from '../services/firebaseService';
+
+const playKickoffChime = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.6);
+  } catch (e) {}
+};
 
 export const Dashboard = () => {
   const [matches, setMatches] = useState(() => getCache('matches', []));
@@ -24,6 +41,16 @@ export const Dashboard = () => {
   const [scheduledDate, setScheduledDate] = useState(new Date().toISOString().slice(0, 16));
   const [stage, setStage] = useState('REGULAR');
   const [submitting, setSubmitting] = useState(false);
+
+  const [notifiedMatches, setNotifiedMatches] = useState(() => {
+    try {
+      const saved = localStorage.getItem('notified_matches');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [toastMessage, setToastMessage] = useState(null);
 
   const { user } = useAuth();
 
@@ -67,6 +94,85 @@ export const Dashboard = () => {
       unsubTourns();
     };
   }, []);
+
+  // Monitor matches and alert user when a subscribed match kicks off (goes LIVE)
+  const prevMatchesRef = useRef(matches);
+  useEffect(() => {
+    if (!matches || matches.length === 0) return;
+
+    matches.forEach(m => {
+      const prev = prevMatchesRef.current.find(p => String(p.id) === String(m.id));
+      const isNowLive = (m.status === 'LIVE' || Boolean(m.is_timer_running)) && prev && prev.status === 'SCHEDULED';
+      
+      if (isNowLive && notifiedMatches.includes(String(m.id))) {
+        playKickoffChime();
+        const homeName = m.home_team_details?.name || 'Home';
+        const awayName = m.away_team_details?.name || 'Away';
+        const title = `🔴 MATCH IS LIVE NOW!`;
+        const body = `KICKOFF: ${homeName} vs ${awayName} is LIVE NOW! Tap to watch.`;
+
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification(title, { body, icon: '/sponsors/sponsor1.png' });
+          } catch (e) {}
+        }
+
+        setToastMessage({
+          matchId: m.id,
+          title,
+          body
+        });
+
+        // Remove from notified list
+        setNotifiedMatches(prevList => {
+          const updated = prevList.filter(id => id !== String(m.id));
+          try { localStorage.setItem('notified_matches', JSON.stringify(updated)); } catch (e) {}
+          return updated;
+        });
+      }
+    });
+
+    prevMatchesRef.current = matches;
+  }, [matches, notifiedMatches]);
+
+  const handleToggleNotify = async (matchId) => {
+    const isSubscribed = notifiedMatches.includes(String(matchId));
+    const targetMatch = matches.find(m => String(m.id) === String(matchId)) || nextMatch;
+    const homeName = targetMatch?.home_team_details?.name || 'Home';
+    const awayName = targetMatch?.away_team_details?.name || 'Away';
+
+    if (isSubscribed) {
+      const updated = notifiedMatches.filter(id => id !== String(matchId));
+      setNotifiedMatches(updated);
+      try { localStorage.setItem('notified_matches', JSON.stringify(updated)); } catch (e) {}
+      alert('🔔 Match kickoff notification cancelled.');
+      return;
+    }
+
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission !== 'granted') {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') {
+          alert('⚠️ Browser notification permission denied. In-app alerts and sounds will still notify you while this website is open!');
+        }
+      }
+    }
+
+    const updated = [...notifiedMatches, String(matchId)];
+    setNotifiedMatches(updated);
+    try { localStorage.setItem('notified_matches', JSON.stringify(updated)); } catch (e) {}
+
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification('🔔 Match Reminder Set!', {
+          body: `We will alert you the moment ${homeName} vs ${awayName} kicks off!`,
+          icon: '/sponsors/sponsor1.png'
+        });
+      } catch (e) {}
+    }
+
+    alert(`🔔 Notification Active!\n\nYou will receive a notification and sound alert the second ${homeName} vs ${awayName} kicks off!`);
+  };
 
   const handleScheduleMatch = async (e) => {
     e.preventDefault();
@@ -524,17 +630,58 @@ export const Dashboard = () => {
               {nextMatch.home_team_details?.name} <span style={{ color: '#2B5748', margin: '0 6px' }}>VS</span> {nextMatch.away_team_details?.name}
             </div>
 
-            <Link to={`/matches/${nextMatch.id}`} style={{
-              backgroundColor: '#2B5748',
-              color: '#EAECF0',
-              fontWeight: '900',
-              padding: '6px 14px',
-              borderRadius: '6px',
-              fontSize: '0.8rem',
-              whiteSpace: 'nowrap'
-            }}>
-              Watch Next Match
-            </Link>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => handleToggleNotify(nextMatch.id)}
+                style={{
+                  backgroundColor: notifiedMatches.includes(String(nextMatch.id)) ? '#10b981' : '#2563eb',
+                  color: '#ffffff',
+                  fontWeight: '900',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontSize: '0.82rem',
+                  whiteSpace: 'nowrap',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: notifiedMatches.includes(String(nextMatch.id))
+                    ? '0 2px 10px rgba(16, 185, 129, 0.4)'
+                    : '0 2px 10px rgba(37, 99, 235, 0.4)',
+                  transition: 'all 0.2s ease'
+                }}
+                title={notifiedMatches.includes(String(nextMatch.id)) ? 'Click to cancel notification reminder' : 'Get notified the moment this match starts'}
+              >
+                {notifiedMatches.includes(String(nextMatch.id)) ? (
+                  <>
+                    <BellRing size={15} /> 🔔 Reminder Set (Notified)
+                  </>
+                ) : (
+                  <>
+                    <Bell size={15} /> 🔔 Notify Next Match
+                  </>
+                )}
+              </button>
+
+              <Link
+                to={`/matches/${nextMatch.id}`}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                  color: '#cbd5e1',
+                  fontWeight: '700',
+                  padding: '8px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.15)'
+                }}
+              >
+                Match Preview →
+              </Link>
+            </div>
           </div>
         </div>
       )}
@@ -705,6 +852,52 @@ export const Dashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Real-time Match Kickoff Alert Toast */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          backgroundColor: '#0f172a',
+          border: '2px solid #ef4444',
+          borderRadius: '12px',
+          padding: '16px 20px',
+          boxShadow: '0 10px 30px rgba(239, 68, 68, 0.4)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+          animation: 'pulseLiveBorder 1.5s infinite',
+          maxWidth: '420px'
+        }}>
+          <div>
+            <div style={{ fontSize: '0.92rem', fontWeight: '900', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444' }}></span>
+              {toastMessage.title}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '3px' }}>
+              {toastMessage.body}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
+            <Link
+              to={`/matches/${toastMessage.matchId}`}
+              className="btn-primary"
+              style={{ padding: '6px 12px', fontSize: '0.78rem', whiteSpace: 'nowrap' }}
+              onClick={() => setToastMessage(null)}
+            >
+              Watch Now
+            </Link>
+            <button
+              onClick={() => setToastMessage(null)}
+              style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1rem', padding: '0 4px' }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );
