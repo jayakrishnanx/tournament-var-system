@@ -13,19 +13,31 @@ export const Navbar = () => {
     navigate('/');
   };
 
-  const navItemStyle = (path) => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '5px 10px',
-    borderRadius: '6px',
-    fontSize: '0.8rem',
-    fontWeight: '800',
-    color: location.pathname === path ? '#2B5748' : '#EAECF0',
-    backgroundColor: location.pathname === path ? 'rgba(43, 87, 72, 0.18)' : 'transparent',
-    border: location.pathname === path ? '1px solid rgba(43, 87, 72, 0.4)' : '1px solid transparent',
-    transition: 'all 0.2s ease',
-  });
+  const isPathActive = (path) => {
+    if (path === '/') {
+      return location.pathname === '/' || location.pathname === '/matches';
+    }
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
+
+  const navItemStyle = (path) => {
+    const active = isPathActive(path);
+    return {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '6px 12px',
+      borderRadius: '6px',
+      fontSize: '0.82rem',
+      fontWeight: '800',
+      color: '#ffffff',
+      backgroundColor: active ? 'rgba(59, 130, 246, 0.25)' : 'transparent',
+      border: active ? '1px solid #3b82f6' : '1px solid transparent',
+      boxShadow: active ? '0 0 10px rgba(59, 130, 246, 0.3)' : 'none',
+      transition: 'all 0.2s ease',
+      textDecoration: 'none'
+    };
+  };
 
   const isAdmin = user?.role === 'ADMIN';
 
@@ -35,14 +47,14 @@ export const Navbar = () => {
       alignItems: 'center',
       justifyContent: 'space-between',
       padding: '10px 16px',
-      backgroundColor: '#181818',
-      borderBottom: '1px solid #343a46',
+      backgroundColor: '#11151c',
+      borderBottom: '1px solid #28303f',
       position: 'sticky',
       top: 0,
       zIndex: 50
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
-        <Link to={isAdmin ? "/matches" : "/"} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        <Link to={isAdmin ? "/matches" : "/"} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, textDecoration: 'none' }}>
           <img
             src="/navbar-logo.png"
             alt="Kalikkalam FC Logo"
@@ -53,10 +65,10 @@ export const Navbar = () => {
             }}
           />
           <div>
-            <span style={{ fontFamily: 'Outfit', fontWeight: '900', fontSize: '1rem', color: '#EAECF0', display: 'block', lineHeight: 1, letterSpacing: '0.02em' }}>
-              KALLI<span style={{ color: '#2B5748' }}>KALAM</span>
+            <span style={{ fontFamily: 'Outfit', fontWeight: '900', fontSize: '1rem', color: '#ffffff', display: 'block', lineHeight: 1, letterSpacing: '0.02em' }}>
+              KALLI<span style={{ color: '#38bdf8' }}>KALAM</span>
             </span>
-            <span style={{ fontSize: '0.55rem', color: '#2B5748', letterSpacing: '0.05em', fontWeight: '800' }}>
+            <span style={{ fontSize: '0.55rem', color: '#94a3b8', letterSpacing: '0.05em', fontWeight: '800' }}>
               LIVE SCOREBOARD
             </span>
           </div>
@@ -95,31 +107,31 @@ export const Navbar = () => {
         {!isAdmin ? (
           <>
             <Link to="/" style={navItemStyle('/')}>
-              <Activity size={14} /> Matches
+              <Activity size={14} color="#38bdf8" /> Matches
             </Link>
-            <Link to="/bracket" style={{ ...navItemStyle('/bracket'), backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#10b981', fontWeight: '800' }}>
-              <Trophy size={14} color="#10b981" /> 🏆 Knockout Bracket
+            <Link to="/bracket" style={navItemStyle('/bracket')}>
+              <Trophy size={14} color="#facc15" /> Knockout Bracket
             </Link>
             <Link to="/standings" style={navItemStyle('/standings')}>
-              <Award size={14} color="#10b981" /> Points Table
+              <Award size={14} color="#34d399" /> Points Table
             </Link>
           </>
         ) : (
           <>
             <Link to="/tournaments" style={navItemStyle('/tournaments')}>
-              <Trophy size={14} /> Tournaments
+              <Trophy size={14} color="#facc15" /> Tournaments
             </Link>
             <Link to="/matches" style={navItemStyle('/matches')}>
-              <Calendar size={14} /> Matches
+              <Calendar size={14} color="#38bdf8" /> Matches
             </Link>
             <Link to="/teams" style={navItemStyle('/teams')}>
-              <Users size={14} /> Teams
+              <Users size={14} color="#a78bfa" /> Teams
             </Link>
-            <Link to="/bracket" style={{ ...navItemStyle('/bracket'), backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#10b981', fontWeight: '800' }}>
-              <Trophy size={14} color="#10b981" /> 🏆 Knockout Bracket
+            <Link to="/bracket" style={navItemStyle('/bracket')}>
+              <Trophy size={14} color="#facc15" /> Knockout Bracket
             </Link>
             <Link to="/standings" style={navItemStyle('/standings')}>
-              <Award size={14} color="#10b981" /> Points Table
+              <Award size={14} color="#34d399" /> Points Table
             </Link>
           </>
         )}
@@ -127,3 +139,5 @@ export const Navbar = () => {
     </nav>
   );
 };
+
+export default Navbar;
