@@ -4,7 +4,7 @@ import api from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
 import { Calendar, Filter, PlusCircle, X, Pencil, Trash2, RotateCcw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getCache } from '../services/firebaseService';
+import { getCache, subscribeMatches } from '../services/firebaseService';
 
 export const Matches = () => {
   const [matches, setMatches] = useState(() => getCache('matches', []));
@@ -52,6 +52,12 @@ export const Matches = () => {
 
   useEffect(() => {
     fetchMatches();
+    const unsub = subscribeMatches(null, (liveMatches) => {
+      if (liveMatches) {
+        setMatches(liveMatches);
+      }
+    });
+    return () => unsub();
   }, []);
 
   const handleCreateMatch = async (e) => {
@@ -67,7 +73,7 @@ export const Matches = () => {
 
     try {
       setSubmitting(true);
-      await api.post('/tournaments/matches/', {
+      const res = await api.post('/tournaments/matches/', {
         tournament: selectedTournament,
         home_team: homeTeam,
         away_team: awayTeam,
@@ -78,6 +84,9 @@ export const Matches = () => {
       setShowModal(false);
       setHomeTeam('');
       setAwayTeam('');
+      if (res.data) {
+        setMatches(prev => [res.data, ...prev.filter(m => String(m.id) !== String(res.data.id))]);
+      }
       fetchMatches();
       alert('Match successfully scheduled!');
     } catch (err) {
@@ -91,6 +100,10 @@ export const Matches = () => {
   const handleSetNextMatch = async (matchId) => {
     try {
       const res = await api.post(`/tournaments/matches/${matchId}/set_next/`);
+      setMatches(prev => prev.map(m => ({
+        ...m,
+        is_next_match: String(m.id) === String(matchId) ? Boolean(res.data?.is_next_match) : false
+      })));
       fetchMatches();
       if (res.data?.is_next_match) {
         alert('📌 Match successfully set as UPCOMING NEXT MATCH!');
@@ -114,47 +127,127 @@ export const Matches = () => {
     setShowEditModal(true);
   };
 
+  const handleUpdateMatch = async (e) => {
+    e.preventDefault();
+    if (!editForm.id || !editForm.home_team || !editForm.away_team) {
+      alert('Please select both Home and Away teams');
+      return;
+    }
+    if (editForm.home_team === editForm.away_team) {
+      alert('Home and Away teams must be different');
+      return;
+    }
+
+    const homeTeamObj = teams.find(t => String(t.id) === String(editForm.home_team));
+    const awayTeamObj = teams.find(t => String(t.id) === String(editForm.away_team));
+
+    // Instant optimistic update
+    setMatches(prev => prev.map(m => String(m.id) === String(editForm.id) ? {
+      ...m,
+      home_team: editForm.home_team,
+      away_team: editForm.away_team,
+      home_team_details: homeTeamObj || m.home_team_details,
+      away_team_details: awayTeamObj || m.away_team_details,
+      scheduled_time: new Date(editForm.scheduled_date).toISOString()
+    } : m));
+
+    setShowEditModal(false);
+
+    try {
+      await api.patch(`/tournaments/matches/${editForm.id}/`, {
+        home_team: editForm.home_team,
+        away_team: editForm.away_team,
+        scheduled_time: new Date(editForm.scheduled_date).toISOString()
+      });
+      fetchMatches();
+      alert('Match updated successfully!');
+    } catch (err) {
+      console.error(err);
+      alert('Error updating match: ' + (err.response?.data?.error || err.message));
+      fetchMatches();
+    }
+  };
+
   const handleResetMatch = async (matchId) => {
     if (!window.confirm('Are you sure you want to RESET this match? This will reset the score to 0 - 0, timer to 00:00, events, and status to SCHEDULED.')) return;
+    
+    // Instant optimistic update
+    setMatches(prev => prev.map(m => String(m.id) === String(matchId) ? {
+      ...m,
+      home_score: 0,
+      away_score: 0,
+      status: 'SCHEDULED',
+      current_period: 'NOT_STARTED',
+      is_timer_running: false,
+      timer_seconds_elapsed: 0,
+      recent_events: []
+    } : m));
+
     try {
       await api.post(`/tournaments/matches/${matchId}/reset/`, {});
       fetchMatches();
       alert('✅ Match successfully reset to Scheduled (0 - 0)!');
     } catch (err) {
       alert('Error resetting match: ' + (err.response?.data?.error || err.message));
+      fetchMatches();
     }
   };
 
   const handleDeleteMatch = async (matchId) => {
     if (!window.confirm('Are you sure you want to delete this match schedule?')) return;
+    
+    // Instant optimistic deletion (0ms instant UI removal)
+    setMatches(prev => prev.filter(m => String(m.id) !== String(matchId)));
+
     try {
       await api.delete(`/tournaments/matches/${matchId}/`);
       fetchMatches();
       alert('Match deleted successfully.');
     } catch (err) {
+      console.error(err);
       alert('Error deleting match: ' + (err.response?.data?.error || err.message));
+      fetchMatches();
     }
   };
 
   const handleResetAllMatches = async () => {
     if (!window.confirm('⚠️ WARNING: Are you sure you want to RESET ALL MATCHES? This will reset all scores to 0 - 0, stop all timers, clear all cards/goals, and set statuses to SCHEDULED.')) return;
+    
+    // Instant optimistic update
+    setMatches(prev => prev.map(m => ({
+      ...m,
+      status: 'SCHEDULED',
+      home_score: 0,
+      away_score: 0,
+      current_period: 'NOT_STARTED',
+      is_timer_running: false,
+      timer_seconds_elapsed: 0,
+      recent_events: []
+    })));
+
     try {
       await api.post('/tournaments/matches/reset_all', {});
       fetchMatches();
       alert('✅ All matches successfully reset to 0 - 0 & SCHEDULED!');
     } catch (err) {
       alert('Error resetting all matches: ' + err.message);
+      fetchMatches();
     }
   };
 
   const handleClearAllMatches = async () => {
     if (!window.confirm('⚠️ WARNING: Are you sure you want to delete ALL match schedules? This will wipe the match schedule clean.')) return;
+    
+    // Instant optimistic clear
+    setMatches([]);
+
     try {
       await api.post('/tournaments/matches/clear_all', {});
       fetchMatches();
       alert('✅ All match schedules cleared successfully!');
     } catch (err) {
       alert('Error clearing matches: ' + err.message);
+      fetchMatches();
     }
   };
 
