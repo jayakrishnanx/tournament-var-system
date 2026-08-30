@@ -232,7 +232,13 @@ export const Dashboard = () => {
 
   const topScorer = topScorers[0];
 
-  const sortedMatches = [...matches].sort((a, b) => {
+  // Filter out unassigned knockout placeholder fixtures (e.g. TBD vs TBD) on user side
+  const readyMatches = matches.filter(m => {
+    if (m.status === 'LIVE' || m.status === 'PAUSED' || m.status === 'ENDED') return true;
+    return Boolean(m.home_team && m.away_team && m.home_team_details?.name && m.away_team_details?.name);
+  });
+
+  const sortedMatches = [...readyMatches].sort((a, b) => {
     if (a.status === 'LIVE' && b.status !== 'LIVE') return -1;
     if (a.status !== 'LIVE' && b.status === 'LIVE') return 1;
     if (a.status === 'PAUSED' && b.status !== 'PAUSED') return -1;
@@ -245,10 +251,10 @@ export const Dashboard = () => {
   });
 
   // LIVE match is strictly the match where the timer is running or active live stream
-  const liveMatch = matches.find(m => Boolean(m.is_timer_running)) ||
-                    matches.find(m => m.status === 'LIVE' && Boolean(m.is_timer_running)) ||
-                    matches.find(m => Boolean(m.is_live_streaming) && (m.status === 'LIVE' || m.status === 'PAUSED'));
-  const nextMatch = matches.find(m => m.is_next_match && m.status === 'SCHEDULED') || matches.find(m => m.status === 'SCHEDULED');
+  const liveMatch = readyMatches.find(m => Boolean(m.is_timer_running)) ||
+                    readyMatches.find(m => m.status === 'LIVE' && Boolean(m.is_timer_running)) ||
+                    readyMatches.find(m => Boolean(m.is_live_streaming) && (m.status === 'LIVE' || m.status === 'PAUSED'));
+  const nextMatch = readyMatches.find(m => m.is_next_match && m.status === 'SCHEDULED') || readyMatches.find(m => m.status === 'SCHEDULED');
 
   if (user?.role === 'ADMIN') return <Navigate to="/matches" replace />;
 

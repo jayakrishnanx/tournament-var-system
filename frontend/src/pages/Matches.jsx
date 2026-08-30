@@ -260,7 +260,11 @@ export const Matches = () => {
   const tournamentTeams = teams.filter(t => t.tournament === selectedTournament || !selectedTournament);
   const editModalTeams = teams.filter(t => t.tournament === editForm.tournament);
 
-  const sortedMatches = [...matches].sort((a, b) => {
+  const readyMatches = user?.role === 'ADMIN'
+    ? matches
+    : matches.filter(m => m.status === 'LIVE' || m.status === 'PAUSED' || m.status === 'ENDED' || Boolean(m.home_team && m.away_team && m.home_team_details?.name && m.away_team_details?.name));
+
+  const sortedMatches = [...readyMatches].sort((a, b) => {
     if (a.status === 'LIVE' && b.status !== 'LIVE') return -1;
     if (a.status !== 'LIVE' && b.status === 'LIVE') return 1;
     if (a.status === 'PAUSED' && b.status !== 'PAUSED') return -1;
