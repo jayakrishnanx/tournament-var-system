@@ -214,6 +214,9 @@ export const Dashboard = () => {
     }
     const scorerMap = {};
     matches.forEach(m => {
+      // Only count goals from finished (ENDED) matches
+      if (m.status !== 'ENDED') return;
+
       if (Array.isArray(m.recent_events)) {
         m.recent_events.forEach(ev => {
           if (ev.event_type === 'GOAL') {

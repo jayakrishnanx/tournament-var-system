@@ -1512,6 +1512,9 @@ export const calculateTournamentStats = (tournamentId = null) => {
   const redMap = {};
 
   relevantMatches.forEach(m => {
+    // Only count goals and cards from finished (ENDED) matches
+    if (m.status !== 'ENDED') return;
+
     if (Array.isArray(m.recent_events)) {
       m.recent_events.forEach(ev => {
         const pKey = ev.player_name || (ev.player ? String(ev.player) : null) || 'Unknown Player';

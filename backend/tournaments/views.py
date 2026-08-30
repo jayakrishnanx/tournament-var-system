@@ -344,7 +344,7 @@ class MatchViewSet(viewsets.ModelViewSet):
         from django.db.models import Count
         tournament_id = request.query_params.get('tournament')
         
-        events_qs = MatchEvent.objects.all()
+        events_qs = MatchEvent.objects.filter(match__status=Match.Status.ENDED)
         if tournament_id:
             events_qs = events_qs.filter(match__tournament_id=tournament_id)
 
