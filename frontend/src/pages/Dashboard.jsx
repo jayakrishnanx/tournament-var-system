@@ -5,15 +5,18 @@ import { StatusBadge } from '../components/StatusBadge';
 import { Activity, PlusCircle, Award, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-import { subscribeMatches, subscribeTournaments } from '../services/firebaseService';
+import { subscribeMatches, subscribeTournaments, getCache } from '../services/firebaseService';
 
 export const Dashboard = () => {
-  const [matches, setMatches] = useState([]);
-  const [tournaments, setTournaments] = useState([]);
-  const [teams, setTeams] = useState([]);
+  const [matches, setMatches] = useState(() => getCache('matches', []));
+  const [tournaments, setTournaments] = useState(() => getCache('tournaments', []));
+  const [teams, setTeams] = useState(() => getCache('teams', []));
   const [stats, setStats] = useState({ top_scorers: [], yellow_cards: [], red_cards: [] });
   const [loading, setLoading] = useState(false);
-  const [selectedTournament, setSelectedTournament] = useState('');
+  const [selectedTournament, setSelectedTournament] = useState(() => {
+    const cached = getCache('tournaments', []);
+    return cached.length > 0 ? cached[0].id : '';
+  });
   const [showModal, setShowModal] = useState(false);
 
   const [homeTeam, setHomeTeam] = useState('');
@@ -29,9 +32,9 @@ export const Dashboard = () => {
         api.get('/tournaments/tournaments/'),
         api.get('/tournaments/teams/')
       ]);
-      setTournaments(tRes.data);
-      setTeams(tmRes.data);
-      if (tRes.data.length > 0 && !selectedTournament) {
+      if (tRes.data?.length > 0) setTournaments(tRes.data);
+      if (tmRes.data?.length > 0) setTeams(tmRes.data);
+      if (tRes.data?.length > 0 && !selectedTournament) {
         setSelectedTournament(tRes.data[0].id);
       }
     } catch (err) {

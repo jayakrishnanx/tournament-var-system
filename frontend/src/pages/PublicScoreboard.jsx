@@ -5,21 +5,27 @@ import { connectMatchWebSocket } from '../services/websocket';
 import { StatusBadge } from '../components/StatusBadge';
 import { LiveStreamViewer } from '../components/LiveStreamViewer';
 import { LiveStreamEmbedPlayer } from '../components/LiveStreamEmbedPlayer';
-import { calculateMatchElapsed } from '../services/firebaseService';
+import { calculateMatchElapsed, subscribeMatch, getCache } from '../services/firebaseService';
 import { Radio, ArrowLeft, Award } from 'lucide-react';
 
 export const PublicScoreboard = () => {
   const { id } = useParams();
-  const [match, setMatch] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [wsConnected, setWsConnected] = useState(false);
+  const [match, setMatch] = useState(() => {
+    const cached = getCache('matches', []);
+    return cached.find(m => String(m.id) === String(id)) || null;
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = getCache('matches', []);
+    return !cached.some(m => String(m.id) === String(id));
+  });
+  const [wsConnected, setWsConnected] = useState(true);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {
     const fetchMatch = async () => {
       try {
         const res = await api.get(`/tournaments/matches/${id}/`);
-        setMatch(res.data);
+        if (res.data) setMatch(res.data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -27,6 +33,13 @@ export const PublicScoreboard = () => {
       }
     };
     fetchMatch();
+
+    const unsub = subscribeMatch(id, (liveMatch) => {
+      if (liveMatch) {
+        setMatch(liveMatch);
+        setLoading(false);
+      }
+    });
 
     const ws = connectMatchWebSocket(
       id,
@@ -39,7 +52,10 @@ export const PublicScoreboard = () => {
       () => setWsConnected(false)
     );
 
-    return () => ws.close();
+    return () => {
+      unsub();
+      ws.close();
+    };
   }, [id]);
 
   useEffect(() => {

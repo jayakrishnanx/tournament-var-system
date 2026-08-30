@@ -4,17 +4,21 @@ import api from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
 import { Calendar, Filter, PlusCircle, X, Pencil, Trash2, RotateCcw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getCache } from '../services/firebaseService';
 
 export const Matches = () => {
-  const [matches, setMatches] = useState([]);
-  const [tournaments, setTournaments] = useState([]);
-  const [teams, setTeams] = useState([]);
+  const [matches, setMatches] = useState(() => getCache('matches', []));
+  const [tournaments, setTournaments] = useState(() => getCache('tournaments', []));
+  const [teams, setTeams] = useState(() => getCache('teams', []));
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [showModal, setShowModal] = useState(false);
   
   // New Match Form State
-  const [selectedTournament, setSelectedTournament] = useState('');
+  const [selectedTournament, setSelectedTournament] = useState(() => {
+    const cached = getCache('tournaments', []);
+    return cached.length > 0 ? cached[0].id : '';
+  });
   const [homeTeam, setHomeTeam] = useState('');
   const [awayTeam, setAwayTeam] = useState('');
   const [scheduledDate, setScheduledDate] = useState(new Date().toISOString().slice(0, 16));
@@ -33,10 +37,10 @@ export const Matches = () => {
         api.get('/tournaments/tournaments/'),
         api.get('/tournaments/teams/')
       ]);
-      setMatches(mRes.data);
-      setTournaments(tRes.data);
-      setTeams(tmRes.data);
-      if (tRes.data.length > 0 && !selectedTournament) {
+      if (mRes.data?.length > 0) setMatches(mRes.data);
+      if (tRes.data?.length > 0) setTournaments(tRes.data);
+      if (tmRes.data?.length > 0) setTeams(tmRes.data);
+      if (tRes.data?.length > 0 && !selectedTournament) {
         setSelectedTournament(tRes.data[0].id);
       }
     } catch (err) {

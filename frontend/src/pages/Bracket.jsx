@@ -3,14 +3,31 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { Trophy, Award, Activity, ArrowLeft, RotateCcw, Trash2, LayoutList, GitMerge, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getCache } from '../services/firebaseService';
 
 export const Bracket = () => {
   const { user } = useAuth();
-  const [tournaments, setTournaments] = useState([]);
-  const [selectedTournament, setSelectedTournament] = useState('');
-  const [tournament, setTournament] = useState(null);
-  const [matches, setMatches] = useState([]);
-  const [teams, setTeams] = useState([]);
+  const [tournaments, setTournaments] = useState(() => getCache('tournaments', []));
+  const [selectedTournament, setSelectedTournament] = useState(() => {
+    const cached = getCache('tournaments', []);
+    return cached.length > 0 ? cached[0].id : '';
+  });
+  const [tournament, setTournament] = useState(() => {
+    const cached = getCache('tournaments', []);
+    return cached.length > 0 ? cached[0] : null;
+  });
+  const [matches, setMatches] = useState(() => {
+    const cachedT = getCache('tournaments', []);
+    const cachedM = getCache('matches', []);
+    const tId = cachedT.length > 0 ? cachedT[0].id : null;
+    return tId ? cachedM.filter(m => String(m.tournament) === String(tId)) : cachedM;
+  });
+  const [teams, setTeams] = useState(() => {
+    const cachedT = getCache('tournaments', []);
+    const cachedTm = getCache('teams', []);
+    const tId = cachedT.length > 0 ? cachedT[0].id : null;
+    return tId ? cachedTm.filter(t => String(t.tournament) === String(tId)) : cachedTm;
+  });
   const [loading, setLoading] = useState(false);
 
   // Generator & Reset states for admin
@@ -23,16 +40,15 @@ export const Bracket = () => {
   const [stageFilter, setStageFilter] = useState('ALL'); // 'ALL', 'QF', 'SF', 'F'
 
   const fetchAll = async (tId) => {
-    setLoading(true);
     try {
       const [tRes, mRes, tmRes] = await Promise.all([
         api.get(`/tournaments/tournaments/${tId}/`),
         api.get(`/tournaments/matches/?tournament=${tId}`),
         api.get(`/tournaments/teams/?tournament=${tId}`)
       ]);
-      setTournament(tRes.data);
-      setMatches(mRes.data);
-      setTeams(tmRes.data);
+      if (tRes.data) setTournament(tRes.data);
+      if (mRes.data) setMatches(mRes.data);
+      if (tmRes.data) setTeams(tmRes.data);
     } catch (err) {
       console.error(err);
     } finally {

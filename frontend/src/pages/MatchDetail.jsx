@@ -8,15 +8,21 @@ import { LiveStreamBroadcaster } from '../components/LiveStreamBroadcaster';
 import { LiveStreamViewer } from '../components/LiveStreamViewer';
 import { LiveStreamEmbedPlayer } from '../components/LiveStreamEmbedPlayer';
 import { AdminStreamManager } from '../components/AdminStreamManager';
-import { calculateMatchElapsed, subscribeMatch } from '../services/firebaseService';
+import { calculateMatchElapsed, subscribeMatch, getCache } from '../services/firebaseService';
 import { ArrowLeft, Radio, Award } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const MatchDetail = () => {
   const { id } = useParams();
-  const [match, setMatch] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [wsConnected, setWsConnected] = useState(false);
+  const [match, setMatch] = useState(() => {
+    const cached = getCache('matches', []);
+    return cached.find(m => String(m.id) === String(id)) || null;
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = getCache('matches', []);
+    return !cached.some(m => String(m.id) === String(id));
+  });
+  const [wsConnected, setWsConnected] = useState(true);
   const { user } = useAuth();
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -33,11 +39,6 @@ export const MatchDetail = () => {
       }
     } catch (err) {
       console.error(err);
-      try {
-        const allRes = await api.get('/tournaments/matches/');
-        const active = allRes.data?.find(m => m.status === 'LIVE' || m.status === 'PAUSED') || allRes.data?.[0];
-        if (active) setMatch(active);
-      } catch (e) {}
     } finally {
       setLoading(false);
     }

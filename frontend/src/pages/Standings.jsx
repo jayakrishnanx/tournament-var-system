@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { getCache } from '../services/firebaseService';
 
 export const Standings = () => {
   const { user } = useAuth();
   const [standings, setStandings] = useState([]);
-  const [tournaments, setTournaments] = useState([]);
-  const [selectedTournament, setSelectedTournament] = useState('');
+  const [tournaments, setTournaments] = useState(() => getCache('tournaments', []));
+  const [selectedTournament, setSelectedTournament] = useState(() => {
+    const cached = getCache('tournaments', []);
+    return cached.length > 0 ? cached[0].id : '';
+  });
   const [loading, setLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
 
@@ -28,9 +32,11 @@ export const Standings = () => {
     const fetchTournaments = async () => {
       try {
         const res = await api.get('/tournaments/tournaments/');
-        setTournaments(res.data);
-        if (res.data.length > 0) {
-          setSelectedTournament(res.data[0].id);
+        if (res.data?.length > 0) {
+          setTournaments(res.data);
+          if (!selectedTournament) {
+            setSelectedTournament(res.data[0].id);
+          }
         }
       } catch (err) {
         console.error(err);
