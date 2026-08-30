@@ -13,11 +13,39 @@ export const Navbar = () => {
     navigate('/');
   };
 
+  const isAdmin = user?.role === 'ADMIN';
+
   const isPathActive = (path) => {
-    if (path === '/') {
-      return location.pathname === '/' || location.pathname === '/matches';
+    const current = location.pathname;
+    if (isAdmin) {
+      if (path === '/matches') {
+        return current === '/matches' || current.startsWith('/matches/');
+      }
+      if (path === '/tournaments') {
+        return current === '/tournaments' || current.startsWith('/tournaments/');
+      }
+      if (path === '/teams') {
+        return current === '/teams' || current.startsWith('/teams/');
+      }
+      if (path === '/bracket') {
+        return current === '/bracket';
+      }
+      if (path === '/standings') {
+        return current === '/standings';
+      }
+      return current === path;
+    } else {
+      if (path === '/') {
+        return current === '/' || current === '/matches' || current.startsWith('/matches/');
+      }
+      if (path === '/bracket') {
+        return current === '/bracket';
+      }
+      if (path === '/standings') {
+        return current === '/standings';
+      }
+      return current === path;
     }
-    return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
   const navItemStyle = (path) => {
@@ -38,8 +66,6 @@ export const Navbar = () => {
       textDecoration: 'none'
     };
   };
-
-  const isAdmin = user?.role === 'ADMIN';
 
   return (
     <nav className="nav-container" style={{

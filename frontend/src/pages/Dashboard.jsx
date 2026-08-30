@@ -693,7 +693,7 @@ export const Dashboard = () => {
             <Activity size={18} color="#2B5748" /> Live & Scheduled Matches
           </h2>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <Link to="/bracket" className="btn-primary" style={{ padding: '6px 14px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '800', backgroundColor: '#10b981', borderColor: '#10b981' }}>
+            <Link to="/bracket" className="btn-secondary" style={{ padding: '6px 14px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '800' }}>
               🏆 Knockout Bracket
             </Link>
             <Link to="/standings" className="btn-secondary" style={{ padding: '6px 14px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: '800' }}>
