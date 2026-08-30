@@ -7,7 +7,6 @@ import { ScorerConsole } from '../components/ScorerConsole';
 import { LiveStreamBroadcaster } from '../components/LiveStreamBroadcaster';
 import { LiveStreamViewer } from '../components/LiveStreamViewer';
 import { LiveStreamEmbedPlayer } from '../components/LiveStreamEmbedPlayer';
-import { AdminStreamManager } from '../components/AdminStreamManager';
 import { calculateMatchElapsed, subscribeMatch, getCache } from '../services/firebaseService';
 import { ArrowLeft, Radio, Award } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -234,9 +233,6 @@ export const MatchDetail = () => {
       {isAdmin ? (
         <div style={{ marginBottom: '24px' }}>
           <ScorerConsole match={match} onUpdate={handleMatchUpdate} />
-          <div style={{ marginTop: '20px' }}>
-            <AdminStreamManager match={match} onUpdate={handleMatchUpdate} />
-          </div>
         </div>
       ) : (
         <div className="glass-panel" style={{ padding: '20px' }}>
